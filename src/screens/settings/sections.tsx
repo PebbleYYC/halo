@@ -13,6 +13,7 @@ import { providerLabel } from "@/coach/providers";
 import { useChatCount, useCoachSetup } from "@/coach/session";
 import { googleSignInAvailable } from "@/google/auth";
 import { GOOGLE_SOURCE_ENABLED } from "@/google/flags";
+import { pickPhoto, removePhoto, setName, useMe } from "@/state/me";
 import { askPermissions, openHealthConnectSettings, permissionState, READ_TYPES, type PermissionState, type ReadType } from "@/health/connect";
 import { getSourcePolicy, setSourcePolicy, SOURCE_POLICIES, SOURCE_POLICY_LABELS, type SourcePolicy } from "@/health/sourcePolicy";
 import { ago, DAY, formatDay } from "@/lib/format";
@@ -28,7 +29,7 @@ import { haptic } from "@/ui/motion/haptics";
 import { RiseEach } from "@/ui/motion/Rise";
 import { useNow } from "../health/shells";
 import { progressLabel } from "../home/status";
-import { Hairline, useCalm } from "./calmKit";
+import { CalmInput, Hairline, useCalm } from "./calmKit";
 import { ButtonRow, CheckRow, Disclosure, HeroCard, ICON_INSET, InfoRow, InsetGroup, NavRow, ProfileAvatar, RowBox } from "./list";
 import { ConfirmDialog, ProgressBar, toneOf } from "./parts";
 import { GoogleConnectGroup, GoogleSourceGroup, GoogleSpo2Group } from "./google";
@@ -46,6 +47,20 @@ type ProfileRow = { label: string; value: string; numeric?: boolean; unit?: stri
 export function ProfileSection() {
   const c = useCalm();
   const app = useApp();
+  const me = useMe();
+  const [name, setNameDraft] = React.useState(me.name ?? "");
+  React.useEffect(() => setNameDraft(me.name ?? ""), [me.name]);
+  const [photoBusy, setPhotoBusy] = React.useState(false);
+  const photo = async (from: "camera" | "library") => {
+    setPhotoBusy(true);
+    try {
+      const r = await pickPhoto(from);
+      if (r === "denied") toast("Halo needs the camera permission to take a photo");
+      else if (r === "failed") toast("Couldn’t use that photo");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
   const q = useQuery(getSettings);
   const p = q.data?.profile;
   const { units } = useUnits();
@@ -73,14 +88,33 @@ export function ProfileSection() {
     <>
       <RiseEach>
         <View accessible accessibilityLabel={age !== null ? `Your profile, ${age} years` : "Your profile"} style={{ alignItems: "center", gap: 4, paddingTop: 4 }}>
-          <ProfileAvatar size={84} />
+          <ProfileAvatar size={84} photo={me.photo} initial={me.name?.[0]?.toUpperCase()} />
           <Txt size={22} lineHeight={28} weight={700} style={{ color: c.ink, marginTop: 8 }}>
-            Your profile
+            {me.name ?? "Your profile"}
           </Txt>
           <Txt size={15} lineHeight={20} style={{ color: c.sub }}>
             Tap Edit to change any of it
           </Txt>
         </View>
+        <InsetGroup title="You" footer="Your name and photo stay on this phone. Today greets you by your first name.">
+          <RowBox>
+            <CalmInput
+              value={name}
+              onChangeText={setNameDraft}
+              onEndEditing={() => void setName(name)}
+              onSubmitEditing={() => void setName(name)}
+              placeholder="Your name"
+              autoCapitalize="words"
+              autoComplete="name"
+              returnKeyType="done"
+              maxLength={40}
+              accessibilityLabel="Your name"
+            />
+          </RowBox>
+          <ButtonRow label="Take a photo" onPress={() => void photo("camera")} disabled={photoBusy} />
+          <ButtonRow label={me.photo ? "Choose another photo" : "Choose a photo"} onPress={() => void photo("library")} disabled={photoBusy} />
+          {me.photo ? <ButtonRow label="Remove photo" danger onPress={() => void removePhoto()} disabled={photoBusy} /> : null}
+        </InsetGroup>
         <InsetGroup title="Details" footer="Your days start at midnight in your time zone. Saving an edit recomputes your scores.">
           {rows
             ? rows.map((r) => <InfoRow key={r.label} label={r.label} value={r.value} numeric={r.numeric} unit={r.unit} detail={r.detail} />)

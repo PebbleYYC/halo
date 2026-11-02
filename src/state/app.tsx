@@ -423,7 +423,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         return toSignInError(e);
       }
-      await run(store, state.profile, "health_connect");
+      // A sync already running finishes first; the next one reads SpO2. Don't hold the button for either.
+      if (state.status !== "syncing") void run(store, state.profile, "health_connect");
       return null;
     },
     async disconnectGoogle() {

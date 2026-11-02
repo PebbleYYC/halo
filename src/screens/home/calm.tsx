@@ -20,6 +20,8 @@ import { reasonCopy } from "@/lib/reasons";
 import { alpha, mix } from "@/lib/utils";
 import { getTrends, type HomeVM, type KeyStat } from "@/queries";
 import { useApp, useQuery } from "@/state/app";
+import { useMe } from "@/state/me";
+import { BAR_BUTTON } from "@/ui/components/GlassButton";
 import { SyncStatus, Txt, type SyncShellStatus } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { CalendarSheet } from "@/ui/components/CalendarSheet";
@@ -87,6 +89,7 @@ function StreakCapsule({ days }: { days: number }) {
  */
 export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<number> | null; title: string; streak: { days: number } | null; sync: { status: SyncShellStatus; now: number | null; onPress?: () => void }; onAvatar: () => void }) {
   const c = useCalm();
+  const me = useMe();
   const insets = useSafeAreaInsets();
   const inline = useAnimatedStyle(() => {
     const p = y ? interpolate(y.value, [TITLE_FOLD - 20, TITLE_FOLD], [0, 1], Extrapolation.CLAMP) : 0;
@@ -107,7 +110,7 @@ export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<
         <View style={{ flex: 1 }} />
         <SyncStatus status={sync.status} now={sync.now} onPress={sync.onPress} hideText />
         <GlassButton onPress={onAvatar} accessibilityLabel="Settings">
-          <UserAvatar src={null} size={22} />
+          <UserAvatar src={me.photo} size={me.photo ? BAR_BUTTON - 4 : 22} />
         </GlassButton>
       </View>
     </View>
@@ -153,10 +156,11 @@ function StepButton({ dir, disabled, onPress }: { dir: -1 | 1; disabled: boolean
  * calendar. As the page scrolls the block shrinks toward its left edge and fades as it slides under the bar, where the
  * inline title takes over (UI thread).
  */
-export function TodayTitle({ y, day, today, firstDay, loading, onChange }: { y: SharedValue<number> | null; day: string; today: string; firstDay?: string | null; loading?: boolean; onChange: (day: string) => void }) {
+export function TodayTitle({ y, day, today, firstDay, loading, onChange, greeting }: { y: SharedValue<number> | null; day: string; today: string; firstDay?: string | null; loading?: boolean; onChange: (day: string) => void; greeting?: string | null }) {
   const c = useCalm();
   const [calendar, setCalendar] = React.useState(false);
-  const title = dayLabel(day, today);
+  // On today the large title greets the person (Bevel's "Good morning, Ian"); past days keep their day name.
+  const title = (day === today && greeting) || dayLabel(day, today);
   const fold = useAnimatedStyle(() => {
     const v = y ? y.value : 0;
     return {
@@ -177,7 +181,7 @@ export function TodayTitle({ y, day, today, firstDay, loading, onChange }: { y: 
           accessibilityState={{ busy: !!loading }}
           style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1, opacity: pressed ? 0.6 : 1 })}
         >
-          <Txt size={34} lineHeight={41} weight={700} accessibilityRole="header" style={{ color: c.ink, flexShrink: 1 }}>
+          <Txt size={34} lineHeight={41} weight={700} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: c.ink, flexShrink: 1 }}>
             {title}
           </Txt>
           {loading ? <ActivityIndicator size="small" color={c.sub} /> : <ChevronDown size={20} color={c.tertiary} strokeWidth={2.6} style={{ marginTop: 6 }} />}

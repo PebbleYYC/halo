@@ -19,7 +19,8 @@ import { Segmented } from "./parts";
 
 const PRESET_ITEMS = [
   { value: "metric", label: "Metric" },
-  { value: "imperial", label: "Imperial (US)" },
+  { value: "canadian", label: "Mixed" },
+  { value: "imperial", label: "US" },
 ] as const satisfies readonly { value: Preset; label: string }[];
 
 /** "Kilograms (kg)", "Feet and inches": each choice's name with its symbol, written out in full. */
@@ -42,6 +43,7 @@ const ROWS: UnitRowDef[] = [
 /** What a preset sets, in a sentence; a mix says so. */
 function presetSentence(p: Preset | null) {
   if (p === "metric") return "Kilograms, centimetres, kilometres, °C and millilitres. Halo’s default.";
+  if (p === "canadian") return "Pounds and feet and inches for your body; kilometres, °C and millilitres for the rest, as in Canada.";
   if (p === "imperial") return "Pounds, feet and inches, miles, °F and US fluid ounces, as in the United States.";
   return "Your own mix, set below. Pick a preset to set every measurement at once.";
 }
