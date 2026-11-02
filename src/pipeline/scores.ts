@@ -14,7 +14,7 @@ import { toStrainScale } from "@/core/scoring/strain";
 import { foldDaytimeBaseline } from "@/core/scoring/stressBase";
 import type { BaselineState } from "@/core/scoring/types";
 import { energyBand, energyBank, energyBankConfig, nightQuality } from "@/core/algorithms/energyBank";
-import { fitnessEstimate as fitnessEstimateOf, type FitnessEstimateDay, fitnessLevel } from "@/core/algorithms/fitnessLevel";
+import { fitnessAgeFromVo2max, fitnessEstimate as fitnessEstimateOf, type FitnessEstimateDay, fitnessLevel } from "@/core/algorithms/fitnessLevel";
 import { healthMonitor, healthMonitorConfig, type HealthMonitorDay, type VitalKey } from "@/core/algorithms/healthMonitor";
 import { HEALTHSPAN_STRENGTH_TYPES, healthspan, type HealthspanDay } from "@/core/algorithms/healthspan";
 import type { OutcomeDay } from "@/core/algorithms/journalImpact";
@@ -754,13 +754,19 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
   // here they made more days "active", lengthened them and shrank the vigorous share.
   const activeSec = bouts ? (bouts.length === 3 ? bouts[0] + bouts[1] : bouts[0]) : null;
   f.fitnessDays.push({ restingHr: row.restingHr, zone13Min: activeSec === null ? null : activeSec / 60, zone45Min: row.zone45Min });
-  const fitnessEstimate = fitnessEstimateOf(f.fitnessDays.slice(-7), {
+  const estimate = fitnessEstimateOf(f.fitnessDays.slice(-7), {
     age: d.age.years,
     sex: opts.profile.sex,
     maxHr: opts.profile.maxHr,
     waistCm: opts.profile.waistCm ?? null,
   });
-  row.vo2maxEstimated = fitnessEstimate?.vo2max ?? null;
+  row.vo2maxEstimated = estimate?.vo2max ?? null;
+  // With a measured VO2max, Fitness Age reads it against the FRIEND medians, so it agrees with the VO2max that Fitness
+  // and Halo Age show; the resting-HR estimate is only for people without one.
+  const measured = pickVo2max(f, day);
+  const fitnessEstimate = measured
+    ? { vo2max: measured.v, method: "measured" as const, fitnessAge: fitnessAgeFromVo2max(measured.v, opts.profile.sex), activityIndex: estimate?.activityIndex ?? 0, restingHr: estimate?.restingHr ?? null }
+    : estimate;
   const hs = healthspan(f.hsRows, { age: d.age.years, sex: opts.profile.sex, heightCm: opts.profile.heightCm ?? null }, day);
   // Pace of Aging, WHOOP's way (Healthspan pages, 2026-01-21 and 2026-04-23): updated weekly, once 21 of the last 31 days
   // have a Recovery. The daily value is computed every day and published on Monday's row; the week's other days carry it.
@@ -779,16 +785,20 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
 
 // Fitness level: latest run VO2max in 90 days, else the latest daily value
 
-export function scoreFitness(f: Fold, d: Day, opts: PipelineOptions): FitnessRow {
-  const age = d.age.years;
-  const cutoff = addDays(d.day, -89);
+function pickVo2max(f: Fold, day: string) {
+  const cutoff = addDays(day, -89);
   const run = f.hsRows.findLast((r) => r.vo2maxRun != null && r.day >= cutoff);
   const daily = f.hsRows.findLast((r) => r.vo2maxDaily != null);
-  const pick = run
+  return run
     ? { v: run.vo2maxRun!, source: "run" as const, sourceDay: run.day }
     : daily
       ? { v: daily.vo2maxDaily!, source: "daily" as const, sourceDay: daily.day }
       : null;
+}
+
+export function scoreFitness(f: Fold, d: Day, opts: PipelineOptions): FitnessRow {
+  const age = d.age.years;
+  const pick = pickVo2max(f, d.day);
   if (!pick) return { reason: "no_data" };
   return { reason: null, vo2max: pick.v, source: pick.source, sourceDay: pick.sourceDay, age, ...fitnessLevel(pick.v, age, opts.profile.sex) };
 }

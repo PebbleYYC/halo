@@ -429,7 +429,7 @@ export const SCORE_DOCS: ScoreDoc[] = [
         rows: [
           { term: "VO2 max", detail: "Your latest measured value (a lab or field test) from the last 90\u00a0days; otherwise Fitbit’s latest daily estimate; otherwise Halo’s own estimate from your resting heart rate and activity. Estimates are marked Provisional." },
           { term: "Age and sex", detail: "From your profile." },
-          { term: "Fitness Age", detail: "The age whose typical fitness matches yours, from your median resting heart rate and a HUNT activity index built from your last 7\u00a0days of zone time (Nes 2011, the HUNT study, ported from noop). The VO2 max it estimates uses your waist when you add it in Profile, otherwise the ratio of your max to resting heart rate (Uth 2004). Good to about 5\u00a0years." },
+          { term: "Fitness Age", detail: "The age whose typical fitness matches yours. With a VO2 max from your Fitbit, it is the age at which that VO2 max is the FRIEND registry\u2019s median for your sex. Without one it is estimated from your median resting heart rate and a HUNT activity index built from your last 7\u00a0days of zone time (Nes 2011, the HUNT study, ported from noop). The VO2 max it estimates uses your waist when you add it in Profile, otherwise the ratio of your max to resting heart rate (Uth 2004). Good to about 5\u00a0years." },
         ],
       },
       {

@@ -467,7 +467,7 @@ export type FitnessVM = {
   /** `source`: a measured value, Fitbit's estimate, or (mobile) Halo's own estimate when there is neither. */
   vo2: Metric<{ value: number; source: "run" | "daily" | "estimate"; sourceDay: string; percentile: number; category: string; ageBand: string; sex: "male" | "female" }>;
   /** Mobile: Fitness Age from resting heart rate and activity (Nes 2011, after noop), and the VO2 max it estimates. */
-  fitnessAge: Metric<{ fitnessAge: number; age: number; vo2max: number; method: "nes" | "uth"; activityIndex: number; restingHr: number; day: string }>;
+  fitnessAge: Metric<{ fitnessAge: number; age: number; vo2max: number; method: "measured" | "nes" | "uth"; activityIndex: number; restingHr: number | null; day: string }>;
   trend: Trend;
   trainingLoad: Metric<{ acwr: number; status: "detraining" | "optimal" | "pushing" | "high_risk"; tone: ChipTone }>;
   /** 90 days of CTL ("Fitness"), ATL ("Fatigue") and TSB ("Form"). */

@@ -17,6 +17,7 @@ import { RevealScroll, useRevealScroll } from "@/ui/motion/Rise";
 import { dayLabel } from "@/lib/format";
 import { greeting } from "@/lib/greeting";
 import { firstName, useMe } from "@/state/me";
+import { useNow } from "../health/shells";
 import { dayHref, useDay } from "@/lib/day";
 import { getHealthHub, getHome, getRecovery, getSleep, getStrain, getTrends } from "@/queries";
 import { prefetchQuery, useApp, useQuery, useQueryCtx, useQueryStamp, useSyncProgress } from "@/state/app";
@@ -43,6 +44,8 @@ export default function HomeScreen() {
   const clearance = useBottomClearance("tabs");
   const { d, today, isToday } = useDay();
   const me = useMe();
+  // The greeting's part of the day: checked every 5 minutes, not on every render.
+  const now = useNow(5 * 60_000);
   // My Dashboard's saved metrics (null: the default list); the editor's save refetches Home.
   const dashboard = useDashboardKeys();
   const home = useQuery((ctx) => getHome(d, ctx, { dashboardKeys: dashboard ?? undefined }), [d, dashboard], homeKey(d, dashboard));
@@ -155,7 +158,7 @@ export default function HomeScreen() {
             contentInsetAdjustmentBehavior="never"
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: clearance }}
           >
-            <TodayTitle y={scrollY} day={d} today={today} firstDay={app.sync.firstDay} loading={dayLoading} onChange={setDay} greeting={greeting(Date.now() / 1000, app.timeZone, firstName(me.name))} />
+            <TodayTitle y={scrollY} day={d} today={today} firstDay={app.sync.firstDay} loading={dayLoading} onChange={setDay} greeting={greeting(now / 1000, app.timeZone, firstName(me.name))} />
             <RevealScroll.Provider value={scrollY}>
               <View style={{ gap: 12, marginTop: 10, opacity: dayLoading ? 0.6 : 1 }}>{content}</View>
             </RevealScroll.Provider>

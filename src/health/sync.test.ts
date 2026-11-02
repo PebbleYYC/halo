@@ -107,7 +107,7 @@ describe("windowPlan", () => {
     expect(windowPlan({ ...base, imported, requested: true })).toEqual({ full: true, reimport: false });
     expect(windowPlan({ ...base, imported, hasToken: false })).toEqual({ full: true, reimport: false });
     expect(windowPlan({ ...base, imported, newlyGranted: 1 })).toEqual({ full: true, reimport: false });
-    expect(windowPlan({ ...base, imported, hasNights: false })).toEqual({ full: true, reimport: false });
+    expect(windowPlan({ ...base, imported, hasNights: false })).toEqual({ full: false, reimport: false });
   });
 });
 

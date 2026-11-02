@@ -29,7 +29,7 @@ export const FITNESS_INFO: InfoContent = {
   title: "About Fitness",
   body: (
     <Body>
-      {`VO2 max is the most oxygen your body can use during hard exercise. Halo ranks it against people of your age and sex from the FRIEND registry. Without a VO2 max from Health Connect, Halo estimates it from your resting heart rate and activity (Nes 2011, the HUNT study, with your waist; otherwise Uth 2004) and shows your Fitness Age: the age whose typical fitness matches yours. Training load compares your last 7 days of strain with your last 28 (the acute to chronic ratio); 0.8 to 1.3 is the usual sweet spot.`}
+      {`VO2 max is the most oxygen your body can use during hard exercise. Halo ranks it against people of your age and sex from the FRIEND registry. Your Fitness Age is the age whose typical fitness matches yours: read from your measured VO2 max when your Fitbit has one, otherwise from Halo's estimate based on your resting heart rate and activity (Nes 2011, the HUNT study, with your waist; otherwise Uth 2004). Training load compares your last 7 days of strain with your last 28 (the acute to chronic ratio); 0.8 to 1.3 is the usual sweet spot.`}
     </Body>
   ),
 };

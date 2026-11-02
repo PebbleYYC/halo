@@ -159,10 +159,19 @@ function FitnessAge({ m }: { m: FitnessVM["fitnessAge"] }) {
         <RollingValue value={formatValue("decimal1", v.fitnessAge)} unit="years" size={36} color={c.tintInk.sky} />
         <TonePill tone={chip.tone}>{chip.text}</TonePill>
       </View>
-      <Sentence>{`Your age ${formatValue("decimal1", v.age)}. Estimated VO2 max ${formatValue("decimal1", v.vo2max)} ml/kg/min, from a resting heart rate of ${formatValue("int", v.restingHr)} bpm.`}</Sentence>
-      <Sentence size={13}>
-        {`${ESTIMATED} (Nes 2011, the HUNT study${v.method === "uth" ? "; VO2 max from the ratio of your max to resting heart rate, Uth 2004, until you add your waist in Profile" : ""}). Good to about 5 years: a fitness comparison, not a medical test.`}
-      </Sentence>
+      {v.method === "measured" ? (
+        <>
+          <Sentence>{`Your age ${formatValue("decimal1", v.age)}. Your VO2 max of ${formatValue("decimal1", v.vo2max)} ml/kg/min is typical of someone aged ${formatValue("decimal1", v.fitnessAge)}.`}</Sentence>
+          <Sentence size={13}>From your measured VO2 max against the FRIEND registry’s medians for your sex. A fitness comparison, not a medical test.</Sentence>
+        </>
+      ) : (
+        <>
+          <Sentence>{`Your age ${formatValue("decimal1", v.age)}. Estimated VO2 max ${formatValue("decimal1", v.vo2max)} ml/kg/min, from a resting heart rate of ${formatValue("int", v.restingHr ?? 0)} bpm.`}</Sentence>
+          <Sentence size={13}>
+            {`${ESTIMATED} (Nes 2011, the HUNT study${v.method === "uth" ? "; VO2 max from the ratio of your max to resting heart rate, Uth 2004, until you add your waist in Profile" : ""}). Good to about 5 years: a fitness comparison, not a medical test.`}
+          </Sentence>
+        </>
+      )}
     </View>
   );
 }

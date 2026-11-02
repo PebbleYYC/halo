@@ -183,9 +183,9 @@ describe("Healthspan, Fitness and Heart rate", () => {
     inspect(vm, "fitness");
     expect(vm.vo2.value?.value).toBeTypeOf("number");
     expect(vm.vo2.value?.ageBand).toBe("30-39");
-    // The seed has Fitbit's VO2 max, so the hero keeps it; Fitness Age (from resting HR and activity) shows beside it.
+    // The seed has Fitbit's VO2 max, so the hero keeps it and Fitness Age reads that same VO2 max.
     expect(vm.vo2.value?.source).not.toBe("estimate");
-    expect(vm.fitnessAge.value).toMatchObject({ method: "uth" });
+    expect(vm.fitnessAge.value).toMatchObject({ method: "measured", vo2max: vm.vo2.value?.value });
     expect(vm.fitnessAge.value!.fitnessAge).toBeGreaterThanOrEqual(20);
     expect(vm.fitnessAge.value!.fitnessAge).toBeLessThanOrEqual(80);
     expect(vm.trainingLoad.value?.acwr).toBeTypeOf("number");
