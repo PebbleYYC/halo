@@ -15,7 +15,7 @@ import { ButtonRow, InfoRow, InsetGroup, NavRow } from "../settings/list";
 export const CONTACT_URL = "https://www.reddit.com/user/S0ulArkk/";
 
 /** Halo's GitHub repo, where "Report a bug" files an issue; null hides the row until the repo exists. */
-export const REPO_URL: string | null = "https://github.com/S0ulArk/halo";
+export const REPO_URL: string | null = "https://github.com/PebbleYYC/halo";
 
 /** The app's head: the mark on an app-icon squircle, the name, and the version under it. */
 function AppHead({ version }: { version: string }) {

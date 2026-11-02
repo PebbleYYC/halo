@@ -11,7 +11,7 @@ import { readSettings } from "@/background/settings";
 import app from "../../app.json";
 import { compareVersions, plainNotes } from "./version";
 
-export const REPO = "S0ulArk/halo";
+export const REPO = "PebbleYYC/halo";
 const LATEST_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 const STATE_KEY = "pulse.update";
 
