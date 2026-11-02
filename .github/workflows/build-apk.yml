@@ -1,0 +1,89 @@
+# Builds a signed release APK and publishes it as a GitHub release, which Halo's in-app updater offers.
+# Run it from the Actions tab: Build APK › Run workflow. Needs one secret, KEYSTORE_PASSWORD.
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Bump the version first (needed for the in-app updater to offer it)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PULSE_KEYSTORE_FILE: ${{ github.workspace }}/signing/halo-release.p12
+      PULSE_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      PULSE_KEY_ALIAS: halo
+      EXPECTED_SHA1: FF:C1:8B:55:5B:3B:AC:39:88:5D:AB:0B:03:3B:E7:41:65:FC:F0:29
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the signing secret
+        run: |
+          if [ -z "$PULSE_KEYSTORE_PASSWORD" ]; then
+            echo "::error::Add the KEYSTORE_PASSWORD secret under Settings › Secrets and variables › Actions."
+            exit 1
+          fi
+          keytool -list -keystore "$PULSE_KEYSTORE_FILE" -storepass "$PULSE_KEYSTORE_PASSWORD" > /dev/null \
+            || { echo "::error::KEYSTORE_PASSWORD doesn't open signing/halo-release.p12."; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      - name: Bump the version
+        if: inputs.bump
+        run: |
+          node scripts/bump-version.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Halo $(node -p 'require("./app.json").expo.version')"
+          git push
+
+      - name: Generate the Android project
+        run: |
+          CI=1 npx expo prebuild --platform android --clean
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g
+          reactNativeArchitectures=arm64-v8a
+          EOF
+
+      - name: Build
+        working-directory: android
+        run: ./gradlew :app:createBundleReleaseJsAndAssets --rerun assembleRelease --no-daemon
+
+      - name: Check the signature
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          sha1=$(keytool -printcert -jarfile "$apk" | awk '/SHA1:/ {print $2}')
+          [ "$sha1" = "$EXPECTED_SHA1" ] || { echo "::error::APK is signed with $sha1, expected $EXPECTED_SHA1"; exit 1; }
+          cp "$apk" Halo.apk
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(node -p 'require("./app.json").expo.version')
+          gh release create "v$v" Halo.apk --target "$(git rev-parse HEAD)" --title "Halo $v" \
+            --notes "Built from $(git rev-parse --short HEAD). Install Halo.apk, or tap Update in Halo."

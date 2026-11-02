@@ -3,8 +3,8 @@
 
 /** Google finds Halo's Android OAuth client by this package name and the release signing certificate's SHA-1. */
 export const ANDROID_PACKAGE = "app.halo.health";
-/** SHA-1 of ~/.pulse-mobile/release.keystore, which signs every release APK (plugins/withReleaseSigning.js). */
-export const RELEASE_SHA1 = "DF:68:C9:30:7F:0F:C1:77:F3:31:12:EF:F4:19:D1:87:B7:1A:55:56";
+/** SHA-1 of signing/halo-release.p12, which signs every APK the Build APK workflow makes. */
+export const RELEASE_SHA1 = "FF:C1:8B:55:5B:3B:AC:39:88:5D:AB:0B:03:3B:E7:41:65:FC:F0:29";
 
 export const SETUP_STEPS: string[] = [
   "At console.cloud.google.com, create a project.",

@@ -57,6 +57,10 @@ Halo checks this repository's [latest release](../../releases/latest) each time 
 
 For a release to be offered, its tag must be a higher version than the installed app (`v1.23.0`, matching `app.json`) and it must have the signed `.apk` attached.
 
+## Building your own APK
+
+The **Build APK** workflow (Actions tab › Build APK › Run workflow) builds a signed APK in the cloud, bumps the version and publishes it as a release, so Halo's in-app updater offers it. It signs with `signing/halo-release.p12`, whose password lives in the `KEYSTORE_PASSWORD` repository secret. Every release must be signed with that same key, or Android won't install it over the previous one.
+
 ## Report a bug
 
 Open an [issue](../../issues/new). Include your phone model, Android version, Halo version (More › About) and what you did, what you expected and what happened.
