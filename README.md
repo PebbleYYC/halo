@@ -59,7 +59,7 @@ For a release to be offered, its tag must be a higher version than the installed
 
 ## Building your own APK
 
-The **Build APK** workflow (Actions tab › Build APK › Run workflow) builds a signed APK in the cloud, bumps the version and publishes it as a release, so Halo's in-app updater offers it. It signs with `signing/halo-release.p12`, whose password lives in the `KEYSTORE_PASSWORD` repository secret. Every release must be signed with that same key, or Android won't install it over the previous one.
+The **Build APK** workflow (on every push to main, or Actions tab › Build APK › Run workflow) builds a signed APK in the cloud, bumps the version and publishes it as a release, so Halo's in-app updater offers it. It signs with `signing/halo-release.p12`, whose password lives in the `KEYSTORE_PASSWORD` repository secret. Every release must be signed with that same key, or Android won't install it over the previous one.
 
 ## Report a bug
 
