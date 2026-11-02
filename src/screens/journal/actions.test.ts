@@ -225,6 +225,24 @@ describe("logEntry", () => {
     expect((await rows()).map((r) => [r.type, r.data])).toEqual([["oxygen-saturation", { pct: 95.4 }]]);
   });
 
+  it("logs a medicine dose, adds its behaviour and answers it yes for the day", async () => {
+    expect(await logEntry(c(), { kind: "medicine", name: " " })).toEqual({ ok: false, error: "Enter the medicine’s name." });
+    expect(await logEntry(c(), { kind: "medicine", name: "Melatonin", dose: "3 mg", at: "2026-10-02T07:30" })).toMatchObject({ ok: true });
+    expect((await rows()).map((r) => [r.type, r.data])).toEqual([["medication", { name: "Melatonin", dose: "3 mg" }]]);
+    expect((await store.journalTags()).find((t) => t.tag === "med_melatonin")?.label).toBe("Melatonin");
+    expect((await store.allJournal()).filter((e) => e.tag === "med_melatonin")).toEqual([{ day: "2026-10-02", tag: "med_melatonin", value: 1 }]);
+  });
+
+  it("deleting a day's last dose clears that day's yes, not before", async () => {
+    await logEntry(c(), { kind: "medicine", name: "Melatonin", at: "2026-10-02T08:00" });
+    await logEntry(c(), { kind: "medicine", name: "melatonin", at: "2026-10-02T09:00" });
+    const [first, second] = await rows();
+    await deleteLogEntry(c(), { id: first.id });
+    expect((await store.allJournal()).some((e) => e.tag === "med_melatonin")).toBe(true);
+    await deleteLogEntry(c(), { id: second.id });
+    expect((await store.allJournal()).some((e) => e.tag === "med_melatonin")).toBe(false);
+  });
+
   it("food keeps a blank name as null", async () => {
     expect(await logEntry(c(), { kind: "food", name: "  ", meal: "LUNCH", kcal: 600, protein: 20, carbs: null, fat: null })).toMatchObject({ ok: true });
     expect((await rows())[0].data).toEqual({ name: null, meal: "LUNCH", kcal: 600, protein: 20, carbs: null, fat: null });

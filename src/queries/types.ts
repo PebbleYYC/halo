@@ -477,7 +477,7 @@ export type FitnessVM = {
 
 // Journal
 
-export type JournalTag = { tag: string; label: string; group: "evening" | "recovery" | "context" | "custom"; isDefault: boolean; hidden: boolean };
+export type JournalTag = { tag: string; label: string; group: "evening" | "recovery" | "context" | "medicine" | "custom"; isDefault: boolean; hidden: boolean };
 
 /** More › Behaviours: every tag in check-in order, hidden ones included, with its answered-day count. */
 export type BehavioursVM = { tags: (JournalTag & { answers: number })[] };

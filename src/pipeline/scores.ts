@@ -743,7 +743,9 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
     steps: covered ? (dm?.steps ?? null) : null,
     vo2maxRun: dm?.vo2maxRun ?? null,
     vo2maxDaily: dm?.vo2maxDaily ?? null,
-    restingHr: dm?.rhrBpm ?? null,
+    // WHOOP's Healthspan reference (60 / 64 bpm) is a sleeping RHR. Fitbit's blends in awake, still daytime minutes and
+    // reads several bpm higher, which aged Halo Age; the night's own lowest 5-minute mean comes first.
+    restingHr: d.cache?.sessionRhr ?? dm?.rhrBpm ?? null,
     weightKg: dm?.weightKg ?? null,
     bodyFatPct: dm?.bodyFatPct ?? null,
   };
@@ -753,7 +755,8 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
   // (active minutes a day, the share at 80 %+): the doubled 60–80 % minutes above are Halo Age's dose only, and fed
   // here they made more days "active", lengthened them and shrank the vigorous share.
   const activeSec = bouts ? (bouts.length === 3 ? bouts[0] + bouts[1] : bouts[0]) : null;
-  f.fitnessDays.push({ restingHr: row.restingHr, zone13Min: activeSec === null ? null : activeSec / 60, zone45Min: row.zone45Min });
+  // The HUNT equations were fitted on a seated, awake resting HR, which Fitbit's definition is nearer to than a sleeping one.
+  f.fitnessDays.push({ restingHr: dm?.rhrBpm ?? null, zone13Min: activeSec === null ? null : activeSec / 60, zone45Min: row.zone45Min });
   const estimate = fitnessEstimateOf(f.fitnessDays.slice(-7), {
     age: d.age.years,
     sex: opts.profile.sex,

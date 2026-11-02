@@ -110,7 +110,7 @@ describe("getLog", () => {
     await saveEntries(store, [{ type: "menstrual-period", ts: T - 86_400, data: { start: "2026-10-01", end: "2026-10-02", flow: null } }], { tz: TZ, now: T });
     await saveEntries(store, [{ type: "hydration-log", ts: T, data: { ml: 500 } }], { tz: TZ, now: T });
     const male = await getLog(ctxOf("male"));
-    expect(male.kinds).toEqual(["water", "food", "weight", "spo2", "mood", "symptoms"]);
+    expect(male.kinds).toEqual(["water", "food", "weight", "spo2", "medicine", "mood", "symptoms"]);
     expect(male.recent.map((e) => e.type)).toEqual(["hydration-log"]);
     expect(male).toMatchObject({ waterToday: 500, today: "2026-10-02", timeZone: TZ, demo: false });
     const female = await getLog(ctxOf("female"), { demo: true });

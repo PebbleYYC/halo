@@ -11,7 +11,7 @@ import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
+import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
 import { FORMATS } from "@/lib/format";
 import { flOzToMl, mlToFlOz } from "@/lib/units";
 import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
@@ -32,6 +32,7 @@ const ICON: Record<LogKind, LucideIcon> = {
   food: Utensils,
   weight: Scale,
   spo2: HeartPulse,
+  medicine: Pill,
   mood: Smile,
   symptoms: Thermometer,
   period: CalendarHeart,
@@ -43,6 +44,7 @@ const TINT: Record<LogKind, CalmTint> = {
   food: "sand",
   weight: "sand",
   spo2: "rose",
+  medicine: "mint",
   mood: "lavender",
   symptoms: "peach",
   period: "rose",
@@ -58,6 +60,7 @@ const TYPE_ICON: Record<LogType, LucideIcon> = {
   symptoms: Thermometer,
   "menstrual-period": CalendarHeart,
   "ovulation-test": FlaskConical,
+  medication: Pill,
 };
 const TYPE_TINT: Record<LogType, CalmTint> = {
   "hydration-log": "sky",
@@ -69,6 +72,7 @@ const TYPE_TINT: Record<LogType, CalmTint> = {
   symptoms: "peach",
   "menstrual-period": "rose",
   "ovulation-test": "lavender",
+  medication: "mint",
 };
 
 const grouped = (v: number) => FORMATS.grouped(v);
@@ -152,7 +156,8 @@ export function Log({ vm }: LogProps) {
   // feed the water goal and the nutrition numbers, which the screens add up as they read: those screens just read again
   // (no sync or scoring run; the food sheet does the same on save). Other entries are list-only.
   const rescoreIfBody = (type: string) => {
-    if (type === "weight" || type === "body-fat" || type === "oxygen-saturation") void app.refresh();
+    // A dose answers its medicine's behaviour for the day, which Insights reads after a rescore.
+    if (type === "weight" || type === "body-fat" || type === "oxygen-saturation" || type === "medicine" || type === "medication") void app.refresh();
     else if (type === "water" || type === "hydration-log" || type === "food" || type === "nutrition-log") app.dataChanged();
   };
   const [kind, setKind] = React.useState<LogKind | null>(null);
@@ -381,6 +386,22 @@ export function Log({ vm }: LogProps) {
           <Section title="Reading" first>
             {numeric("pct", "Blood oxygen", "(%)", { decimal: true, placeholder: "e.g. 95" })}
             <Sentence style={{ paddingHorizontal: 4 }}>The morning reading from the Fitbit app (Google Health doesn’t share blood oxygen with Health Connect).</Sentence>
+            {timeField}
+          </Section>
+        )}
+
+        {shown === "medicine" && (
+          <Section title="Medicine" first>
+            {vm.medicines.length > 0 && (
+              <Chips label="Your medicines" options={vm.medicines.map((m) => [m, m] as const)} value={form.name as string} onChange={set("name")} />
+            )}
+            <Field label="Name">
+              <TextField value={form.name as string} onChangeText={(t) => set("name")(t)} placeholder="e.g. Melatonin" autoCapitalize="words" maxLength={32} accessibilityLabel="Medicine name" />
+            </Field>
+            <Field label="Dose" hint="(optional)">
+              <TextField value={form.dose as string} onChangeText={(t) => set("dose")(t)} placeholder="e.g. 3 mg" maxLength={40} accessibilityLabel="Dose" returnKeyType="done" onSubmitEditing={save} />
+            </Field>
+            <Sentence style={{ paddingHorizontal: 4 }}>Each medicine becomes a behaviour in your journal. From its first dose, days without one count as “no”, so Insights can show how it affects your next-day Recovery, HRV and Sleep.</Sentence>
             {timeField}
           </Section>
         )}

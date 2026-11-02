@@ -3,11 +3,10 @@
 // over the Store (no React Native), so the tests run in node. The caller refreshes (rescoring) after a check-in.
 import type { Profile } from "@/data/types";
 import type { Store } from "@/data/store";
-import { addDays, fromWall, localDay } from "@/lib/time";
+import { addDays, fromWall, localDay, localMidnight } from "@/lib/time";
 import { addTag, getJournal, MAX_TAGS, reorderTags, setTagHidden, tagKey, tagRows } from "@/queries/journal";
 import {
   CYCLE_SYMPTOMS,
-  deleteEntry,
   FLOWS,
   isCycleKind,
   MEALS,
@@ -27,6 +26,7 @@ import {
 import type { QueryCtx } from "@/queries/ctx";
 import type { FoodData, FoodVia } from "@/queries/food";
 import type { JournalVM } from "@/queries/types";
+import { medicineTag } from "@/lib/medicine";
 import { amount, kgToLb, METRIC, mlToFlOz, type Units } from "@/lib/units";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -123,6 +123,7 @@ export type LogInput =
   | ({ kind: "food"; meal: Meal; via?: FoodVia; at?: string } & FoodItemInput)
   | { kind: "weight"; kg: number; fatPct: number | null; at?: string }
   | { kind: "spo2"; pct: number; at?: string }
+  | { kind: "medicine"; name: string; dose?: string; at?: string }
   | { kind: "mood"; moods: Mood[]; valence: Valence | null; at?: string }
   | { kind: "symptoms"; symptoms: Symptom[]; at?: string }
   | { kind: "period"; start: string; end: string; flow: Flow | null }
@@ -173,6 +174,11 @@ function invalid(v: LogInput, units: Units = METRIC): string | null {
       return null;
     case "spo2":
       return num(v.pct) && v.pct >= 70 && v.pct <= 100 ? null : "Between 70 and 100%";
+    case "medicine":
+      if (typeof v.name !== "string" || !medicineTag(v.name)) return "Enter the medicine’s name.";
+      if (v.name.trim().length > 32) return "Use 32 characters or fewer.";
+      if (v.dose !== undefined && (typeof v.dose !== "string" || v.dose.trim().length > 40)) return "Keep the dose to 40 characters or fewer.";
+      return null;
     case "mood":
       if (!Array.isArray(v.moods) || v.moods.length < 1) return "Choose how you feel";
       if (v.moods.length > 5) return "Choose up to 5 feelings";
@@ -317,6 +323,18 @@ export async function logEntry(c: ActionCtx, input: LogInput): Promise<ActionRes
     case "spo2":
       entries = [{ type: "oxygen-saturation", ts, data: { pct: Math.round(v.pct * 10) / 10 } }];
       break;
+    case "medicine": {
+      // The dose goes in the log, and the day's answer for the medicine's behaviour is "yes" (lib/medicine.ts).
+      const name = v.name.trim();
+      const tag = medicineTag(name);
+      const added = await addTag(c.store, tag, name);
+      if (added === "full") return fail("You’ve reached the behaviour limit. Hide or remove one in More › Behaviours.");
+      const day = localDay(ts, tz);
+      await c.store.setJournal({ day, tag, value: 1 });
+      await c.store.markIntradayDirty([day]);
+      entries = [{ type: "medication", ts, data: { name, ...(v.dose?.trim() && { dose: v.dose.trim() }) } }];
+      break;
+    }
     case "mood":
       entries = [{ type: "moods", ts, data: { moods: v.moods, valence: v.valence } }];
       break;
@@ -344,6 +362,18 @@ export async function logEntry(c: ActionCtx, input: LogInput): Promise<ActionRes
 /** Deletes a logged entry. */
 export async function deleteLogEntry(c: ActionCtx, input: { id: string }): Promise<ActionResult> {
   if (typeof input.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.id)) return fail("Invalid UUID");
-  await deleteEntry(c.store, input.id);
+  const gone = await c.store.deleteLoggedEntry(input.id);
+  // The last dose of a medicine on its day takes the day's "yes" with it.
+  const med = gone?.type === "medication" ? (gone.data as { name?: unknown }) : null;
+  if (gone && med && typeof med.name === "string") {
+    const tag = medicineTag(med.name);
+    const left = (await c.store.loggedEntries(localMidnight(gone.day, c.timeZone), 10_000)).some(
+      (e) => e.type === "medication" && e.day === gone.day && medicineTag(String((e.data as { name?: unknown }).name ?? "")) === tag,
+    );
+    if (!left) {
+      await c.store.deleteJournal(gone.day, tag);
+      await c.store.markIntradayDirty([gone.day]);
+    }
+  }
   return { ok: true, data: undefined };
 }

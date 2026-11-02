@@ -4,6 +4,7 @@
 import type { ImpactMetric, TagImpact } from "@/core/algorithms/journalImpact";
 import type { JournalEntry } from "@/data/types";
 import type { JournalTagRow, Store } from "@/data/store";
+import { isMedicineTag, withMedicineNoDays } from "@/lib/medicine";
 import { addDays } from "@/lib/time";
 import type { JournalImpactRow } from "@/pipeline/types";
 import { finite, loadDays, meanSd, type QueryCtx, todayOf } from "./common";
@@ -100,7 +101,7 @@ const GROUP: Record<string, JournalTag["group"]> = {
 /** Every tag, hidden ones included, in check-in order (position inside a group, then insertion order). */
 async function tagsOf(ctx: QueryCtx): Promise<JournalTag[]> {
   const rows = await tagRows(ctx.store);
-  return rows.map((r) => ({ tag: r.tag, label: r.label, isDefault: r.isDefault, hidden: r.hidden, group: GROUP[r.tag] ?? "custom" }));
+  return rows.map((r) => ({ tag: r.tag, label: r.label, isDefault: r.isDefault, hidden: r.hidden, group: GROUP[r.tag] ?? (isMedicineTag(r.tag) ? "medicine" : "custom") }));
 }
 
 /** More › Behaviours: every tag, hidden ones included, with how many days answered it. */
@@ -190,10 +191,16 @@ export async function getJournalInsights(metric: ImpactMetricKey = "recovery", c
     const r = rows.get(day);
     return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
   };
+  const byDay = new Map<string, Record<string, number>>();
+  for (const e of entries) byDay.set(e.day, { ...byDay.get(e.day), [e.tag]: e.value });
+  const answers = withMedicineNoDays(
+    [...byDay].map(([day, tags]) => ({ day, tags })),
+    addDays(impact.asOf, -1),
+  );
   const arms = (tag: string) => {
     const yes: (number | null | undefined)[] = [];
     const no: (number | null | undefined)[] = [];
-    for (const e of entries) if (e.tag === tag) (e.value > 0 ? yes : no).push(outcome(addDays(e.day, 1)));
+    for (const a of answers) if (tag in a.tags) (Number(a.tags[tag]) > 0 ? yes : no).push(outcome(addDays(a.day, 1)));
     return { avgWith: meanSd(yes.filter(finite)).mean, avgWithout: meanSd(no.filter(finite)).mean };
   };
 
