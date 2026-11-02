@@ -1,4 +1,4 @@
-// Health hub and its four detail screens (spec §7.6–7.10). Ported from Pulse's src/server/queries/health.ts.
+// Health hub and its four detail screens (spec §7.6–7.10). Ported from Halo's src/server/queries/health.ts.
 import { fitnessLevel } from "@/core/algorithms/fitnessLevel";
 import { HEALTHSPAN_TERM_COUNT, healthspanConfig, type HealthspanContribution } from "@/core/algorithms/healthspan";
 import { minuteMeanHr } from "@/core/algorithms/stress";
@@ -51,7 +51,7 @@ import { metricsWithLoggedBody } from "@/data/body";
 import { conversionFor, kgToLb, METRIC, shown, type Units } from "@/lib/units";
 import { localizeStat, shownPick, unitsOf } from "./units";
 
-// ── Hub ─────────────────────────────────────────────────────────────────────
+// Hub
 
 /** Health hub `/health`: today's values (spec §7.6). */
 export async function getHealthHub(ctx: QueryCtx): Promise<HealthHubVM> {
@@ -77,7 +77,7 @@ export async function getHealthHub(ctx: QueryCtx): Promise<HealthHubVM> {
     day: today,
     healthspan: hs.value ? ok({ pulseAge: hs.value.pulseAge, deltaYears: hs.value.deltaYears, pace: hs.value.pace, paceDelta: prevPace == null || hs.value.pace == null ? null : hs.value.pace - prevPace }, hs.provisional) : none(hs.reason ?? "no_data", hs.nightsLeft),
     monitor: monitor.count.value
-      ? ok({ vitals: monitor.vitals.map((v) => ({ key: v.key, short: v.short, status: v.status })), inRange: monitor.count.value.inRange, total: 5 })
+      ? ok({ vitals: monitor.vitals.map((v) => ({ key: v.key, short: v.short, status: v.status })), inRange: monitor.count.value.inRange, total: monitor.count.value.total })
       : none(monitor.count.reason ?? "no_data"),
     stress:
       st && st.average != null
@@ -107,7 +107,7 @@ async function latestHr(ctx: QueryCtx) {
   return r ? (await hrMinutes(ctx, r.last, r.last + 1)).latest : null;
 }
 
-// ── Healthspan ──────────────────────────────────────────────────────────────
+// Healthspan
 
 // Mobile: the terms and references follow WHOOP's Healthspan (white paper, 2025); see src/core/algorithms/healthspan.ts.
 const HS_META: Record<string, Omit<HealthspanContributor, "metric" | "target" | "years" | "caption" | "key">> = {
@@ -288,7 +288,7 @@ function leanCaption(c: HealthspanContribution, b: HealthspanBody | null | undef
 }
 type HealthspanBody = Extract<NonNullable<DayRow["healthspan"]>, { reason: null }>["bodyComposition"];
 
-/** `termsUsed`: how many of Pulse Age's 9 inputs it rests on (absent on rows stored before scoring version 10). */
+/** `termsUsed`: how many of Halo Age's 9 inputs it rests on (absent on rows stored before scoring version 10). */
 function healthspanInsight(pace: number | null, deltaYears: number, cs: HealthspanContribution[], termsUsed: number | undefined) {
   const title =
     pace == null
@@ -312,7 +312,7 @@ function healthspanInsight(pace: number | null, deltaYears: number, cs: Healthsp
   ];
   if (best && best.years < 0) parts.push(`Your biggest boost is ${label(best)}, worth ${Math.abs(best.years).toFixed(1)} years.`);
   if (worst && worst.years > 0) parts.push(`${HS_META[worst.key].label} adds the most, ${worst.years.toFixed(1)} years.`);
-  // Mobile: say how much of Pulse Age is measured; a missing input counts as no effect.
+  // Mobile: say how much of Halo Age is measured; a missing input counts as no effect.
   if (termsUsed != null)
     parts.push(
       termsUsed < HEALTHSPAN_TERM_COUNT
@@ -322,7 +322,7 @@ function healthspanInsight(pace: number | null, deltaYears: number, cs: Healthsp
   return { title, body: parts.join(" ") };
 }
 
-// ── Health Monitor ──────────────────────────────────────────────────────────
+// Health Monitor
 
 const VITALS: { key: VitalKey; short: string; unit: string; signed?: boolean; pick: (r: DayRow) => number | null | undefined }[] = [
   { key: "resp", short: "Resp", unit: "rpm", pick: (r) => r.metrics?.respBpm },
@@ -391,7 +391,7 @@ export async function getMonitor(day: string, ctx: QueryCtx, preloaded?: Map<str
   else if (hm.reason !== null) count = none(nightReason(hm.reason, isToday));
   else {
     const raised = illnessRaised(hm);
-    count = ok({ inRange: hm.inRange, total: 5, outOfRange: hm.flagged, status: raised ? "illness" : hm.flagged ? "out" : "within" });
+    count = ok({ inRange: hm.inRange, total: vitals.filter((v) => v.status !== "no_data").length || VITALS.length, outOfRange: hm.flagged, status: raised ? "illness" : hm.flagged ? "out" : "within" });
   }
   return {
     day,
@@ -404,7 +404,7 @@ export async function getMonitor(day: string, ctx: QueryCtx, preloaded?: Map<str
   };
 }
 
-// ── Heart rhythm and measurements ───────────────────────────────────────────
+// Heart rhythm and measurements
 
 type EcgCopy = Pick<EcgReading, "label" | "tone" | "explanation">;
 /**
@@ -498,7 +498,7 @@ async function measurements(ctx: QueryCtx, day: string, today: string): Promise<
   return out;
 }
 
-// ── Stress Monitor ──────────────────────────────────────────────────────────
+// Stress Monitor
 
 /** Stress Monitor `/health/stress` for `day` (spec §7.9). */
 export async function getStress(day: string, ctx: QueryCtx): Promise<StressVM> {
@@ -554,7 +554,7 @@ function stressInsight(st: NonNullable<DayRow["stress"]>, tz: string) {
   return `${lead} You had no long stretch of high stress.`;
 }
 
-// ── Fitness ─────────────────────────────────────────────────────────────────
+// Fitness
 
 const ACWR_STATUS = { neutral: "detraining", optimal: "optimal", warning: "pushing", alert: "high_risk" } as const satisfies Record<ChipTone, string>;
 export const acwrStatus = (acwr: number) => {
@@ -573,7 +573,7 @@ export async function getFitness(ctx: QueryCtx): Promise<FitnessVM> {
     const lo = Math.min(70, Math.max(20, Math.floor(age / 10) * 10));
     return `${lo}-${lo + 9}`;
   };
-  // Mobile: Fitness Age and Pulse's own VO2 max estimate (from resting HR and activity) on the newest day that has one.
+  // Mobile: Fitness Age and Halo's own VO2 max estimate (from resting HR and activity) on the newest day that has one.
   const estDay = [...rows.keys()].sort().reverse().find((d) => d >= addDays(last, -6) && rows.get(d)?.healthspan?.fitnessEstimate);
   const est = estDay ? rows.get(estDay)!.healthspan!.fitnessEstimate! : null;
   const estAge = estDay ? fractionalYears(ctx.profile.birthDate, estDay) : 0;
@@ -597,7 +597,7 @@ export async function getFitness(ctx: QueryCtx): Promise<FitnessVM> {
     const t = rows.get(d)?.trainingLoad;
     return { day: d, ctl: t?.ctl ?? null, atl: t?.atl ?? null, tsb: t?.tsb ?? null };
   });
-  // Measured and Fitbit values; with none in the window, Pulse's own estimate.
+  // Measured and Fitbit values; with none in the window, Halo's own estimate.
   const measured = trendPoints(rows, last, (r) => r.metrics?.vo2maxRun ?? r.metrics?.vo2maxDaily);
   return {
     vo2,
@@ -611,7 +611,7 @@ export async function getFitness(ctx: QueryCtx): Promise<FitnessVM> {
   };
 }
 
-// ── Heart rate ──────────────────────────────────────────────────────────────
+// Heart rate
 
 /**
  * The band's heart rate over [from, to) unix seconds (minute-aligned) as minute means, a null for a minute without a

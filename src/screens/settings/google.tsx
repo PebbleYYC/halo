@@ -322,3 +322,64 @@ function GoogleDataTypes({ rows, now }: { rows: GroupStatus[]; now: number }) {
     </Disclosure>
   );
 }
+
+/** With Health Connect as the source: a Google account for the blood oxygen the Google Health app doesn't share. */
+export function GoogleSpo2Group() {
+  const app = useApp();
+  const [error, setError] = React.useState<GoogleSignInError | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [confirm, setConfirm] = React.useState(false);
+  const syncing = app.status === "syncing";
+  const failed = app.syncWarnings.includes("spo2_failed");
+  const signIn = app.syncWarnings.includes("spo2_sign_in");
+  const connect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const e = await app.connectGoogleSpo2();
+      setError(e);
+      if (!e) toast("Blood oxygen connected");
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (!app.google) {
+    return (
+      <>
+        <InsetGroup
+          title="Blood oxygen"
+          footer="The Google Health app doesn’t share SpO2 with Health Connect. Halo can read just that from your Google account, with read-only access to health metrics. Everything else still comes from Health Connect."
+        >
+          <ButtonRow label={busy ? "Connecting…" : "Get SpO2 from Google"} busy={busy} onPress={() => void connect()} disabled={busy || syncing} />
+        </InsetGroup>
+        {error && <SignInProblem error={error} onRetry={() => void connect()} busy={busy} />}
+      </>
+    );
+  }
+  return (
+    <>
+      <InsetGroup title="Blood oxygen" footer="Used only on nights Health Connect and your journal have no SpO2.">
+        <InfoRow label="From Google" value={app.google.email ?? "Connected"} />
+        {signIn && <NavRow icon={TriangleAlert} system="yellow" label="Sign in to Google again" description="Google wants you to sign in before Halo can read SpO2." action />}
+        {failed && !signIn && <NavRow icon={TriangleAlert} system="yellow" label="Last SpO2 read failed" description="Halo will try again on the next sync." action />}
+        {signIn && <ButtonRow label="Connect again" onPress={() => void connect()} disabled={busy || syncing} />}
+        <ButtonRow label="Disconnect" danger onPress={() => setConfirm(true)} disabled={syncing} />
+      </InsetGroup>
+      {error && <SignInProblem error={error} onRetry={() => void connect()} busy={busy} />}
+      <ConfirmDialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        title="Stop reading SpO2 from Google?"
+        description="Halo revokes its access to your Google account. SpO2 it already read stays on this phone."
+        confirm="Disconnect"
+        pending="Disconnecting…"
+        danger
+        onConfirm={async () => {
+          const r = await app.disconnectGoogle();
+          setConfirm(false);
+          toast(r.revoked ? "Google account disconnected" : "Disconnected on this phone. Also remove Halo under Google Account › Security › Third-party access");
+        }}
+      />
+    </>
+  );
+}

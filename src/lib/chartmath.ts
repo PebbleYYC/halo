@@ -3,7 +3,7 @@
 // function that runs inside a gesture or a derived value is a worklet (the "worklet" directive is a plain string
 // outside Reanimated's Babel plugin, so vitest runs these unchanged). No React Native imports.
 
-// --- Hit-testing ---
+// Hit-testing
 
 /** The band under `x` when `n` equal bands span [x0, x1] (bars, day columns); -1 outside the plot. */
 export function bandIndexAt(x: number, x0: number, x1: number, n: number): number {
@@ -68,7 +68,7 @@ export function nearestValued(xs: readonly number[], ys: readonly (number | null
   return bestD <= maxGap ? best : -1;
 }
 
-// --- Viewport (the explorer's visible x window) ---
+// Viewport (the explorer's visible x window)
 
 /** `start` moved so the window [start, start + span] stays inside [min, max] (a wider window pins to `min`). */
 export function clampStart(start: number, span: number, min: number, max: number): number {
@@ -113,7 +113,7 @@ export function dataMatrix(start: number, span: number, left: number, width: num
   return [sx, 0, left - start * sx, 0, sy, bottom - lo * sy, 0, 0, 1];
 }
 
-// --- Axes ---
+// Axes
 
 const STEPS = [1, 2, 2.5, 5, 10];
 
@@ -182,7 +182,7 @@ export function mapAxis(v: number, fromLo: number, fromHi: number, toLo: number,
   return fromHi === fromLo ? toLo : toLo + ((v - fromLo) / (fromHi - fromLo)) * (toHi - toLo);
 }
 
-// --- Range windows and statistics ---
+// Range windows and statistics
 
 export type ExplorerRange = "w" | "m" | "6m" | "1y" | "all";
 export const EXPLORER_DAYS: Record<Exclude<ExplorerRange, "all">, number> = { w: 7, m: 30, "6m": 182, "1y": 365 };
@@ -227,7 +227,7 @@ export function windowStats(xs: readonly number[], ys: readonly (number | null)[
   return { min, max, avg: count ? sum / count : null, minIndex, maxIndex, count, total: count ? sum : null };
 }
 
-// --- Calendar text without Intl (cheap enough to label every day of several years) ---
+// Calendar text without Intl (cheap enough to label every day of several years)
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -252,7 +252,7 @@ export function minuteText(m: number): string {
   return `${h < 10 ? "0" : ""}${h}:${mm < 10 ? "0" : ""}${mm}`;
 }
 
-// --- Tick levels: one list of ticks per granularity, the explorer picks the finest that fits ---
+// Tick levels: one list of ticks per granularity, the explorer picks the finest that fits
 
 export type Tick = { x: number; text: string };
 /** `step` is the typical distance between ticks in x units (for choosing a level by the zoom). */
@@ -361,7 +361,7 @@ export function barsWeight(span: number, full = 55, none = 95): number {
   return (none - span) / (none - full);
 }
 
-// --- Draw-in ---
+// Draw-in
 
 /**
  * A staggered rise: item `i` of `n` grows over the middle part of the overall progress `p` (0-1), the first starting at
@@ -376,7 +376,7 @@ export function staggered(p: number, i: number, n: number, share = 0.6): number 
   return t <= 0 ? 0 : t >= 1 ? 1 : t;
 }
 
-// --- Time-axis labels ---
+// Time-axis labels
 
 /** The smallest whole-hour step (1, 2, 3, 4, 6, 12 h) that puts ticks at least `minPx` apart when `spanMs` fills `widthPx`. */
 export function hourStepFor(spanMs: number, widthPx: number, minPx: number): number {

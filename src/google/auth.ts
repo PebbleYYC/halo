@@ -1,16 +1,17 @@
 // Google sign-in for the Google Health API source: Connect (Google's consent screen), the silent token before each sync
 // and each live heart-rate pull, and Disconnect (revoke). Google Play services holds the grant (modules/pulse-google);
-// Pulse keeps the account's email and the granted scopes (state.ts) and, in memory, the current access token. No client
+// Halo keeps the account's email and the granted scopes (state.ts) and, in memory, the current access token. No client
 // secret, no refresh token, nothing sent anywhere but Google.
 import * as native from "../../modules/pulse-google";
-import { GoogleSignInError } from "../../modules/pulse-google/errors";
+import { GoogleSignInError, toSignInError } from "../../modules/pulse-google/errors";
 import { createGoogleClient, revokeToken } from "./client";
+import { SPO2_SCOPE, SPO2_SCOPES } from "./spo2";
 import { clearConnection, readConnection, saveConnection, type GoogleConnection } from "./state";
 
 const health = (s: string) => `https://www.googleapis.com/auth/googlehealth.${s}`;
 
 /**
- * Every read scope the Google Health API has (the web's SCOPES without its write-only ones: on the phone Pulse writes
+ * Every read scope the Google Health API has (the web's SCOPES without its write-only ones: on the phone Halo writes
  * nothing to Google). settings.readonly is what the paired-device check needs; profile.readonly the identity check.
  */
 export const HEALTH_SCOPES = [
@@ -42,7 +43,7 @@ export const SCOPE_LABEL: Record<string, string> = {
   [EMAIL_SCOPE]: "email address",
 };
 
-/** Play services' tokens last about an hour: Pulse asks again after 45 minutes, sooner after a 401. */
+/** Play services' tokens last about an hour: Halo asks again after 45 minutes, sooner after a 401. */
 const TOKEN_TTL_MS = 45 * 60_000;
 /** A silent sign-in Play services doesn't answer (no network) fails the run rather than holding it. */
 const SILENT_TIMEOUT_MS = 45_000;
@@ -87,7 +88,7 @@ export type ConnectResult = {
   connection: GoogleConnection;
   /** Optional scopes the person left unticked (ECG, food…): those types sync nothing until a new Connect. */
   missing: string[];
-  /** Another account than the one connected before: what Pulse imported from the old one should go. */
+  /** Another account than the one connected before: what Halo imported from the old one should go. */
   changedAccount: boolean;
 };
 
@@ -120,8 +121,24 @@ export async function connectGoogleAccount(): Promise<ConnectResult> {
   };
 }
 
+/** Google's consent screen for the SpO2 scopes only, then the same identity check as the full source. */
+export async function connectSpo2Account(): Promise<GoogleConnection> {
+  const r = await native.authorize(SPO2_SCOPES, true).catch((e) => {
+    throw toSignInError(e);
+  });
+  if (!r.grantedScopes.includes(SPO2_SCOPE)) throw new GoogleSignInError("scope_not_granted", undefined, SCOPE_LABEL[SPO2_SCOPE]);
+  const client = createGoogleClient({ token: async () => r.accessToken, timeZone: "UTC", maxTries: 2 });
+  const identity = await client.identity().catch(() => "unknown" as const);
+  if (identity === "not_linked") throw new GoogleSignInError("account_not_linked");
+  if (identity === "api_disabled") throw new GoogleSignInError("api_disabled");
+  const email = r.grantedScopes.includes(EMAIL_SCOPE) ? await client.userEmail().catch(() => null) : null;
+  const connection: GoogleConnection = { email, scopes: SPO2_SCOPES.filter((s) => r.grantedScopes.includes(s)), connectedAt: Date.now() };
+  await saveConnection(connection);
+  return connection;
+}
+
 /**
- * Disconnect: revokes the grant at Google (every scope, as removing Pulse under Google Account › Security ›
+ * Disconnect: revokes the grant at Google (every scope, as removing Halo under Google Account › Security ›
  * Third-party access does) and forgets the account here. `revoked` is false when Google couldn't be reached; the
  * account is forgotten on the phone anyway, and access can be removed from the Google Account page.
  */

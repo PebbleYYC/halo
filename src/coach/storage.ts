@@ -25,7 +25,7 @@ export function subscribe(fn: () => void): () => void {
 
 const now = () => Math.floor(Date.now() / 1000);
 
-// ── Setup and key ────────────────────────────────────────────────────────────
+// Setup and key
 
 export async function coachSetup(): Promise<CoachSetup> {
   const raw = await AsyncStorage.getItem(SETUP_KEY).catch(() => null);
@@ -64,7 +64,7 @@ export async function apiKey(): Promise<string | null> {
   return SecureStore.getItemAsync(API_KEY).catch(() => null);
 }
 
-// ── Chats ────────────────────────────────────────────────────────────────────
+// Chats
 
 let opening: Promise<SQLiteDatabase> | null = null;
 

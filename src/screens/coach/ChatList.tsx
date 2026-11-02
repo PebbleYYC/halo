@@ -1,4 +1,4 @@
-// The coach's chats, ported from Pulse's coach/ChatList.tsx, as an iOS list: New chat on top, then the chats grouped by
+// The coach's chats, ported from Halo's coach/ChatList.tsx, as an iOS list: New chat on top, then the chats grouped by
 // recency (in the person's zone), each group an inset grouped list, 30 at a time with "Show older chats". A row opens
 // its chat; swiping it left reveals the red Delete (Gesture Handler's Reanimated swipeable, so the row follows the
 // finger on the UI thread), a long press offers Delete in an action sheet, and screen readers get a Delete action.

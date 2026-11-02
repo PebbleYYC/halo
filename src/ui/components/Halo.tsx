@@ -1,17 +1,6 @@
-// The motion pieces the score cards share: Apple Activity-style rings that draw on, a number whose digits roll into
-// place, a hero's breathing sheen, a lit progress fill, and the halo line (the icon's ring colours, used once: the
-// active tab).
-//
-// A ring is Apple's: a thick stroke (about a tenth of its diameter) with round ends over a track of its own hue at
-// about 20 %, coloured along its arc from a slightly darker start to a lighter end. SVG has no sweep gradient, so the
-// arc is drawn as two halves, each with a linear gradient along its chord (src/lib/charts.ts ringHalves), and its
-// round ends are two discs: the tail in the start colour, the head in the colour where the arc ends, drawn last so a
-// full ring's head overlaps its tail as Apple's does. It sweeps in on a spring (about 0.6 s, a slight overshoot), rings
-// in a set 80 ms apart.
-//
-// All UI thread (Reanimated): a ring draws on through animated dash offsets and its head disc's position, a number
-// rolls its digits with transforms, the sheen breathes through one opacity. Nothing animates layout; nothing runs
-// while its screen is out of view or the app is in the background; reduce motion shows every end state at once.
+// The score cards' motion pieces: rings that draw on, rolling digits, a hero's sheen, a lit progress fill and the halo line.
+// SVG has no sweep gradient, so a ring is two half-arcs with linear gradients (lib/charts.ts ringHalves) plus two end discs.
+// Everything animates on the UI thread, nothing animates layout, and reduce motion shows the end state at once.
 import * as React from "react";
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {
@@ -458,7 +447,7 @@ export function HeroSheen({ radius, color = "rgba(255,255,255,0.55)" }: { radius
   );
 }
 
-// --- The rolling number ---
+// The rolling number
 
 const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 

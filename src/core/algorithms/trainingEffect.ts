@@ -153,7 +153,7 @@ export function maxHrSplit(hr: readonly { ts: number; bpm: number }[], maxHr: nu
   return out;
 }
 
-// ── Recovery Time ───────────────────────────────────────────────────────────
+// Recovery Time
 
 export const recoveryTimeConfig = {
   /**

@@ -1,4 +1,4 @@
-// What the model sees of a long chat, ported from Pulse's src/server/coach/history.ts. Past 30 messages, everything but
+// What the model sees of a long chat, ported from Halo's src/server/coach/history.ts. Past 30 messages, everything but
 // the newest 20 is summarised once by the model (summary_instructions) and the summary is kept on the first message's
 // metadata as a checkpoint: { count, hash, text }. A fingerprint of the summarised prefix invalidates the checkpoint
 // after an edit or a regenerate; the full transcript is always kept.

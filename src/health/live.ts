@@ -1,4 +1,4 @@
-// The "current heart rate": Pulse cannot talk to the band, so the newest reading is whatever the Google Health app has
+// The "current heart rate": Halo cannot talk to the band, so the newest reading is whatever the Google Health app has
 // written to Health Connect (a Fitbit sync lands a batch of samples every ~15 minutes, sooner while that app is open),
 // or, with a Google account as the source, what the Google Health API has (src/google/live.ts, passed in as
 // `pullGoogle`). This is the cheap path the foreground ticker takes every minute: one short heart-rate read, the new

@@ -26,7 +26,7 @@ import { useTitleInk } from "./controls";
 import { MiniBars, MiniDots } from "./miniCharts";
 import { STAT_ICON, statProps } from "./view";
 
-// ── The card ─────────────────────────────────────────────────────────────────
+// The card
 
 /** The big number's size and line, Health's highlight value. */
 const VALUE = { size: 30, line: 36 } as const;
@@ -142,7 +142,7 @@ export function HealthContext({ children, color }: { children: React.ReactNode; 
   );
 }
 
-// ── A pinned metric ──────────────────────────────────────────────────────────
+// A pinned metric
 
 /** Metrics that add up through a day: a week of bars. Every other one is a reading: dots over its normal band. */
 const BAR_KEYS = new Set([

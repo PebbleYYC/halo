@@ -95,7 +95,7 @@ export type TrendChartProps = {
   onRangeChange?: (r: TrendRange) => void;
   /** The toggle's ranges (default W, M, 6M; Trends adds 1Y). `data` must hold enough days for the longest. */
   ranges?: readonly TrendRange[];
-  /** A labelled horizontal line ("Your age" on Pulse Age history). */
+  /** A labelled horizontal line ("Your age" on Halo Age history). */
   reference?: { y: number; label: string };
   /** Draws each day's `parts` as stacked bars (W and M; 6M and 1Y draw the total as a line) with a legend of the shown day's split. */
   stack?: readonly TrendSeries[];
@@ -265,7 +265,7 @@ function Trend({ points, p }: { points: TrendPoint[]; p: TrendChartProps }) {
     const line = !!props.line || range === "6m" || range === "1y";
     const byDay = props.headline === "day";
 
-    // --- Layout: a little air on the left, the value axis (and any guide's pill) on the right ---
+    // Layout: a little air on the left, the value axis (and any guide's pill) on the right
     const showAvg = !line && range !== "w" && avg !== null;
     // Room over the plot for the values drawn over bars and points (the week's, the latest).
     const marginTop = range === "w" || !line ? 18 : 14;

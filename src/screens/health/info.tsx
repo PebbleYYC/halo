@@ -1,4 +1,4 @@
-// Info-sheet copy for the Health screens, ported from Pulse's health/monitor/page.tsx and health/stress/page.tsx.
+// Info-sheet copy for the Health screens, ported from Halo's health/monitor/page.tsx and health/stress/page.tsx.
 // Final copy: do not reword.
 import * as React from "react";
 import { alpha } from "@/lib/utils";

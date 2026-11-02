@@ -1,4 +1,4 @@
-// Chat-list helpers shared by storage and the screens, ported from Pulse's src/server/coach/store.ts and ChatList.tsx:
+// Chat-list helpers shared by storage and the screens, ported from Halo's src/server/coach/store.ts and ChatList.tsx:
 // titles, paging cursors, and grouping by recency in the person's own time zone. No storage here, so tests load it.
 import type { UIMessage } from "ai";
 import { daysBetween, localDay } from "@/lib/time";

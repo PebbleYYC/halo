@@ -83,12 +83,12 @@ export function fitnessLevel(vo2max: number, age: number, sex: Sex): { percentil
   return { percentile, category: fitnessCategory(percentile) };
 }
 
-// ── Fitness Age and an estimated VO2max (mobile) ─────────────────────────────
+// Fitness Age and an estimated VO2max (mobile)
 // Ported from noop's analytics/FitnessAgeEngine.kt (Copyright 2026 NoopApp, PolyForm Noncommercial 1.0.0), a fitness
 // comparison rather than a medical test:
 //  - VO2max: Nes et al. 2011 (Med Sci Sports Exerc 43:2024), the HUNT non-exercise model, waist-circumference variant
 //    (SEE ≈ 5.7 mL/kg/min for men, 5.1 for women). noop deliberately has no BMI variant (the circulating coefficients
-//    couldn't be confirmed against the paper), so neither does Pulse: without a waist in the profile it falls back, as
+//    couldn't be confirmed against the paper), so neither does Halo: without a waist in the profile it falls back, as
 //    noop's IntelligenceEngine.fitnessAgeRows does, to Uth et al. 2004 (Eur J Appl Physiol 91:111): 15.3 × HRmax / RHR.
 //  - Physical-activity index: the HUNT1 questionnaire's frequency × intensity × duration on [0, 15] (Kurtze 2008),
 //    rebuilt from measured weekly zone minutes (noop's physicalActivityIndex).
@@ -114,7 +114,7 @@ export const fitnessAgeConfig = {
   windowDays: 7,
   /** Of those, days needed with a resting HR, and with a full day of heart rate for activity (noop's minCoverageDays). */
   minDays: 4,
-  /** Minutes at 40 % of heart-rate reserve or more (Pulse Age's bout-counted zone time) that make a day active. */
+  /** Minutes at 40 % of heart-rate reserve or more (Halo Age's bout-counted zone time) that make a day active. */
   activeDayMinutes: 10,
 };
 
@@ -149,8 +149,8 @@ export function physicalActivityIndex(activeDaysPerWeek: number, avgActiveMinute
 }
 
 /**
- * One day as the estimate reads it: Fitbit's resting HR, and Pulse Age's bout-counted zone minutes (null on a day without
- * 12 h of HR), each minute counted once: `zone13Min` is real minutes at 40–80 % of the reserve, not Pulse Age's
+ * One day as the estimate reads it: Fitbit's resting HR, and Halo Age's bout-counted zone minutes (null on a day without
+ * 12 h of HR), each minute counted once: `zone13Min` is real minutes at 40–80 % of the reserve, not Halo Age's
  * moderate-equivalent dose, which counts a 60–80 % minute twice.
  */
 export interface FitnessEstimateDay {

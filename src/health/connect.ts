@@ -1,5 +1,5 @@
 // Thin wrapper over react-native-health-connect: availability, permissions and paginated range reads.
-// Everything Pulse needs is read-only; the Google Health app writes the Fitbit data into Health Connect.
+// Everything Halo needs is read-only; the Google Health app writes the Fitbit data into Health Connect.
 import {
   getGrantedPermissions,
   getSdkStatus,
@@ -17,7 +17,7 @@ import {
 } from "react-native-health-connect";
 import { PermissionsAndroid, Platform } from "react-native";
 
-/** Record types Pulse reads, in the order the permission sheet lists them. */
+/** Record types Halo reads, in the order the permission sheet lists them. */
 export const READ_TYPES = [
   "SleepSession",
   "HeartRate",
@@ -52,7 +52,7 @@ export type ReadType = (typeof READ_TYPES)[number];
 const readPermissions: Permission[] = READ_TYPES.map((recordType) => ({ accessType: "read", recordType }));
 /** Without it Health Connect only serves the 30 days before the grant; baselines want 180. */
 const historyPermission: ReadHealthDataHistoryPermission = { accessType: "read", recordType: "ReadHealthDataHistory" };
-/** Lets a closed Pulse read Health Connect (READ_HEALTH_DATA_IN_BACKGROUND), for the background sync task (src/background/task.ts); without it the task skips. */
+/** Lets a closed Halo read Health Connect (READ_HEALTH_DATA_IN_BACKGROUND), for the background sync task (src/background/task.ts); without it the task skips. */
 const backgroundPermission: BackgroundAccessPermission = { accessType: "read", recordType: "BackgroundAccessPermission" };
 
 export type Availability = "available" | "update_required" | "unavailable";

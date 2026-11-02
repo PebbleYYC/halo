@@ -1,4 +1,4 @@
-// Health hub `/health` (spec §7.6), ported from Pulse's src/app/(app)/health/page.tsx and its loading.tsx, in Apple
+// Health hub `/health` (spec §7.6), ported from Halo's src/app/(app)/health/page.tsx and its loading.tsx, in Apple
 // Health's Summary look: the large title, Halo Age's hero (the age in its gradient, the scale against your real age, the
 // pace pills), today's Recovery, then one Summary card per area (the category's glyph and name in its colour, the time
 // and a chevron, the value large with a line of context and a small chart): Health Monitor, Stress, HRV Status, Fitness,
@@ -19,7 +19,7 @@ import { Grow, HealthCard } from "./kit";
 import { toneInk } from "@/screens/detail/calmKit";
 import { categoryInk, categoryWord, ordinal } from "./format";
 import { LastReading } from "./LastReading";
-import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, type AgePill } from "./PulseAge";
+import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, type AgePill } from "./HaloAge";
 import { ErrorState, TabShell, usePush } from "./shells";
 import { AvatarButton } from "@/ui/components/AvatarButton";
 import { homeKey, useDashboardKeys } from "@/screens/home/dashboard";
@@ -51,7 +51,7 @@ function Note({ children }: { children: string }) {
   );
 }
 
-// ── Halo Age: the hero ───────────────────────────────────────────────────────
+// Halo Age: the hero
 
 /** The tab's lead [latest-health-tab-1]: Halo Age in its gradient, the age scale, then Pace of Aging and its week-on-week change. */
 function HaloAge({ m, onPress }: { m: HealthHubVM["healthspan"] | undefined; onPress: () => void }) {
@@ -86,7 +86,7 @@ function RecoveryCardSkeleton() {
   return <View importantForAccessibility="no-hide-descendants" style={{ height: 292, borderRadius: 20, backgroundColor: c.tint.mint }} />;
 }
 
-// ── The Summary cards ────────────────────────────────────────────────────────
+// The Summary cards
 
 /** Last night's five vitals as a row of status dots: green in range, orange out of it, grey without a reading. */
 function VitalDots({ vitals }: { vitals: { key: string; status: string }[] }) {

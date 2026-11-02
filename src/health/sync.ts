@@ -1,4 +1,4 @@
-// Reads Health Connect for a window of days and writes Pulse rows through the Store.
+// Reads Health Connect for a window of days and writes Halo rows through the Store.
 // Sleep, workouts and the nightly/daily records are read for the whole window (small: a handful per day);
 // heart rate and steps are read one local day at a time and written as they come, so a 180-day first sync
 // never holds more than a day of samples.
@@ -163,7 +163,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     for (const t of perms.missing) warnings.push(`permission_missing:${t}`);
 
     // Window. A full window (the last `historyDays` days, 30 without the history permission) on the first sync, until a
-    // night has arrived, when Pulse was granted a type it couldn't read before, when the changes token is missing or
+    // night has arrived, when Halo was granted a type it couldn't read before, when the changes token is missing or
     // expired, or on request. Otherwise from 3 days before the last sync, widened back to the oldest record Health
     // Connect received since then (a health app backfilling history writes old dates).
     const state = await store.getSyncState();
@@ -384,7 +384,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     done++;
 
     // Under "Fitbit only", nothing at all from the Fitbit app means the policy is hiding everything (another band's app,
-    // or Google Health not sharing yet): say so rather than show an empty Pulse.
+    // or Google Health not sharing yet): say so rather than show an empty Halo.
     if (policy === "fitbit_only" && recordsKept === 0 && plan.full) warnings.push("no_fitbit_records");
 
     const firstDay = state.firstDay && state.firstDay < fromDay ? state.firstDay : fromDay;

@@ -1,4 +1,4 @@
-// Journal `/journal`, Behaviour insights `/journal/insights` and More › Behaviours, ported from Pulse's
+// Journal `/journal`, Behaviour insights `/journal/insights` and More › Behaviours, ported from Halo's
 // src/server/queries/journal.ts, with the tag-table helpers of src/server/journalTags.ts. Every Postgres read is a
 // Store read; the VM shapes are the web's (types.ts).
 import type { ImpactMetric, TagImpact } from "@/core/algorithms/journalImpact";
@@ -10,7 +10,7 @@ import { finite, loadDays, meanSd, type QueryCtx, todayOf } from "./common";
 import type { BehavioursVM, ImpactMetricKey, JournalInsightsVM, JournalTag, JournalVM } from "./types";
 
 
-// ── journalTags.ts ──────────────────────────────────────────────────────────
+// journalTags.ts
 
 /** The Journal's default behaviours, shared by both data sources (and the demo generator's DEFAULT_JOURNAL_TAGS). */
 export const DEFAULT_JOURNAL_TAGS = [
@@ -83,7 +83,7 @@ export async function reorderTags(store: Store, tags: string[]): Promise<boolean
   return true;
 }
 
-// ── queries/journal.ts ──────────────────────────────────────────────────────
+// queries/journal.ts
 
 const GROUP: Record<string, JournalTag["group"]> = {
   alcohol: "evening",

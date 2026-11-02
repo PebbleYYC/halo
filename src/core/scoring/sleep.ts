@@ -3,7 +3,7 @@
 // implementation of WHOOP's 2025 four-part score (since version 16; docs/research/whoop-garmin.md C4).
 import type { HypnogramMetrics, SleepSession, Stage, StageSegment } from "./types";
 
-// ── Hypnogram ──────────────────────────────────────────────────────────────
+// Hypnogram
 
 const isWake = (stage: Stage): boolean => {
   const s = stage.trim().toLowerCase();
@@ -62,7 +62,7 @@ export function hypnogramMetrics(session: SleepSession): HypnogramMetrics {
   };
 }
 
-// ── Sleep Performance (WHOOP's 2025 four parts) ─────────────────────────────
+// Sleep Performance (WHOOP's 2025 four parts)
 
 /**
  * WHOOP's Sleep Performance since May 2025 has four parts: Hours vs Needed, Sleep Consistency, Sleep Efficiency and Sleep
@@ -149,7 +149,7 @@ export function sleepConsistency(nightlyHours: number[]): number | null {
   return clamp(1 - Math.sqrt(variance) / mean, 0.0, 1.0);
 }
 
-// ── Sleep debt ─────────────────────────────────────────────────────────────
+// Sleep debt
 
 /** Nights the debt ledger looks back over: WHOOP's 28 days of sleep history (The Locker, 2026-02-12). */
 export const DEFAULT_WINDOW_NIGHTS = 28;

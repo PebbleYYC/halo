@@ -1,6 +1,6 @@
-// The cards under a coach answer, ported from Pulse's coach/Evidence.tsx and Coach.tsx (DayCard, Stat), in Apple
+// The cards under a coach answer, ported from Halo's coach/Evidence.tsx and Coach.tsx (DayCard, Stat), in Apple
 // Health's language: each tool's result on a flat card whose small header is the family's glyph and title in the
-// family's system colour (as Health heads "Heart Rate"), Pulse's own rows inside it, and a blue "Based on …" capsule
+// family's system colour (as Health heads "Heart Rate"), Halo's own rows inside it, and a blue "Based on …" capsule
 // that opens the screen the numbers come from. The day's three scores sit on their families' soft fills (Recovery
 // green, Sleep indigo, Strain orange), the numbers in the system colours. The tools return metric; the cards show the
 // numbers in the person's units (Settings › Units). Every card is memoised on its tool output, so a streaming answer
@@ -93,7 +93,7 @@ function Stat({ variant, label, m, unit }: { variant: MiniRingVariant; label: st
   );
 }
 
-/** get_day's result as Pulse's own numbers, so the answer can point at them: three scores, then what moved Recovery. */
+/** get_day's result as Halo's own numbers, so the answer can point at them: three scores, then what moved Recovery. */
 export const DayCard = React.memo(function DayCard({ d }: { d: DayDigest }) {
   const c = useCalm();
   const movers = d.recovery.contributors

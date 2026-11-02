@@ -16,7 +16,7 @@ export type PhotoResult = { ok: true; photo: MealPhoto } | { ok: false; reason: 
 export const MAX_SIDE = 1024;
 const QUALITY = 0.7;
 
-/** Deletes a file Pulse made in its own cache; anything else (a gallery photo, a content:// uri) is left alone. */
+/** Deletes a file Halo made in its own cache; anything else (a gallery photo, a content:// uri) is left alone. */
 function discard(uri: string | null | undefined) {
   if (!uri || !uri.startsWith(Paths.cache.uri)) return;
   try {

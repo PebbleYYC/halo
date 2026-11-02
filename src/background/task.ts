@@ -1,5 +1,5 @@
 // The background task: expo-background-task on expo-task-manager (WorkManager on Android, 15 min at best). Defined
-// at module scope, as TaskManager requires: index.ts imports this file, so a headless launch (WorkManager waking Pulse
+// at module scope, as TaskManager requires: index.ts imports this file, so a headless launch (WorkManager waking Halo
 // with no UI) finds the task before anything renders. The task opens the store, checks the setting, the source and
 // its access (Health Connect's background read permission, or a connected Google account, whose token the sync gets
 // silently), runs the shared runSync, and logs the outcome (log.ts). It also checks GitHub for a Halo update, so it is
@@ -60,7 +60,7 @@ export async function runBackgroundTask(): Promise<BackgroundTask.BackgroundTask
 }
 
 TaskManager.defineTask(TASK_NAME, runBackgroundTask);
-// Also global: a notification arriving while Pulse is open must still show.
+// Also global: a notification arriving while Halo is open must still show.
 installNotificationHandler();
 
 export function isBackgroundSyncRegistered(): Promise<boolean> {

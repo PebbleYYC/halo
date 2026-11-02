@@ -91,7 +91,7 @@ describe("LiveCoach (guardian behaviour)", () => {
     expect(out).toMatchObject({ status: "stale", smoothedBpm: null, cue: null });
   });
 
-  it("accepts a hard effort a little over an estimated max (Pulse's wider cut-off)", () => {
+  it("accepts a hard effort a little over an estimated max (Halo's wider cut-off)", () => {
     const e = new LiveCoach(cfg(null), 0);
     feed(e, 185, 0, 10);
     expect(e.update(10, 200).sampleArrived).toBe(true);

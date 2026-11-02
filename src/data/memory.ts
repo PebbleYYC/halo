@@ -179,6 +179,9 @@ export class MemoryStore implements Store {
   async dailyValues(range?: DayRange) {
     return copy([...this.values.values()].filter((v) => inRange(v.day, range)));
   }
+  async valuesForKey(key: string) {
+    return copy([...this.values.values()].filter((v) => v.key === key).sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0)));
+  }
   async healthRecords(toDay?: string) {
     const rows = [...this.records.values()].filter((r) => toDay === undefined || r.day <= toDay);
     return copy(rows.sort((a, b) => b.ts - a.ts || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)));

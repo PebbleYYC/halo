@@ -1,4 +1,4 @@
-// Strain `/strain` (spec §7.3). Ported from Pulse's src/server/queries/strain.ts.
+// Strain `/strain` (spec §7.3). Ported from Halo's src/server/queries/strain.ts.
 import { ZONE_NAMES } from "@/core/scoring/zones";
 import { addDays } from "@/lib/time";
 import { type ExtraKey, extraMetric, metricHref } from "./_lib";
@@ -56,7 +56,7 @@ export async function getStrain(day: string, ctx: QueryCtx): Promise<StrainVM> {
         : ok({ low: t.low, high: t.high, estimate: t.coldStart, acwrRule: t.acwrRule });
 
   const strengthMin = (d: string) => exs.filter((e) => e.day === d && isStrength(e)).reduce((a, e) => a + (e.endTs - e.startTs) / 60, 0);
-  // Time in zones from..to-1 (0-based), the same zones as the zone chart and Pulse Age.
+  // Time in zones from..to-1 (0-based), the same zones as the zone chart and Halo Age.
   const zoneMin = (r: DayRow | undefined, from: number, to: number) =>
     r?.s1 && r.s1.hrCount > 0 ? r.s1.zoneSeconds.slice(from, to).reduce((a, b) => a + b, 0) / 60 : null;
   const reason = hrReason(row?.s1 ?? null);

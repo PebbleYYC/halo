@@ -1,6 +1,6 @@
 // Info-card copy for Home, ported from the web's src/app/(app)/_lib/info.tsx and (home)/page.tsx. The web's copy is
 // final; only the lines that name the web's data path (Fitbit app → Google Health) are reworded for the phone, where
-// data reaches Pulse through Health Connect (the Google Health app writes it there).
+// data reaches Halo through Health Connect (the Google Health app writes it there).
 import * as React from "react";
 import { alpha } from "@/lib/utils";
 import { InfoRows, Txt, useTheme, type ColorToken, type InfoContent } from "@/ui";

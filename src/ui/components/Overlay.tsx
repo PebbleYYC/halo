@@ -58,7 +58,7 @@ export function Overlay({ children }: { children: React.ReactNode }) {
   return host ? null : <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>{children}</View>;
 }
 
-// --- What a screen reader may reach while a sheet or dialog covers the app ---
+// What a screen reader may reach while a sheet or dialog covers the app
 
 let covering = 0;
 const coverSubs = new Set<() => void>();

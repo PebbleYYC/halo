@@ -142,7 +142,7 @@ class PulseGoogleModule : Module() {
       .addOnFailureListener { e -> promise.reject(mapError(e)) }
   }
 
-  /** Revokes every scope the account granted Pulse (Google removes the app from the account's third-party access). */
+  /** Revokes every scope the account granted Halo (Google removes the app from the account's third-party access). */
   private fun revokeAccess(scopes: List<String>, email: String, promise: Promise) {
     val ctx = context() ?: return promise.reject(err("ERR_AUTHORIZE_FAILED", "Halo isn't ready yet."))
     playServicesError()?.let { return promise.reject(it) }

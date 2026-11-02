@@ -1,4 +1,4 @@
-// View models returned by the screen queries, one per screen (Pulse spec §7), ported verbatim from the web app's
+// View models returned by the screen queries, one per screen (Halo spec §7), ported verbatim from the web app's
 // src/server/queries/types.ts so the ported UI consumes them unchanged.
 // Conventions: instants are epoch **milliseconds** (as the charts and cards take them), days are
 // local `YYYY-MM-DD`, Strain is on the reference app's 0–21 scale, and no number is ever NaN or ±Infinity.
@@ -112,7 +112,7 @@ export type EnergyBankVM = {
   naps: { start: number; end: number }[];
 };
 
-// ── Home ─────────────────────────────────────────────────────────────────────
+// Home
 
 /** The stats Home's own cards read (HomeVM.cardStats). */
 export type CardStatKey = "hrv" | "rhr" | "resp" | "steps" | "calories";
@@ -160,7 +160,7 @@ export type HomeVM = {
   strainRecovery: { day: string; strain: number | null; recovery: number | null }[];
 };
 
-// ── Recovery ─────────────────────────────────────────────────────────────────
+// Recovery
 
 export type Contributor = {
   key: "hrv" | "rhr" | "resp" | "sleep" | "skinTemp";
@@ -185,7 +185,7 @@ export type RecoveryVM = {
   forecast: Metric<{ value: number; low: number; high: number; band: Band }>;
 };
 
-// ── Strain and Activity ──────────────────────────────────────────────────────
+// Strain and Activity
 
 export type HrChart = { points: TimePoint[]; zones: ZoneRow[]; spans: Span[]; now: number | null };
 
@@ -289,7 +289,7 @@ export type ActivityVM = {
   cost: (Omit<ActivityCostVM, "items"> & { item: ActivityCostEntry; nextMorning: number | null }) | null;
 };
 
-// ── Sleep ────────────────────────────────────────────────────────────────────
+// Sleep
 
 export type SleepVM = {
   day: string;
@@ -333,7 +333,7 @@ export type SleepVM = {
   planner: Metric<SleepPlanVM & { weekdayWake: boolean }>;
 };
 
-// ── Health ───────────────────────────────────────────────────────────────────
+// Health
 
 export type VitalKey = "resp" | "spo2" | "restingHr" | "hrv" | "skinTempDev";
 export type Vital = {
@@ -404,7 +404,7 @@ export type HealthspanVM = {
   /** `pace` is the weekly value (Mondays), null with fewer than 21 of the last 31 days scored for Recovery (`paceDays`). */
   result: Metric<{ pulseAge: number; deltaYears: number; pace: number | null; paceDays: number | null; paceProvisional: boolean; vo2maxSource: "run" | "daily" | "estimate" | null }>;
   insight: { title: string; body: string } | null;
-  /** Pulse Age at each week end. */
+  /** Halo Age at each week end. */
   history: DayPoint[];
   contributors: HealthspanContributor[];
 };
@@ -464,7 +464,7 @@ export type StressVM = {
 };
 
 export type FitnessVM = {
-  /** `source`: a measured value, Fitbit's estimate, or (mobile) Pulse's own estimate when there is neither. */
+  /** `source`: a measured value, Fitbit's estimate, or (mobile) Halo's own estimate when there is neither. */
   vo2: Metric<{ value: number; source: "run" | "daily" | "estimate"; sourceDay: string; percentile: number; category: string; ageBand: string; sex: "male" | "female" }>;
   /** Mobile: Fitness Age from resting heart rate and activity (Nes 2011, after noop), and the VO2 max it estimates. */
   fitnessAge: Metric<{ fitnessAge: number; age: number; vo2max: number; method: "nes" | "uth"; activityIndex: number; restingHr: number; day: string }>;
@@ -475,7 +475,7 @@ export type FitnessVM = {
   loadReason: { reason: ReasonCode; nightsLeft?: number } | null;
 };
 
-// ── Journal ──────────────────────────────────────────────────────────────────
+// Journal
 
 export type JournalTag = { tag: string; label: string; group: "evening" | "recovery" | "context" | "custom"; isDefault: boolean; hidden: boolean };
 
@@ -500,7 +500,7 @@ export type JournalInsightsVM = {
   needsMore: { key: string; label: string; yes: number; no: number }[];
 };
 
-// ── Reports ──────────────────────────────────────────────────────────────────
+// Reports
 
 export type ReportVM = {
   period: string;
@@ -521,7 +521,7 @@ export type ReportVM = {
   bestWorst: { label: "Best day" | "Worst day"; day: string; recovery: number; strain: number | null }[] | null;
 };
 
-// ── More and Settings ────────────────────────────────────────────────────────
+// More and Settings
 
 /** Matches the ShellStatus context. */
 export type ShellStatusVM = {
@@ -573,7 +573,7 @@ export type YourDataVM = {
   mode: "demo" | "google";
 };
 
-// ── Calendar (DateSwitcher month panel) ─────────────────────────────────────
+// Calendar (DateSwitcher month panel)
 
 /** One day's three headline scores; null when the day has none. Strain is on the 0–21 scale. */
 export type CalendarDayVM = { day: string; recovery: number | null; strain: number | null; sleep: number | null };

@@ -1,4 +1,4 @@
-// The starter questions on an empty chat, ported from Pulse's src/server/coach/suggestions.ts: today's signals (Recovery
+// The starter questions on an empty chat, ported from Halo's src/server/coach/suggestions.ts: today's signals (Recovery
 // and why it is missing, HRV against the 30 days before today, last night's sleep, Strain against today's target).
 import { suggestionsFor } from "@/core/algorithms/coachSuggestions";
 import { addDays } from "@/lib/time";

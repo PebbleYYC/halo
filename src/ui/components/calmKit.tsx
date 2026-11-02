@@ -40,7 +40,7 @@ export function toneTint(tone: Tone | ChipTone): CalmTint | null {
   return tone === "good" || tone === "optimal" ? "mint" : tone === "bad" || tone === "warning" ? "sand" : tone === "alert" ? "rose" : null;
 }
 
-// --- The surface under a control ---
+// The surface under a control
 
 /** Where a control sits: the grouped ground, a card, or straight on a bottom sheet. */
 export type CalmSurface = "ground" | "card" | "sheet";
@@ -74,7 +74,7 @@ export function useSoftFill(): string {
   return softFill(useCalm(), useSurface());
 }
 
-// --- Icons ---
+// Icons
 
 type IconComponent = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 const isComponent = (x: unknown): x is IconComponent => typeof x === "function" || (typeof x === "object" && x !== null && "$$typeof" in x);
@@ -114,7 +114,7 @@ export function IconTile({ icon, tint, size = 44, radius, iconSize, bg, style }:
   );
 }
 
-// --- List rows ---
+// List rows
 
 /** The disclosure chevron's glyph size and weight: iOS's thin, tertiary chevron. */
 export const CHEVRON = { size: 18, stroke: 2.4 } as const;
@@ -138,7 +138,7 @@ export function ChevronSlot({ shown, size = CHEVRON.size, color, style }: { show
  */
 export const onBand = (band: number, h: number) => Math.max(0, (band - h) / 2);
 
-// --- Numbers ---
+// Numbers
 
 /**
  * A number with its unit beside it on the baseline, as Apple Health sets "80 BPM": Inter bold (tabular) in the number's

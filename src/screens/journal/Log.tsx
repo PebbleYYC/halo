@@ -148,7 +148,7 @@ export function Log({ vm }: LogProps) {
   const waterUnit = oz ? "fl oz" : "ml";
   const waterToday = oz ? mlToFlOz(vm.waterToday) : vm.waterToday;
   const steps = oz ? WATER_STEPS_FL_OZ.map((n) => ({ ml: Math.round(flOzToMl(n)), label: n })) : WATER_STEPS.map((n) => ({ ml: n, label: n }));
-  // Weight, body fat and blood oxygen feed their metrics, Pulse Age and Health Monitor, so they rescore. Water and food
+  // Weight, body fat and blood oxygen feed their metrics, Halo Age and Health Monitor, so they rescore. Water and food
   // feed the water goal and the nutrition numbers, which the screens add up as they read: those screens just read again
   // (no sync or scoring run; the food sheet does the same on save). Other entries are list-only.
   const rescoreIfBody = (type: string) => {
@@ -286,7 +286,7 @@ export function Log({ vm }: LogProps) {
           <View accessibilityLabel="Logged in the last 14 days" style={{ borderRadius: LIST_RADIUS, backgroundColor: c.card, overflow: "hidden" }}>
             {recent.map((e, i) => {
               // Entries read from Health Connect were logged in Fitbit: shown as such, and never deleted from here
-              // (Pulse doesn't write to Health Connect; they go when they are deleted in Fitbit).
+              // (Halo doesn't write to Health Connect; they go when they are deleted in Fitbit).
               const external = e.source === "health_connect";
               const whenLine = e.type === "menstrual-period" ? e.day : when(e.ts, vm.today, vm.timeZone);
               return (

@@ -171,13 +171,13 @@ describe("getGoalsDay on a past day", () => {
   });
 });
 
-describe("water logged in Pulse", () => {
+describe("water logged in Halo", () => {
   it("counts toward the water goal with what Health Connect synced, as the Log's total does", async () => {
     const water = new MemoryStore();
     const day = "2026-10-01";
     const at = (hh: string) => Date.parse(`${day}T${hh}:00+05:30`) / 1000;
     // Fitbit's 1,000 ml synced (its own entry, read from Health Connect, is already in that total), and 250 + 150 ml
-    // logged in Pulse, which never reaches Health Connect.
+    // logged in Halo, which never reaches Health Connect.
     await water.upsertDailyValues([{ day, key: "water", value: 1000 }]);
     await water.addLoggedEntries([
       { id: "hc-1", type: "hydration-log", ts: at("08:00"), day, data: { ml: 1000 }, createdAt: at("08:00"), source: "health_connect" },
@@ -189,7 +189,7 @@ describe("water logged in Pulse", () => {
     const vm = await getGoalsDay(day, wctx, withEnabled(DEFAULT_GOALS, "water", true));
     expect(vm.goals.find((g) => g.key === "water")!.value).toBe(1400);
     expect(await waterOn(water, day, TZ)).toBe(1400);
-    // A day with only Pulse's log.
+    // A day with only Halo's log.
     const next = await getGoalsDay("2026-10-02", wctx, withEnabled(DEFAULT_GOALS, "water", true));
     expect(next.goals.find((g) => g.key === "water")!.value).toBe(300);
   });

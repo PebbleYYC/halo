@@ -18,43 +18,7 @@ import type { TrainingStatus } from "@/core/algorithms/trainingStatus";
 import type { StrainTarget } from "@/core/algorithms/strainTarget";
 import type { RestingHrSource } from "./restingHr";
 
-/**
- * Bump on any scoring change; a mismatch at startup reruns both stages for every day.
- * 1: U5 scorers. 2: SRI consistency in sleep performance (U7), U10 pipeline. 3: one age helper
- * (healthspan and fitness age agree with whole years on birthdays). 4: local days open at the right instant
- * where DST starts at midnight (Santiago, Havana, Azores...), so the 23-hour day is the right one. 5: Pulse Age's
- * stored key is `pulseAge` (was a brand name), so stored healthspan rows rescore. 6: Google's inputs first (its daily
- * zones, resting HR, time in zones, skin-temperature baseline and personal ranges), four named zones. 7: five
- * display zones on heart-rate reserve (Strain's and WHOOP's 50/60/70/80/90%) in place of Google's four. 8: max HR
- * no longer from Google's PEAK zone (a flat 220), so zones and Strain use the person's own or Tanaka's.
- * 10 (mobile only; the web is at 9): resting HR carried up to 30 days, else estimated from the day's own still HR,
- * before the 60 bpm default (stage 1); Pulse Age's zone and strength terms only on days with 12 h of HR; Training
- * load leaves a day without an Effort out instead of counting 0; Pulse Age reports its term count, and its moderate-
- * activity input counts from 40 % of heart-rate reserve (stage 1's `moderateSeconds`), not from Zone 1's 50 %.
- * 11: Pulse Age rebuilt on WHOOP's Healthspan method (bout-counted zone minutes, `boutZoneSeconds`), and Fitness Age.
- * 12: its refinements (Paluch's step curves by age, a 60–80 % minute counted twice, 4.77 years per ln HR).
- * 13: Fitness Age's activity index reads real zone minutes, not Pulse Age's doubled ones; the sleep planner's wake times
- * are clock minutes on DST days (lib/time localMinutes).
- * 14: Pulse Age's sleep consistency pools its window's pairs of nights, each pair once, instead of averaging the daily
- * 7-day SRIs (which counted early nights several times).
- * 15 (WHOOP/Garmin alignment, docs/research/whoop-garmin.md, batch 1): zones on WHOOP's 2024 edges (Zone 1 from 40 % of
- * the reserve); Strain on continuous Banister TRIMP through 5.05 · ln(1 + 0.09 · TRIMP), with a waking floor for Day
- * Strain, 10-minute credit for quiet sparse readings and muscular load for strength-type sessions; max HR learned from
- * workout heart rate when the profile has none.
- * 16 (batch 2): Sleep Performance on WHOOP's 2025 four parts (hours against the night's full need, WHOOP-style 4-day
- * consistency, efficiency, Sleep Stress from sleeping heart rate); restorative sleep shown, not scored. Sleep need adds
- * WHOOP's patented strain sigmoid and a debt term capped at an hour (debt over 28 nights), within 6.5–11 h, and
- * bedtimes leave the typical minutes to fall asleep.
- * 17 (batch 3): Recovery on WHOOP's 2026 inputs: HRV z on ln(RMSSD) against a 21-night-half-life ln baseline, weights
- * 0.58 / 0.22 / 0.20, respiratory rate only lowering the score, skin temperature out (still in Health Monitor).
- * 18 (batch 4): Garmin's training load (linear TRIMP, a 10-day decaying acute load, a 28-day chronic load, ratio bands
- * 0.8 / 1.5 / 2.0; Strain Target's cap at 1.5); Energy Bank as a 24-hour Body Battery-style reserve (5–100, sleep charges
- * it, each day carries on from the last, a per-minute TRIMP drain); Halo Age counts zone minutes once, yoga, Pilates and
- * boot camp as strength, and publishes Pace of Aging on Mondays with 21 of 31 days scored for Recovery.
- * 19 (batch 5, new columns): HRV Status (`hrv_status`) and Garmin-style training (`training`: Aerobic Training Effect
- * from each workout's peak EPOC, which stage 1 now stores, Recovery Time, Training Readiness 1–100, Training Status);
- * VO2 max categories on Garmin's 40 / 60 / 80 / 95 percentiles; workouts auto-detected from 10 minutes (WHOOP, 2026).
- */
+/** Bump on any scoring change; a mismatch at startup rescores every day. What each bump changed is in git log. */
 export const SCORING_VERSION = 19;
 
 export type PipelineOptions = {
@@ -76,7 +40,7 @@ export type Stage1Day = {
   lastHrTs: number | null;
   restingHr: number;
   /**
-   * Google's daily resting HR first, then Pulse's sleep-session estimate; then (mobile) the newest of either from the
+   * Google's daily resting HR first, then Halo's sleep-session estimate; then (mobile) the newest of either from the
    * 30 days before, an estimate from the day's own still HR, and 60 bpm (src/pipeline/restingHr.ts).
    */
   restingHrSource: RestingHrSource;
@@ -98,12 +62,12 @@ export type Stage1Day = {
   /** Seconds below Zone 1 ("Zone 0"); absent on days stored before version 9. */
   zoneBelowSeconds?: number;
   /**
-   * Mobile, versions 10–14: seconds at 40–50 % of heart-rate reserve (ACSM moderate, then inside Zone 0), which Pulse
+   * Mobile, versions 10–14: seconds at 40–50 % of heart-rate reserve (ACSM moderate, then inside Zone 0), which Halo
    * Age's moderate-activity input added to zones 1–3. Not written since version 15, whose Zone 1 starts at 40 %.
    */
   moderateSeconds?: number;
   /**
-   * Mobile: Pulse Age's zone time as [40–80 %, ≥ 80 % of heart-rate reserve] seconds, counted only inside a workout or in
+   * Mobile: Halo Age's zone time as [40–80 %, ≥ 80 % of heart-rate reserve] seconds, counted only inside a workout or in
    * a bout of 10 minutes or more (healthspan.ts zoneBoutSeconds); absent on rows stored before the bout rule.
    */
   boutZoneSeconds?: [number, number] | [number, number, number];
@@ -191,7 +155,7 @@ export type SleepRow = {
   /** Main sleep plus yesterday's naps, the debt ledger's night. */
   creditedMin: number | null;
   debtMin: number;
-  /** Raw SRI on [−100, 100] over the 7 nights ending on D (Pulse Age's sleep-regularity input). */
+  /** Raw SRI on [−100, 100] over the 7 nights ending on D (Halo Age's sleep-regularity input). */
   sri: number | null;
   /**
    * 0–100: since version 16, WHOOP-style Sleep Consistency (the last 24 hours against each of the 4 days before,
@@ -261,7 +225,7 @@ export type SleepPlannerRow =
 export type HealthMonitorRow = (HealthMonitorResult & { reason: null; stale: string[] }) | { reason: ReasonCode };
 
 /**
- * `fitnessEstimate` (mobile): Fitness Age and Pulse's own VO2max estimate for the day, shown on Fitness. Since version 18
+ * `fitnessEstimate` (mobile): Fitness Age and Halo's own VO2max estimate for the day, shown on Fitness. Since version 18
  * `paceOfAging` is the weekly value (published on Mondays, with 21 of the last 31 days scored for Recovery; `paceDays`
  * counts those days), `paceDaily` the day's own and `paceAsOf` the Monday it was published.
  */

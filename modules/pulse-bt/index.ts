@@ -1,4 +1,4 @@
-// Pulse's small native helper (android/…/PulseBtModule.kt): the Bluetooth LE devices paired with the phone, and opening
+// Halo's small native helper (android/…/PulseBtModule.kt): the Bluetooth LE devices paired with the phone, and opening
 // another app. Both are safe to call anywhere: without the native module (tests, web) they return nothing.
 import { requireOptionalNativeModule } from "expo-modules-core";
 

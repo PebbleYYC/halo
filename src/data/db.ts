@@ -1,6 +1,6 @@
-// The Store on expo-sqlite. The schema mirrors Pulse's Postgres one (src/server/db/schema.ts) minus user ids:
+// The Store on expo-sqlite. The schema mirrors Halo's Postgres one (src/server/db/schema.ts) minus user ids:
 // one person per database. JSON columns hold the score and series blobs; heart rate and steps are bucketed per
-// UTC day like Pulse's hr_days / steps_days (parallel JSON arrays of second-of-day offsets and values), since a
+// UTC day like Halo's hr_days / steps_days (parallel JSON arrays of second-of-day offsets and values), since a
 // row per 1 Hz sample is far too slow over months. Every batch write runs in one exclusive transaction.
 import { openDatabaseAsync, type SQLiteDatabase } from "expo-sqlite";
 import { isDeadConnection } from "./deadConnection";
@@ -249,7 +249,7 @@ class SqliteStore implements Store {
     }
   }
 
-  // ── Profile and sync ──────────────────────────────────────────────────────
+  // Profile and sync
 
   async getProfile() {
     const r = await this.db.getFirstAsync<{ birth_date: string; sex: Profile["sex"]; max_hr: number | null; height_cm: number | null; waist_cm: number | null; time_zone: string }>(
@@ -275,7 +275,7 @@ class SqliteStore implements Store {
     ]));
   }
 
-  // ── Rows ──────────────────────────────────────────────────────────────────
+  // Rows
 
   async upsertMetrics(rows: Metrics[]) {
     if (!rows.length) return;
@@ -436,7 +436,7 @@ class SqliteStore implements Store {
     return days;
   }
 
-  // ── Reads ─────────────────────────────────────────────────────────────────
+  // Reads
 
   async allMetrics() {
     return (await this.db.getAllAsync<MetricsRow>("select * from daily_metrics order by day")).map(metricsOf);
@@ -467,6 +467,9 @@ class SqliteStore implements Store {
     return range
       ? this.db.getAllAsync<DailyValue>("select day, key, value from daily_values where day >= ? and day <= ? order by day, key", [range.from, range.to])
       : this.db.getAllAsync<DailyValue>("select day, key, value from daily_values order by day, key");
+  }
+  async valuesForKey(key: string) {
+    return this.db.getAllAsync<DailyValue>("select day, key, value from daily_values where key = ? order by day", [key]);
   }
   async healthRecords(toDay?: string) {
     const rows = await this.db.getAllAsync<{ id: string; kind: HealthRecord["kind"]; ts: number; day: string; data: string }>(
@@ -516,7 +519,7 @@ class SqliteStore implements Store {
     return { first: lo.bucket * DAY + first[0], last: hi.bucket * DAY + last[last.length - 1] };
   }
 
-  // ── Scores ────────────────────────────────────────────────────────────────
+  // Scores
 
   async getScores(day: string) {
     const r = await this.db.getFirstAsync<ScoresRow>("select * from daily_scores where day = ?", [day]);
@@ -547,7 +550,7 @@ class SqliteStore implements Store {
     );
   }
 
-  // ── Journal behaviours and logged entries ────────────────────────────────
+  // Journal behaviours and logged entries
 
   async journalTags() {
     const rows = await this.db.getAllAsync<{ tag: string; label: string; is_default: number; hidden: number; position: number }>(
@@ -673,8 +676,8 @@ export async function openStore(name = "pulse.db"): Promise<Store> {
 /**
  * A native connection that died under a long-lived JS runtime ("Call to function 'NativeDatabase.prepareAsync' has
  * been rejected → NullPointerException", or an access-closed error): seen on a phone after Android tore down and
- * recreated Pulse's native modules around a background sync while the JS kept its old handle. Every later call then
- * failed until Pulse was restarted, so syncs silently stopped. This reopens the database once and retries the call.
+ * recreated Halo's native modules around a background sync while the JS kept its old handle. Every later call then
+ * failed until Halo was restarted, so syncs silently stopped. This reopens the database once and retries the call.
  *
  * The old connection is closed only once no call is running. Closing finalizes every statement on it, and expo-sqlite
  * runs queries on a pool of threads: a query still stepping one of them read freed memory and took the app down

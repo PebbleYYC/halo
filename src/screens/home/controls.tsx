@@ -28,7 +28,7 @@ export function useInfo(info: InfoContent) {
   return { show: () => setOpen(true), dialog: <InfoDialog open={open} onClose={() => setOpen(false)} {...info} /> };
 }
 
-// ── Icons ────────────────────────────────────────────────────────────────────
+// Icons
 
 /**
  * An icon square, iOS's: rounded at a quarter of its size, the glyph about half its size. Callers pass the colours:
@@ -58,7 +58,7 @@ export function RowIcon({ icon, tint, size = 29 }: { icon: LucideIcon; tint: Cal
   return <HeadTile icon={icon} color="#ffffff" bg={c.tintInk[tint]} size={size} />;
 }
 
-// ── The card ─────────────────────────────────────────────────────────────────
+// The card
 
 /** A tinted card's wash: its family's soft fill at the top left melting into the card colour, as Health's coach cards. */
 function TintWash({ tint }: { tint: CalmTint }) {
@@ -321,7 +321,7 @@ export function CheckBadge({ size = 24 }: { size?: number }) {
   );
 }
 
-// ── The week as bars ─────────────────────────────────────────────────────────
+// The week as bars
 
 /** `value`: the day's number, written over its bar when given ("45"). */
 export type WeekColumn = { day: string; frac: number | null; met: boolean; value?: string | null };
@@ -373,7 +373,7 @@ export function WeekColumns({ cols, tint, height = 44, current, label }: { cols:
   );
 }
 
-// ── Buttons ──────────────────────────────────────────────────────────────────
+// Buttons
 
 /**
  * The tinted capsule button at a card's foot ("+ Add activity", "Live workout", "Set goals"), iOS's: blue at 15 % with
@@ -400,7 +400,7 @@ export function CardButton({ icon: Icon, label, onPress, style }: { icon: Lucide
   );
 }
 
-// ── The day's outlook ────────────────────────────────────────────────────────
+// The day's outlook
 
 /**
  * "Your daily outlook" before 17:00, "Your day in review" after it and on past days (spec §7.1 7a): a card with the

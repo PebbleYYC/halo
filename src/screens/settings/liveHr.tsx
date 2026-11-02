@@ -27,7 +27,7 @@ import { ConfirmDialog } from "./parts";
 /** How long Halo keeps the band after leaving the foreground, in words. */
 const GRACE_WORDS = `${Math.round(BACKGROUND_GRACE_MS / 1000)} seconds`;
 
-// ── Shared pieces ────────────────────────────────────────────────────────────
+// Shared pieces
 
 /**
  * A filled heart that beats at `bpm` while `live` (a 20 % swell on each beat: a quick rise over the first 30 % of the
@@ -177,7 +177,7 @@ export function StopLiveButton({ style }: { style?: StyleProp<ViewStyle> }) {
   );
 }
 
-// ── The how-to ───────────────────────────────────────────────────────────────
+// The how-to
 
 const GOOGLE_HEALTH = "com.fitbit.FitbitMobile";
 
@@ -233,7 +233,7 @@ function Notes() {
   );
 }
 
-// ── The sheet ────────────────────────────────────────────────────────────────
+// The sheet
 
 /** A band the scan found: its watch square, its name and what Halo knows of it, then "Connect". */
 function DeviceRow({ d, onPress, aside }: { d: FoundDevice; onPress: () => void; aside?: string }) {
@@ -476,7 +476,7 @@ export function GoLiveSheet({ open, onClose }: { open: boolean; onClose: () => v
   );
 }
 
-// ── Settings › Live heart rate ───────────────────────────────────────────────
+// Settings › Live heart rate
 
 /** The page's feature header: the Bluetooth square, the status, and while live the bpm with its beating heart. */
 function LiveHead({ live }: { live: LiveControl & LiveData }) {

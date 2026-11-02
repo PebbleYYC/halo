@@ -1,32 +1,5 @@
-/**
- * Screen view-model queries, ported from Pulse's src/server/queries. Every query takes a `QueryCtx` (ctx.ts) and reads
- * the Store; the VM shapes (types.ts) are the web app's, verbatim, so the ported UI consumes them unchanged.
- *
- * Queries
- *   getHome(day, ctx, opts?)            → HomeVM           Home: dials, strip, monitor, stress, timeline, Energy Bank, tonight, key stats
- *   getRecovery(day, ctx)               → RecoveryVM       Recovery: score, band, contributors, drivers, forecast, 182-day trend
- *   getSleep(day, ctx)                  → SleepVM          Sleep: performance, hypnogram, night HR, consistency, planner, trends
- *   getStrain(day, ctx)                 → StrainVM         Strain: score, target, coach, HR chart, zones, activities, calories, workouts
- *   getActivities(days, ctx)            → ActivitiesVM     Workouts grouped by day, newest first
- *   getActivity(id, ctx)                → ActivityVM|null  One workout: stats, HR window, zones with typicals, HRR
- *   getHealthHub(ctx) / getHealth(ctx)  → HealthHubVM      Health hub: Pulse Age, monitor, stress, fitness, latest HR
- *   getHealthspan(day, ctx)             → HealthspanVM     Pulse Age for the ISO week, contributors, 26-week history
- *   getMonitor(day, ctx, rows?)         → MonitorVM        Health Monitor: five vitals with ranges, illness, measurements
- *   getStress(day, ctx)                 → StressVM         Stress Monitor: gauge, chart, levels against the same weekday
- *   getFitness(ctx)                     → FitnessVM        VO2 max, ACWR, 90 days of CTL/ATL/TSB
- *   getHeartRate(day, ctx)              → HeartRateVM      Minute-mean HR for the day, zones
- *   hrMinutes(ctx, from, to)            → HeartRateLive    Minute-mean HR over a window (the live chart's feed)
- *   getTrends(metric, ctx)              → TrendsVM         One metric over 365 days with W/M/6M/1Y averages
- *   getMetricDetail(key, day, ctx) / getMetric → MetricDetailVM (MetricVM)  A metric's own screen with its sections
- *   getCalendarMonth(month, ctx)        → CalendarMonthVM  Recovery, Strain and Sleep for every day of a month
- *
- * VM types (types.ts): HomeVM, RecoveryVM, StrainVM, ActivitiesVM, ActivityVM, SleepVM, HealthHubVM (HealthVM),
- * HeartRateVM, HeartRateLive, HealthspanVM, MonitorVM, StressVM, FitnessVM, CalendarMonthVM, CalendarDayVM, plus the
- * building blocks (Metric, KeyStat, Trend, DayPoint, SplitPoint, TimePoint, Span, ZoneRow, DriverItem, TimelineItem,
- * SleepPlanVM, EnergyBankVM, Contributor, Vital, HealthspanContributor, Measurement, HeartRhythm, EcgReading) and the
- * web's remaining VM types kept for the UI (JournalVM, ReportVM, SettingsVM, MoreVM, ShellStatusVM, YourDataVM…).
- * TrendsVM lives in trends.ts and MetricDetailVM in metric.ts, as on the web.
- */
+// Screen view-model queries ported from the web app: each takes a QueryCtx (ctx.ts), reads the Store and returns the
+// web's VM shapes (types.ts) unchanged, so the ported UI consumes them as is.
 export type { QueryCtx } from "./ctx";
 export * from "./types";
 export {

@@ -1,4 +1,4 @@
-// Pure parts of the Pulse Age orb, ported from Pulse's src/lib/orb.ts (docs/design/orb.md): colour stops, shape
+// Pure parts of the Halo Age orb, ported from Halo's src/lib/orb.ts (docs/design/orb.md): colour stops, shape
 // noise, seeded RNG. Hues are theme tokens (`orbGreen`…) instead of CSS variables.
 import { clamp, lerp } from "@/lib/utils";
 import type { ColorToken } from "@/ui/theme";
@@ -68,7 +68,7 @@ export function hexRGB(hex: string): RGB {
   return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [0, 0, 0];
 }
 
-/** The two stops around a Pulse Age delta and how far between them; `null` (no result) is the empty orb. */
+/** The two stops around a Halo Age delta and how far between them; `null` (no result) is the empty orb. */
 export function orbStops(delta: number | null): { top: [ColorToken, ColorToken]; bottom: [ColorToken, ColorToken]; t: number } {
   if (delta === null || !Number.isFinite(delta)) return { top: [ORB.empty, ORB.empty], bottom: [ORB.empty, ORB.empty], t: 0 };
   const s = ORB.stops;
@@ -80,7 +80,7 @@ export function orbStops(delta: number | null): { top: [ColorToken, ColorToken];
   return { top: [a.top, b.top], bottom: [a.bottom, b.bottom], t };
 }
 
-/** Rim colours for a Pulse Age delta (years older is positive), with `rgb` resolving a token. */
+/** Rim colours for a Halo Age delta (years older is positive), with `rgb` resolving a token. */
 export function orbColors(delta: number | null, rgb: (token: ColorToken) => RGB): { top: RGB; bottom: RGB } {
   const { top, bottom, t } = orbStops(delta);
   return { top: mixRGB(rgb(top[0]), rgb(top[1]), t), bottom: mixRGB(rgb(bottom[0]), rgb(bottom[1]), t) };
@@ -130,7 +130,7 @@ export function rng(seed: number) {
   };
 }
 
-// --- Motion geometry ---
+// Motion geometry
 
 const TAU = Math.PI * 2;
 const norm = (a: number) => ((a % TAU) + TAU) % TAU;

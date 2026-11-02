@@ -1,4 +1,4 @@
-// Ported from Pulse's src/lib/reasons.ts (icons dropped: the mobile app maps a ReasonCode to a lucide icon itself).
+// Ported from Halo's src/lib/reasons.ts (icons dropped: the mobile app maps a ReasonCode to a lucide icon itself).
 export const REASON_CODES = [
   "calibrating",
   "no_hrv_last_night",

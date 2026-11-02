@@ -1,4 +1,4 @@
-// Coach `/coach` (spec §7.21), ported from Pulse's coach/page.tsx: consent, then a provider and key (BYOK), then the
+// Coach `/coach` (spec §7.21), ported from Halo's coach/page.tsx: consent, then a provider and key (BYOK), then the
 // chat. `?c=` opens a saved chat, `?q=` fills the composer without sending, `?brief=1` asks for today's brief at once,
 // `?n=` starts a fresh chat. On the web only people an admin let in see it; on the phone it is the person's own. The
 // setup pages are iOS settings pages (DetailShell); the chat is a full-screen Messages-style page with its own floating

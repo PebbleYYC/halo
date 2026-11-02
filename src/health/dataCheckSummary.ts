@@ -1,6 +1,6 @@
 // Data check, pure part: per local day, what Health Connect holds for each metric — split by the app and device that
-// wrote it — next to what Pulse stored. Lets a mismatch with the Fitbit app be traced to its cause (another source,
-// a day boundary, a missing record, or Pulse's own mapping). The Health Connect reads live in dataCheck.ts.
+// wrote it — next to what Halo stored. Lets a mismatch with the Fitbit app be traced to its cause (another source,
+// a day boundary, a missing record, or Halo's own mapping). The Health Connect reads live in dataCheck.ts.
 import { localDay } from "@/lib/time";
 import type { Metrics, Session } from "@/data/types";
 import { DEVICE_NAME, isFitbit } from "./sourcePolicy";
@@ -50,7 +50,7 @@ export type SourceLine = { source: string; fitbit: boolean; records: number; val
 export type MetricLine = { key: string; label: string; unit: string; pulse: number | null; sources: SourceLine[] };
 export type DayCheck = { day: string; metrics: MetricLine[]; sleep: { pulse: string[]; sources: SourceLine[] } };
 
-/** Groups each metric's raw records by local day and source; `pulse` is what Pulse stored for that day. */
+/** Groups each metric's raw records by local day and source; `pulse` is what Halo stored for that day. */
 export function summarize(raw: Partial<Record<ReadType, RawRecord[]>>, sleepRaw: RawRecord[], metrics: Metrics[], sessions: Session[], days: string[], tz: string, values: { day: string; key: string; value: number }[] = []): DayCheck[] {
   const byDay = new Map(metrics.map((m) => [m.day, m]));
   const valueOn = (day: string, key: string) => values.find((v) => v.day === day && v.key === key)?.value ?? null;
@@ -82,7 +82,7 @@ export function summarize(raw: Partial<Record<ReadType, RawRecord[]>>, sleepRaw:
       const pulse = cm.key === "distance" ? valueOn(day, "distance") : m && cm.pulse ? cm.pulse(m) : null;
       return { key: cm.key, label: cm.label, unit: cm.unit, pulse, sources };
     });
-    // Sleep: Health Connect sessions ending on this day, and the sessions Pulse kept.
+    // Sleep: Health Connect sessions ending on this day, and the sessions Halo kept.
     const sleepSources: SourceLine[] = [];
     for (const r of sleepRaw) {
       const end = r.endTime ? Math.floor(Date.parse(r.endTime) / 1000) : null;
@@ -107,7 +107,7 @@ const round = (v: number) => (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v 
  */
 export function formatReport(days: DayCheck[], policy: string, opts: { source?: string; legend?: string } = {}): string {
   const out: string[] = [
-    opts.source ? `Halo data check — ${opts.source}` : `Halo data check — source policy: ${policy}`,
+    opts.source ? `Halo data check: ${opts.source}` : `Halo data check, source policy: ${policy}`,
     opts.legend ?? "★ = kept by the policy (Fitbit, not phone-measured)",
   ];
   for (const d of days) {

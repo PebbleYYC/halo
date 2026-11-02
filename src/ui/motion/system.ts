@@ -54,7 +54,7 @@ export function useAppActive(): boolean {
   return React.useSyncExternalStore(appActive.subscribe, appActive.get, appActive.get);
 }
 
-// --- One frame loop for every JS-driven tween ---
+// One frame loop for every JS-driven tween
 
 const now = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
 type Tick = (t: number) => boolean;

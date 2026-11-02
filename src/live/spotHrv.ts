@@ -55,7 +55,7 @@ export function hrvBeforeAfter(preRr: readonly number[], beats: readonly RrBeat[
   return { before, after };
 }
 
-// ── RSA amplitude (ResonanceEngine.scorePace) ────────────────────────────────
+// RSA amplitude (ResonanceEngine.scorePace)
 
 /** The settling time dropped from the start before the swing is measured (noop: 30 s), at most a quarter of the session. */
 export const TRANSIENT_MS = 30_000;

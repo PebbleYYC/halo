@@ -1,4 +1,4 @@
-// Provider setup checks, ported from Pulse's saveProviderAction (src/server/actions/coach.ts): the form's rules, then
+// Provider setup checks, ported from Halo's saveProviderAction (src/server/actions/coach.ts): the form's rules, then
 // one tiny test request with the key, so a bad key, model id or empty account is never saved.
 import { APICallError, generateText } from "ai";
 import { modelFor, providerOf, type Fetch } from "./providers";

@@ -1,4 +1,4 @@
-// The DateSwitcher calendar's month of scores (spec §4.3). Ported from Pulse's src/server/queries/calendar.ts.
+// The DateSwitcher calendar's month of scores (spec §4.3). Ported from Halo's src/server/queries/calendar.ts.
 import { addDays } from "@/lib/time";
 import { finite, loadDays, type QueryCtx, toStrain } from "./common";
 import type { CalendarMonthVM } from "./types";

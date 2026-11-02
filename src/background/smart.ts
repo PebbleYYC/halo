@@ -2,7 +2,7 @@
 // the bedtime reminder's schedule. Pure like decide.ts (smart.test.ts); alerts.ts reads the store, sends and schedules.
 // The gates are ported from noop's notif/StrainTargetNotifier.kt, notif/IllnessAlertNotifier.kt,
 // notif/ScheduledReportNotifier.kt and alarm/WindDownScheduler.kt (© 2026 NoopApp, PolyForm Noncommercial 1.0.0); the
-// copy and the inputs (strain_target, health_monitor, the reports, sleep_planner) are Pulse's own.
+// copy and the inputs (strain_target, health_monitor, the reports, sleep_planner) are Halo's own.
 import { isoWeek, type Report } from "@/core/algorithms/reports";
 import { toStrainScale } from "@/core/scoring/strain";
 import type { ScoreRow } from "@/data/store";
@@ -12,7 +12,7 @@ import type { SleepPlannerRow } from "@/pipeline/types";
 import { illnessRaised, VITAL_LABEL } from "@/queries/home";
 import { DEEP_LINK, isOwnData, sentFor, type Alert, type AlertSource, type MarkedMonitorLevel, type Markers } from "./decide";
 
-// ── Inputs from the stored rows ──────────────────────────────────────────────
+// Inputs from the stored rows
 
 export type MonitorLevel = "clear" | MarkedMonitorLevel;
 const RANK: Record<MonitorLevel, number> = { clear: 0, flagged: 1, illness: 2 };
@@ -49,7 +49,7 @@ export function strainOf(row: ScoreRow | null | undefined): { strain: number | n
   };
 }
 
-// ── The alerts ───────────────────────────────────────────────────────────────
+// The alerts
 
 export type WeekReport = Pick<Report, "period" | "start" | "end" | "partial" | "days" | "averages">;
 
@@ -160,7 +160,7 @@ export function decideSmart(input: SmartInput): Alert[] {
   return [strainTargetAlert(input, day), monitorAlert(input, day), weeklyReportAlert(input, day)].filter((a): a is Alert => a !== null);
 }
 
-// ── Bedtime reminder ─────────────────────────────────────────────────────────
+// Bedtime reminder
 
 export type BedtimeInput = {
   /** Unix seconds. */

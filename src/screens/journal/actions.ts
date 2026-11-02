@@ -1,4 +1,4 @@
-// Journal and Log writes, ported from Pulse's src/server/actions/{journal,log}.ts: the same validation (zod there, by
+// Journal and Log writes, ported from Halo's src/server/actions/{journal,log}.ts: the same validation (zod there, by
 // hand here), the same messages, and results returned rather than thrown so a form can show them. Plain TypeScript
 // over the Store (no React Native), so the tests run in node. The caller refreshes (rescoring) after a check-in.
 import type { Profile } from "@/data/types";
@@ -54,7 +54,7 @@ export const inDayRange = (v: string, today: string) => isDay(v) && v <= today &
 
 const fail = (error: string) => ({ ok: false as const, error });
 
-// ── Journal ─────────────────────────────────────────────────────────────────
+// Journal
 
 export type EntryInput = { day: string; tag: string; value: boolean | number | null };
 
@@ -113,7 +113,7 @@ export async function reorderBehaviours(c: ActionCtx, input: { tags: string[] })
   return { ok: true, data: undefined };
 }
 
-// ── Log ─────────────────────────────────────────────────────────────────────
+// Log
 
 /** One food: its name (blank: the meal's), portion, calories and grams; a nutrient not given is null (unknown). */
 export type FoodItemInput = { name: string; portion?: string; kcal: number; protein: number | null; carbs: number | null; fat: number | null; fiber?: number | null };
@@ -248,7 +248,7 @@ export async function logFoods(c: ActionCtx, input: { meal: Meal; via: FoodVia; 
 }
 
 /**
- * Changes a food logged in Pulse, in place (same id): its name, portion, numbers, meal and time. `ts` is the entry's
+ * Changes a food logged in Halo, in place (same id): its name, portion, numbers, meal and time. `ts` is the entry's
  * time as listed (it is found from there). Food read from Health Connect (logged in Fitbit) is changed in Fitbit only.
  */
 export async function updateFoodEntry(c: ActionCtx, input: { id: string; ts: number; meal: Meal; at?: string; item: FoodItemInput }): Promise<ActionResult> {
@@ -269,8 +269,8 @@ export async function updateFoodEntry(c: ActionCtx, input: { id: string; ts: num
 }
 
 /**
- * "Count it too": a Pulse food that Pulse took for a repeat of a Fitbit entry is a food of its own after all, so it
- * counts beside Fitbit's (`separate`). `separate: false` lets Pulse match it again.
+ * "Count it too": a Halo food that Halo took for a repeat of a Fitbit entry is a food of its own after all, so it
+ * counts beside Fitbit's (`separate`). `separate: false` lets Halo match it again.
  */
 export async function setFoodSeparate(c: ActionCtx, input: { id: string; ts: number; separate: boolean }): Promise<ActionResult> {
   const row = (await c.store.loggedEntries(input.ts - 1, 5000)).find((r) => r.id === input.id);
@@ -336,7 +336,7 @@ export async function logEntry(c: ActionCtx, input: LogInput): Promise<ActionRes
       break;
   }
 
-  // mobile: no Google writer and no write permission to ask for; every entry stays in Pulse, as in the web's demo mode.
+  // mobile: no Google writer and no write permission to ask for; every entry stays in Halo, as in the web's demo mode.
   await saveEntries(c.store, entries, { tz, now });
   return { ok: true, data: { demo: true } };
 }

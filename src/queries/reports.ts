@@ -1,4 +1,4 @@
-// Reports (spec §7.13): one ISO week or calendar month, and the archive of every period with data. Ported from Pulse's
+// Reports (spec §7.13): one ISO week or calendar month, and the archive of every period with data. Ported from Halo's
 // src/server/queries/reports.ts; the web's `reports` table reads are Store reads (`store.getReports()`, which the
 // pipeline's stage 2 rewrites on every run), and the VM shapes are the web's, verbatim. A phone addition rides along:
 // the Performance Assessment (`performance`, after WHOOP's), computed here from the stored days of the period and the
@@ -142,7 +142,7 @@ export async function getReport(period: string, ctx: QueryCtx, targets: PlanTarg
   };
 }
 
-// ── Performance assessment (phone addition) ─────────────────────────────────
+// Performance assessment (phone addition)
 
 /** One of the biggest changes: "Sleep consistency", "−12%". */
 export type ReportChange = { key: AssessKey; label: string; text: string; better: boolean };

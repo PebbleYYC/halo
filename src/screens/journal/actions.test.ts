@@ -1,4 +1,4 @@
-// Ported from Pulse's src/server/actions/journal.test.ts and log.test.ts. There is one person per phone and no
+// Ported from Halo's src/server/actions/journal.test.ts and log.test.ts. There is one person per phone and no
 // session, so the signed-out and per-user cases have no counterpart; Google writes have none either.
 import { beforeEach, describe, expect, it } from "vitest";
 import { openMemoryStore } from "@/data/memory";
@@ -275,7 +275,7 @@ describe("logFoods and updateFoodEntry", () => {
     expect(await rows()).toEqual([]);
   });
 
-  it("edits a Pulse entry in place, keeping its id and how it was made", async () => {
+  it("edits a Halo entry in place, keeping its id and how it was made", async () => {
     await logFoods(c(), { meal: "BREAKFAST", via: "photo", at: "2026-10-02T08:30", items: [eggs] });
     const [before] = await rows();
     const r = await updateFoodEntry(c(), { id: before.id, ts: before.ts, meal: "LUNCH", at: "2026-10-02T11:00", item: { name: "Egg bhurji", kcal: 240, protein: 14, carbs: 4, fat: 18 } });

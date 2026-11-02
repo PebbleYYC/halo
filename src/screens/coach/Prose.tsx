@@ -1,4 +1,4 @@
-// The coach's answer text, ported from Pulse's coach/Prose.tsx and set as Apple Intelligence sets an answer: plain text
+// The coach's answer text, ported from Halo's coach/Prose.tsx and set as Apple Intelligence sets an answer: plain text
 // on the ground (no bubble) in iOS's body size, paragraphs, bullet and numbered lists with grey markers, **bold** in
 // semibold. Built from parsed strings into Text, so model output is never interpreted as markup. Selectable, so a long
 // press copies it. Memoised on the text, so a streaming answer re-renders only while its own words change.

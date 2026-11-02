@@ -1,9 +1,9 @@
-// Journal's Log section (spec §11 LG1), ported from Pulse's src/lib/log.ts (the choices the sheets offer),
+// Journal's Log section (spec §11 LG1), ported from Halo's src/lib/log.ts (the choices the sheets offer),
 // src/server/log.ts (the stored entries) and src/server/queries/log.ts (the view model).
 //
-// mobile: the web writes each entry to Google Health and mirrors it in `logged_entries`. Pulse for Android never writes
+// mobile: the web writes each entry to Google Health and mirrors it in `logged_entries`. Halo for Android never writes
 // to Health Connect (it asks for no write permission), so every entry is kept on the phone only, in the Store's
-// logged entries, exactly as the web's demo mode keeps them: every type's access is "demo" (kept in Pulse) and
+// logged entries, exactly as the web's demo mode keeps them: every type's access is "demo" (kept in Halo) and
 // `atGoogle` is always false.
 import type { LoggedEntryRow, Store } from "@/data/store";
 import { addDays, localDay, localMidnight } from "@/lib/time";
@@ -15,9 +15,9 @@ import { unitsOf } from "./units";
 
 export { LOG_TYPES, type LoggedEntry, type LogType } from "./_lib";
 
-// ── lib/log.ts ──────────────────────────────────────────────────────────────
+// lib/log.ts
 
-/** Types Google lets Pulse read back: the sync brings them home, so totals come from the sync, not this log. */
+/** Types Google lets Halo read back: the sync brings them home, so totals come from the sync, not this log. */
 export const READABLE: ReadonlySet<LogType> = new Set(["hydration-log", "nutrition-log", "weight", "body-fat"]);
 
 /** Cycle tracking: never offered, shown or accepted on a male profile. */
@@ -114,7 +114,7 @@ export const SYMPTOMS = [
 export type Symptom = (typeof SYMPTOMS)[number][0];
 export const CYCLE_SYMPTOMS: ReadonlySet<string> = new Set(SYMPTOMS.filter((s) => s[2]).map((s) => s[0]));
 
-/** Google records period flow nowhere but free-text notes, so Pulse keeps it locally and writes it into `notes`. */
+/** Google records period flow nowhere but free-text notes, so Halo keeps it locally and writes it into `notes`. */
 export const FLOWS = [
   ["SPOTTING", "Spotting"],
   ["LIGHT", "Light"],
@@ -138,7 +138,7 @@ const labelOf = (list: readonly (readonly [string, string, ...unknown[]])[], v: 
  * What a logged entry's `data` holds, per type. Moods and symptoms keep Google's enum values, for Behaviour Insights later.
  * mobile: entries read from Health Connect (logged in Fitbit) use the same shapes, with two extras: a food log whose meal
  * Health Connect doesn't know has `meal: "UNKNOWN"`, and bleeding between periods is a one-day period with `spotting`.
- * Food logged in Pulse may also carry its portion, fiber and how it was made (photo, description or typed; food.ts).
+ * Food logged in Halo may also carry its portion, fiber and how it was made (photo, description or typed; food.ts).
  */
 export type LogData = {
   "hydration-log": { ml: number };
@@ -189,12 +189,12 @@ export function describeEntry(type: LogType, data: unknown, units: Units = METRI
   }
 }
 
-// ── server/log.ts ───────────────────────────────────────────────────────────
+// server/log.ts
 
-/** `demo`: kept in Pulse only. `reconnect`: the grant lacks this type's write scope (or was revoked). */
+/** `demo`: kept in Halo only. `reconnect`: the grant lacks this type's write scope (or was revoked). */
 export type LogAccess = "demo" | "ok" | "reconnect" | "not_connected";
 
-/** mobile: nothing is written to Health Connect, so every type is kept in Pulse ("demo"), whatever the data source. */
+/** mobile: nothing is written to Health Connect, so every type is kept in Halo ("demo"), whatever the data source. */
 export function logAccess(): Record<LogType, LogAccess> {
   return Object.fromEntries(LOG_TYPES.map((t) => [t, "demo"])) as Record<LogType, LogAccess>;
 }
@@ -220,7 +220,7 @@ export async function deleteEntry(store: Store, id: string): Promise<{ ok: true;
   return row ? { ok: true, type: row.type as LogType } : { ok: true };
 }
 
-/** Entries logged at or after `fromTs`, newest first: Pulse's own and those read from Health Connect (logged in Fitbit). */
+/** Entries logged at or after `fromTs`, newest first: Halo's own and those read from Health Connect (logged in Fitbit). */
 export async function recentEntries(store: Store, fromTs: number, limit = 50, units: Units = METRIC): Promise<LoggedEntry[]> {
   const rows = await store.loggedEntries(fromTs, limit);
   return rows.map((r) => ({
@@ -236,7 +236,7 @@ export async function recentEntries(store: Store, fromTs: number, limit = 50, un
 
 /**
  * Water drunk on `day`: the source's daily roll-up (`daily_values` water, the sync's sum of Health Connect's hydration
- * records, Fitbit's included) plus what was logged in Pulse that day. mobile: Pulse's entries never reach Health
+ * records, Fitbit's included) plus what was logged in Halo that day. mobile: Halo's entries never reach Health
  * Connect, so the roll-up can never hold them and each is counted once (the web adds only what was logged after the
  * last hydration sync); the Fitbit entries the sync mirrors into the log are already in the roll-up, so they are not
  * added again.
@@ -252,14 +252,14 @@ export async function waterOn(store: Store, day: string, tz: string): Promise<nu
 
 export const isReadable = (t: LogType) => READABLE.has(t);
 
-// ── queries/log.ts ──────────────────────────────────────────────────────────
+// queries/log.ts
 
 export type LogVM = {
   /** Cycle kinds are absent on a male profile. */
   kinds: LogKind[];
   /** Per sheet: the worst access of the types it writes (weight needs weight and body fat). */
   access: Record<LogKind, LogAccess>;
-  /** Today's water in ml, synced roll-up plus what Pulse logged since that sync (the Log converts it for display). */
+  /** Today's water in ml, synced roll-up plus what Halo logged since that sync (the Log converts it for display). */
   waterToday: number;
   /** Today's calories and protein eaten, counted as the nutrition metrics count them (food.ts); null when none logged. */
   foodToday: { kcal: number | null; protein: number | null };
@@ -267,7 +267,7 @@ export type LogVM = {
   recent: LoggedEntry[];
   today: string;
   timeZone: string;
-  /** Demo mode: entries stay in Pulse. */
+  /** Demo mode: entries stay in Halo. */
   demo: boolean;
 };
 

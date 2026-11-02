@@ -174,7 +174,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
   const reduce = useReduceMotion();
   const { width, height, extent, fonts } = p;
 
-  // --- Fonts and the text measured once ---
+  // Fonts and the text measured once
   const axisFont = fonts.num(500, 12);
   const pillFont = fonts.num(700, 11);
   const nameFont = fonts.sans(600, 11);
@@ -183,7 +183,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
   const laneNames = React.useMemo(() => STAGE_ORDER.map((s) => STAGE_NAME[s].toUpperCase()), []);
   const laneW = React.useMemo(() => Math.max(...laneNames.map((t) => measure(laneFont, t))), [laneNames, laneFont]);
 
-  // --- Layout: the night's lanes need room for their names; a day names its stretches in a lane over the plot ---
+  // Layout: the night's lanes need room for their names; a day names its stretches in a lane over the plot
   const LEFT = p.stages.length ? Math.max(AXIS_W, Math.ceil(laneW) + 14) : p.compare ? AXIS_W : BARE_LEFT;
   const right = AXIS_W;
   const plotW = Math.max(1, width - LEFT - right);
@@ -194,7 +194,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
   const plotH = Math.max(1, bottom - top);
   const { min, max, minSpan } = extent;
 
-  // --- The viewport and the axes, animated on the UI thread ---
+  // The viewport and the axes, animated on the UI thread
   const start = useSharedValue(p.window.start);
   const span = useSharedValue(p.window.span);
   const lo = useSharedValue(p.domain.lo);
@@ -266,7 +266,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.domain2, p.y2Labels]);
 
-  // --- Series geometry (data space, built once per series) ---
+  // Series geometry (data space, built once per series)
   const prim = React.useMemo(() => dataPaths(p.primary), [p.primary]);
   const comp = React.useMemo(() => dataPaths(p.compare), [p.compare]);
   // The workouts day: the minutes inside a workout as a series of their own, on the primary's scale.
@@ -357,7 +357,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
   // The series stay inside the plot (the bars' rounded feet run under its floor).
   const clip = React.useMemo(() => rect(LEFT, top - 6, plotW, plotH + 6), [LEFT, top, plotW, plotH]);
 
-  // --- Axes, grid and bands (recorded per frame from the viewport) ---
+  // Axes, grid and bands (recorded per frame from the viewport)
   // Dashed hairline rows and grey axis text, soft dashed guides, pastel spans, bands and stage lanes.
   const workoutsFirst = p.emphasis === "workouts";
   // A line's latest point is ringed in the card colour (bars mark the latest in full ink instead, a running total with its pill).
@@ -608,7 +608,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
     ),
   );
 
-  // --- The crosshair (the cursor is in data x, so it rides along with a pan or a zoom) ---
+  // The crosshair (the cursor is in data x, so it rides along with a pan or a zoom)
   const cxs = p.compare?.xs ?? [];
   const cys = p.compare?.ys ?? [];
   const cidx = p.compareIdx;
@@ -647,7 +647,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
   });
   const selColor = useDerivedValue(() => (idx.value < 0 ? "transparent" : (barColors[groups[idx.value] ?? 0] ?? "transparent")));
 
-  // --- Gestures ---
+  // Gestures
   const notify = p.onViewport;
   const full = max - min;
   const gesture = React.useMemo(() => {
@@ -747,7 +747,7 @@ export function ExplorerChart(p: ExplorerChartProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plotW, LEFT, min, max, minSpan, full, notify]);
 
-  // --- The readout box: text per point, measured once ---
+  // The readout box: text per point, measured once
   const r = p.readout;
   const dateFont = fonts.sans(600, 12);
   const valueFont = fonts.num(700, 17);

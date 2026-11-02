@@ -57,7 +57,7 @@ export const EASE = {
   linear: (t: number) => t,
 } satisfies Record<string, EasingFn>;
 
-// --- Entrance cascade ---
+// Entrance cascade
 
 /** Cards and sections rise 8 px and fade in over 220 ms; a screen's first six cascade 40 ms apart. */
 export const ENTER = { duration: MOTION.base, rise: 8, step: MOTION.stagger, steps: 6 } as const;
@@ -84,7 +84,7 @@ export function burstCounter(gap = 120, now: () => number = () => Date.now()): (
   };
 }
 
-// --- Count-up ---
+// Count-up
 
 export const COUNT = { duration: MOTION.fill } as const;
 
@@ -115,7 +115,7 @@ export const COUNTABLE: Record<FormatKey, boolean> = {
   pace: false,
 };
 
-// --- Waves from a linear clock ---
+// Waves from a linear clock
 
 /**
  * `interpolate` stops that turn a phase in [0, 1] into one smooth cycle lo → hi → lo, `(1 − cos 2πx) / 2` sampled at

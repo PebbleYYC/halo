@@ -1,4 +1,4 @@
-// What the Google source keeps between syncs, outside the Store (it describes the Google account, not Pulse's rows),
+// What the Google source keeps between syncs, outside the Store (it describes the Google account, not Halo's rows),
 // in AsyncStorage like the Health Connect import's state (src/health/importState.ts): the connected account and the
 // scopes it granted, and each data type's sync cursor and last outcome (the web's sync_state rows).
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -6,7 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const CONNECTION_KEY = "pulse.google.connection";
 export const SYNC_KEY = "pulse.google.sync";
 
-/** The Google account Pulse reads. No token: Google Play services keeps the grant and hands out tokens. */
+/** The Google account Halo reads. No token: Google Play services keeps the grant and hands out tokens. */
 export type GoogleConnection = {
   /** The account's email (userinfo), or null when Google didn't say. */
   email: string | null;

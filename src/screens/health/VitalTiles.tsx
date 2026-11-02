@@ -1,4 +1,4 @@
-// Health Monitor's five vital tiles and their sheet, ported from Pulse's health/monitor/VitalTiles.tsx, as Apple's
+// Health Monitor's five vital tiles and their sheet, ported from Halo's health/monitor/VitalTiles.tsx, as Apple's
 // Vitals: two tiles a row (the last a full-width strip), each the vital's glyph and name in its colour, last night's
 // reading large with its unit (its digits rolling in) and its chip ("Within range" in a green capsule). A tile opens the
 // vital's sheet: the reading, the chip, your normal range and the last 30 nights (the web's `?vital=` deep-linked sheet

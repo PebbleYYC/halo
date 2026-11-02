@@ -120,7 +120,7 @@ export type Tokens = {
   selection: string;
   onMedia: string;
   mediaGround: string;
-  // Pulse Age orb
+  // Halo Age orb
   orbGreen: string;
   orbTeal: string;
   orbCyan: string;

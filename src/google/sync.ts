@@ -1,19 +1,7 @@
-// The Google Health API import: the web app's src/server/sources/google/sync.ts on the phone. Per data type (a "job"),
-// the first sync backfills BACKFILL_DAYS local days, oldest first, saving the job's cursor after every window so an
-// interrupted backfill resumes where it stopped; later syncs re-fetch a little before the cursor (3 days; sessions 30,
-// so a nap or workout deleted in Fitbit days later is pruned; heart rate and steps from an hour before the newest
-// stored sample). Every job runs on its own: a failing type keeps its safe error and the next carries on. Only a
-// sign-in Google won't give, a revoked grant, an account without Google Health or the API switched off stops the run.
-//
-// Rows go through the Store as the Health Connect import writes them (src/health/sync.ts): daily types fill their
-// Metrics columns (merged into the day's row), roll-up extras are DailyValues, sessions, workouts and samples are
-// upserted, ECG and irregular-rhythm records are health records. Days whose samples, sessions or workouts changed are
-// marked intraday-dirty as they are written, so stage 1 reruns them; src/background/runSync.ts then runs the same
-// pipeline as after a Health Connect sync. Day boundaries are local midnights in `timeZone`.
-//
-// Deletions: `list` returns a window whole or throws, so within a list window Pulse holds exactly what Google returns.
-// A sleep session or workout there that Google left out was deleted in Fitbit: it is removed and its day marked dirty.
-// Rows outside the window are never touched.
+// The Google Health API import. Each data type is a job: the first sync backfills BACKFILL_DAYS oldest first, saving
+// the cursor after every window so an interrupted backfill resumes; later syncs re-read a short overlap before it.
+// One type failing doesn't stop the others; only sign-in, account or API-off errors stop the run.
+// Within a listed window Halo holds exactly what Google returned, so a session missing there was deleted in Fitbit.
 import type { Store } from "@/data/store";
 import { emptyMetrics, type HrSample, type Metrics, type Segment, type StepsMinute } from "@/data/types";
 import { addDays, localDay, localMidnight } from "@/lib/time";
@@ -70,10 +58,10 @@ export const JOBS: Job[] = [
   { key: "total-calories", kind: "rollup", type: "total-calories" },
   { key: "steps-daily", kind: "rollup", type: "steps" }, // daily totals; "steps" below is per minute
   { key: "steps", kind: "steps", type: "steps" },
-  // Score inputs from roll-ups: Pulse Age's zone minutes.
+  // Score inputs from roll-ups: Halo Age's zone minutes.
   { key: "time-in-heart-rate-zone", kind: "rollup", type: "time-in-heart-rate-zone" },
   { key: "heart-rate", kind: "hr", type: "heart-rate" },
-  // Google's personal resting-HR and HRV ranges (Health Monitor's ranges, else Pulse's own). The web found the API
+  // Google's personal resting-HR and HRV ranges (Health Monitor's ranges, else Halo's own). The web found the API
   // answering UNSUPPORTED_DATA_TYPE_ACTION to these roll-ups (2026-10-03), so a refusal parks the job for a week, quietly.
   { key: "rhr-range", kind: "rollup", type: "daily-resting-heart-rate", optional: true },
   { key: "hrv-range", kind: "rollup", type: "daily-heart-rate-variability", optional: true },
@@ -318,7 +306,7 @@ async function runWindow(client: GoogleClient, w: Writer, job: Job, win: TimeWin
       return rows.length;
     }
     case "height": {
-      // Pulse Age's lean-mass term reads it when the profile has no height (src/pipeline/index.ts sourceHeight).
+      // Halo Age's lean-mass term reads it when the profile has no height (src/pipeline/index.ts sourceHeight).
       const h = mapHeight(await client.list(job.type, win.start, win.end));
       return h ? w.values([{ day: "latest", key: "height_cm", value: h.cm }]) : 0;
     }
@@ -340,7 +328,7 @@ export async function heartRate(client: Pick<GoogleClient, "listEach">, win: Tim
   return hr;
 }
 
-// --- Writes ---------------------------------------------------------------------------------------
+// Writes
 
 type Writer = ReturnType<typeof writer>;
 

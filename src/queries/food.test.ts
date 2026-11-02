@@ -1,4 +1,4 @@
-// Food logged in Pulse counts in calories eaten, protein, carbs and fat beside Fitbit's synced totals, and a meal logged
+// Food logged in Halo counts in calories eaten, protein, carbs and fat beside Fitbit's synced totals, and a meal logged
 // in both apps counts once: the sums, the matching rules, the day loader every metric reads, and the Nutrition screen.
 import { beforeEach, describe, expect, it } from "vitest";
 import { openMemoryStore } from "@/data/memory";
@@ -117,7 +117,7 @@ describe("a meal logged in both apps", () => {
     expect(sameFood(p, entry(fitbit("f", TODAY, "20:00", { name: "Boiled eggs", meal: "UNKNOWN", kcal: 140 })))).toBe(false);
   });
 
-  it("pairs each Fitbit entry with one Pulse entry at most, the nearest", () => {
+  it("pairs each Fitbit entry with one Halo entry at most, the nearest", () => {
     const es = [
       fitbit("f", TODAY, "16:30", { name: "Banana", meal: "SNACK", kcal: 105 }),
       pulse("p1", TODAY, "10:00", { name: "Banana", meal: "SNACK", kcal: 105 }),
@@ -126,7 +126,7 @@ describe("a meal logged in both apps", () => {
     expect([...duplicates(es)]).toEqual([["p2", "f"]]);
   });
 
-  it("never pairs a Pulse entry the person marked as its own food, and asks nothing about it", async () => {
+  it("never pairs a Halo entry the person marked as its own food, and asks nothing about it", async () => {
     const es = [
       fitbit("f", TODAY, "13:00", { name: "Paneer butter masala", kcal: 450 }),
       pulse("p", TODAY, "13:05", { name: "Paneer", kcal: 300, separate: true }),
@@ -153,7 +153,7 @@ describe("a meal logged in both apps", () => {
   });
 });
 
-describe("Pulse's food in the day's totals", () => {
+describe("Halo's food in the day's totals", () => {
   const D = "2026-10-01";
 
   it("adds to Fitbit's synced totals, a repeated meal once", async () => {
@@ -167,7 +167,7 @@ describe("Pulse's food in the day's totals", () => {
     expect(await nutritionOn(store, D, TZ)).toEqual({ kcal: 900, protein: 40.5, carbs: 74, fat: 41, fiber: 8 });
   });
 
-  it("makes a day of its own where only Pulse logged, leaving out nutrients nobody gave", async () => {
+  it("makes a day of its own where only Halo logged, leaving out nutrients nobody gave", async () => {
     await store.addLoggedEntries([pulse("p-1", D, "20:00", { name: "Pizza", meal: "DINNER", kcal: 800, fat: 32 })]);
     const extra = (await loadDays(ctx, D, D)).get(D)!.extra;
     expect(extra).toEqual({ calories_in: 800, fat: 32 });
@@ -208,14 +208,14 @@ describe("Nutrition overview", () => {
   });
 
   it("puts today's totals against the targets, with the averages, the chart and today's food by meal", async () => {
-    // Fourteen days of burn (2,400 a day), a weight logged in Pulse, a week of food (2,000 kcal and 100 g protein a day).
+    // Fourteen days of burn (2,400 a day), a weight logged in Halo, a week of food (2,000 kcal and 100 g protein a day).
     await store.upsertMetrics(Array.from({ length: 14 }, (_, k) => ({ ...emptyMetrics(addDays(TODAY, -1 - k)), calories: 2400 })));
     await store.addLoggedEntries([{ id: "w-1", type: "weight", ts: at("2026-09-20", "07:00"), day: "2026-09-20", data: { kg: 80 }, createdAt: 0, source: "pulse" }]);
     for (let k = 1; k <= 7; k++) {
       const d = addDays(TODAY, -k);
       await store.addLoggedEntries([pulse(`p-${k}`, d, "13:00", { name: "Meal", kcal: 2000, protein: 100, carbs: 250, fat: 60 })]);
     }
-    // Today: Fitbit's breakfast, Pulse's repeat of it, Pulse's lunch from a photo.
+    // Today: Fitbit's breakfast, Halo's repeat of it, Halo's lunch from a photo.
     await syncFitbit(TODAY, [fitbit("hc-b", TODAY, "08:00", { name: "Idli sambar", meal: "BREAKFAST", kcal: 320, protein: 11 })]);
     await store.addLoggedEntries([
       pulse("t-1", TODAY, "08:05", { name: "Idli with sambar", meal: "BREAKFAST", kcal: 300, protein: 10 }),

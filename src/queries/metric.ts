@@ -1,6 +1,6 @@
 // A metric's own screen `/metric/[key]?d=&r=` (spec §11 MD1): one shell for every metric without a richer screen (the
 // day's value against its 30-day average, history over W / M / 6M / 1Y with the range's stats, where the number comes
-// from), plus the sections that make that metric useful, chosen per key below. Ported from Pulse's
+// from), plus the sections that make that metric useful, chosen per key below. Ported from Halo's
 // src/server/queries/metric.ts; the hourly section reads the day's steps from store.readSteps.
 import { addDays, localMidnight } from "@/lib/time";
 import {
@@ -115,7 +115,7 @@ const CONFIG: Record<DetailKey, Config> = {
 const SOURCE: Record<Group, string> = {
   activity: "Your health app's daily roll-up, counted by your band or your phone. Halo shows it as it comes and does not score it.",
   body: "Readings synced from your health app. A day without a reading shows the latest one before it.",
-  // mobile: water and food logged in Pulse's Journal add to the synced totals (common.ts loadDays, food.ts).
+  // mobile: water and food logged in Halo's Journal add to the synced totals (common.ts loadDays, food.ts).
   nutrition: "Your health app's daily total of your logs, plus what you log in Halo's Journal. A meal logged in both Halo and Fitbit counts once.",
   vitals: "Your health app's daily value, from your band or a connected device. Halo shades your usual range from the last 90 days.",
 };
@@ -133,7 +133,7 @@ const CALORIES = {
 /** The metric's definition in `units`: its value read already converted (weight, distance, elevation, water, core temperature). */
 function defOf(key: DetailKey, units: Units) {
   const t = localizeDef(key === "calories" ? CALORIES : TREND_METRICS.find((m) => m.key === key)!, units);
-  // mobile: an extra Pulse derives itself (activity minutes, AZM, average HR) says so in place of the group's source line.
+  // mobile: an extra Halo derives itself (activity minutes, AZM, average HR) says so in place of the group's source line.
   const note = (EXTRA_METRICS as readonly ExtraMetric[]).find((m) => m.key === key)?.note;
   return { key, label: t.label, unit: t.unit, format: t.format, direction: t.direction, pick: t.pick, partialToday: !!t.partialToday, note, ...CONFIG[key] };
 }
@@ -411,9 +411,9 @@ const BUILD: Record<Exclude<SectionKind, "outliers">, (s: SectionCtx, key: Detai
     return { kind: "workouts", active: finite(a) ? a : null, items };
   },
 
-  // mobile: the entries logged in Pulse's Journal (log.ts), kept on the phone only, and those the sync read from Health
-  // Connect (logged in Fitbit). Pulse's never reach Health Connect, so the day loader adds them to the roll-up (Fitbit's
-  // are in it already, and a Pulse food repeating a Fitbit one is left out: food.ts).
+  // mobile: the entries logged in Halo's Journal (log.ts), kept on the phone only, and those the sync read from Health
+  // Connect (logged in Fitbit). Halo's never reach Health Connect, so the day loader adds them to the roll-up (Fitbit's
+  // are in it already, and a Halo food repeating a Fitbit one is left out: food.ts).
   entries: async (s, key) => {
     const type = key === "water" ? "hydration-log" : "nutrition-log";
     const start = localMidnight(s.day, s.ctx.timeZone);

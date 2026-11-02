@@ -1,4 +1,4 @@
-// Pure mappers: Google Health API v4 data points → Pulse's rows (src/data/types.ts). No I/O. Ported from the web app's
+// Pure mappers: Google Health API v4 data points → Halo's rows (src/data/types.ts). No I/O. Ported from the web app's
 // src/server/sources/google/map.ts (shapes from Hælan's probe findings, see the web's docs/data-notes.md), with its
 // Postgres rows swapped for the Store's: a daily type fills some Metrics columns (the sync merges them into the day's
 // row), roll-up extras become DailyValues, ECG and irregular-rhythm records become HealthRecords.
@@ -50,7 +50,7 @@ export const bodyKey = (type: DataTypeId | string) => type.replace(/-(\w)/g, (_,
 /** Where a point came from: FITBIT for the band, HEALTH_CONNECT for the phone and other apps. */
 export const platform = (p: unknown) => str(at(p, "dataSource.platform"));
 
-// --- Daily rows -----------------------------------------------------------------------------------
+// Daily rows
 
 /** Some of a day's Metrics columns; the sync merges them into the stored row. */
 export type MetricsPatch = Partial<Omit<Metrics, "day">>;
@@ -81,7 +81,7 @@ const DAILY = {
   "body-fat": (o: Obj): MetricsPatch => ({ bodyFatPct: num(o.percentage) }),
 } satisfies Partial<Record<DataTypeId, (o: Obj) => MetricsPatch>>;
 
-/** Google's zone order; Pulse's zones 1-4 are these. */
+/** Google's zone order; Halo's zones 1-4 are these. */
 const ZONE_TYPES = ["LIGHT", "MODERATE", "VIGOROUS", "PEAK"];
 
 /**
@@ -119,7 +119,7 @@ const ROLLUP = {
   // Value path unobserved (Hælan saw floors.countSum, an int64 string); confirm on Fitbit Air.
   steps: (o: Obj): MetricsPatch => ({ steps: int(o.countSum) }),
   "total-calories": (o: Obj): MetricsPatch => ({ calories: num(o.kcalSum) }),
-  // LIGHT + MODERATE and VIGOROUS + PEAK, Pulse Age's two activity terms. A zone the day lacks counts as 0;
+  // LIGHT + MODERATE and VIGOROUS + PEAK, Halo Age's two activity terms. A zone the day lacks counts as 0;
   // a point with no zones at all is skipped.
   "time-in-heart-rate-zone": (o: Obj): MetricsPatch => {
     const zones = list(o.timeInHeartRateZones);
@@ -163,7 +163,7 @@ export function mapRollup(type: RollupType, points: unknown[]): MetricsRow[] {
   return out;
 }
 
-// --- Intraday -------------------------------------------------------------------------------------
+// Intraday
 
 /**
  * Band heart rate, unix second → bpm. HEALTH_CONNECT carries phone and third-party apps, so it is dropped: the
@@ -210,7 +210,7 @@ export function mapStepsMinutes(points: unknown[]): Map<number, number> {
   return out;
 }
 
-// --- Sessions -------------------------------------------------------------------------------------
+// Sessions
 
 const STAGES: Record<string, Stage> = { AWAKE: "awake", LIGHT: "light", DEEP: "deep", REM: "rem" };
 
@@ -315,7 +315,7 @@ export function mapExercises(points: unknown[], tz: string): Exercise[] {
   return [...out.values()];
 }
 
-// --- Extra metrics (shown, not scored) --------------------------------------------------------------
+// Extra metrics (shown, not scored)
 
 /** Seconds from a proto Duration ("3600s", "1.5s"). */
 const durationS = (v: unknown) => (typeof v === "string" && /^-?\d+(\.\d+)?s$/.test(v) ? Number(v.slice(0, -1)) : null);

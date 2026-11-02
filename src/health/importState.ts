@@ -1,4 +1,4 @@
-// What the Health Connect import remembers between syncs, outside the Store (it describes Health Connect, not Pulse's
+// What the Health Connect import remembers between syncs, outside the Store (it describes Health Connect, not Halo's
 // rows): the changes token and the types it was taken for, and the importer version and source policy the stored rows
 // were imported under (sync.ts re-imports the whole history window when either differs).
 import AsyncStorage from "@react-native-async-storage/async-storage";

@@ -16,9 +16,9 @@ import { ageDelta } from "./format";
 import { blobRadius, hexRGB, mixRGB, ORB, orbColors, particleCount, particleLayer, rgba, rng, shadeRGB, swirlVelocity, type RGB } from "./orb";
 
 export type AgeOrbProps = {
-  /** Pulse Age, the number in the middle. */
+  /** Halo Age, the number in the middle. */
   age: number | null;
-  /** Pulse Age minus chronological age; positive is older. */
+  /** Halo Age minus chronological age; positive is older. */
   deltaYears: number | null;
   provisional?: boolean;
   /** Box size in px (default 300). Below 160 it drops the delta line and does not respond to touch. */
@@ -51,7 +51,7 @@ const coast = (t: number) => {
   return (1 - Math.exp(-COAST_K * t)) / COAST_NORM;
 };
 
-// --- The ambient waves, from one linear clock in seconds (UI-thread worklets) ---
+// The ambient waves, from one linear clock in seconds (UI-thread worklets)
 
 /** A wave's phase in [0, 1): the clock in cycles of `period` seconds, wrapped. */
 const phase = (t: number, period: number) => {
@@ -71,7 +71,7 @@ const turns = (t: number, k: number) => {
 };
 
 /**
- * Pulse Age hero (docs/design/orb.md), ported from the web's canvas AgeOrb: the same noise-edged blob, rim colours by
+ * Halo Age hero (docs/design/orb.md), ported from the web's canvas AgeOrb: the same noise-edged blob, rim colours by
  * delta, black core, outer glow, rim light and seeded particle field. The canvas redraws every frame; here each part
  * is a static SVG drawn once, and only the views around them move (transform and opacity, Reanimated styles computed
  * by worklets on the UI thread), so the motion costs no JS per frame:
@@ -98,7 +98,7 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
   // with its numbers: the slide itself runs over an empty box.
   const opened = useAfterTransition();
 
-  // --- Drivers: an entry, one linear clock (seconds) for every ambient loop, and the press swirl (turns, gather). ---
+  // Drivers: an entry, one linear clock (seconds) for every ambient loop, and the press swirl (turns, gather).
   // A bare orb (Calm) skips the spiral-in: it is drawn settled.
   const [entered] = React.useState(() => bare || reduceMotionNow());
   const enter = useSharedValue(entered ? 1 : 0);
@@ -148,7 +148,7 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
     return settle;
   }, [live, wake, settle]);
 
-  // --- Press and hold (a bare orb turns at any size) ---
+  // Press and hold (a bare orb turns at any size)
   const interactive = (bare || !small) && !reduce;
   const press = React.useRef<{ t0: number; x: number; y: number } | null>(null);
   React.useEffect(
@@ -205,7 +205,7 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
     [release],
   );
 
-  // --- The layers: drawn once per size, delta and theme; the animated tree around them is built once too. ---
+  // The layers: drawn once per size, delta and theme; the animated tree around them is built once too.
   // The core is dark in both schemes (the person asked for the dark centre back), so its text is always the dark
   // scheme's: light on the deep core, which reads as part of the orb rather than printed over it.
   const art = React.useMemo(() => (opened ? drawOrb(size, delta, small, (t: ColorToken) => hexRGB(c[t]), hexRGB(DARK.orbCore), hexRGB(DARK.orbHighlight)) : null), [opened, size, delta, small, c]);

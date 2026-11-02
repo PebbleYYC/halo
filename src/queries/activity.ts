@@ -1,4 +1,4 @@
-// Activity `/activity/[id]` (spec §7.4). Ported from Pulse's src/server/queries/activity.ts.
+// Activity `/activity/[id]` (spec §7.4). Ported from Halo's src/server/queries/activity.ts.
 import type { Metric } from "@/lib/reasons";
 import { addDays } from "@/lib/time";
 import {

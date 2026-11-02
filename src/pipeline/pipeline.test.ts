@@ -118,7 +118,7 @@ describe("parity with the web app", () => {
   const GOLDEN_9: Record<string, string> = {
     // Mobile's SCORING_VERSION is 15 (the web's 9 hashed to "06731b2819e3281d", mobile's 10 to "bfc634c893f9c22c", 11 to
     // "16e50b07b414d86c", 12 to "939826e567133b72", 13 to "d458be542084860d", 14 to "d9daea29ed5fa736"): every row carries
-    // the new number. 14: Pulse Age's sleep consistency pools pairs of nights (below). 11: the Pulse Age rebuild
+    // the new number. 14: Halo Age's sleep consistency pools pairs of nights (below). 11: the Halo Age rebuild
     // (WHOOP-parity model, bout zone minutes, Fitness Age). 12: its refinements after checking the sources (step curves by
     // age, brisk minutes twice). 13: Fitness Age's real zone minutes and clock-time wake minutes on DST days (below).
     // 15: WHOOP's 2024 zones and the recalibrated Strain (strain.ts; the lines below say what each change moved).
@@ -191,18 +191,18 @@ describe("parity with the web app", () => {
     // which tempers a few days' scores (the seeded illness's 2026-08-03 scores 51 where it scored 69). The web's
     // value was "3a2163c7f92d4dab".
     "daily_scores.health_monitor": "abb58b72955859e1",
-    // Mobile rebuilds Pulse Age on WHOOP's Healthspan method (src/core/algorithms/healthspan.ts): 6.0 years per ln HR
+    // Mobile rebuilds Halo Age on WHOOP's Healthspan method (src/core/algorithms/healthspan.ts): 6.0 years per ln HR
     // (WHOOP's 10 × an overlap factor of 0.6) with no 9/n rescaling (a missing term counts 0), WHOOP's references and
     // curves (sleep from 7 h, Arem and Ahmadi zone curves, strength flat after 40 min, lean mass as body fat %), zone time
     // only inside workouts or in 10-minute bouts (stage 1's `boutZoneSeconds`), steps, zones and strength only on days
     // with 12 h of heart rate, Pace = 1 + (Δ30 − Δ180) / 0.5 shown from 21 of 30 days, and the day's Fitness Age
-    // estimate (`fitnessEstimate`). Today's Pulse Age goes from +1.32 to −3.95 (the seed is a fit 36-year-old: VO2 max
+    // estimate (`fitnessEstimate`). Today's Halo Age goes from +1.32 to −3.95 (the seed is a fit 36-year-old: VO2 max
     // 44 against WHOOP's 41, 10,200 steps, 236 bouted moderate minutes a week). The web's value was "683be47b969df06b".
     // Version 12, after checking the sources: Paluch's age-specific step curves, a minute at 60–80 % of the reserve
     // counting twice in zones 1–3 (moderate-equivalent minutes, Arem's dose), and the overlap factor refit to 4.77.
-    // Version 13: the doubled minutes are Pulse Age's dose only. Fitness Age's activity index (`fitnessEstimate`) had read
+    // Version 13: the doubled minutes are Halo Age's dose only. Fitness Age's activity index (`fitnessEstimate`) had read
     // them as real minutes, so more days counted as active, active days ran longer and the vigorous share shrank; it reads
-    // each minute once now. Today's index goes from 5 to 3.75 and Fitness Age from 32.0 to 33.0; Pulse Age itself is
+    // each minute once now. Today's index goes from 5 to 3.75 and Fitness Age from 32.0 to 33.0; Halo Age itself is
     // unchanged (the seed has a measured VO2max). Version 12's value was "02d38912d1963795".
     // Version 14: the sleep-consistency term pools the window's pairs of nights, each pair once (sriPair), instead of
     // averaging the daily 7-day SRIs, which counted the first nights up to six times. Version 13's value was

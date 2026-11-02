@@ -7,7 +7,7 @@ const at = (day: string, t: string) => `${day}T${t}+05:30`;
 const fitbit = (type?: number) => ({ dataOrigin: "com.fitbit.FitbitMobile", device: type == null ? null : { type } });
 
 describe("data check summary", () => {
-  it("splits a day's steps by app and device and shows what Pulse stored", () => {
+  it("splits a day's steps by app and device and shows what Halo stored", () => {
     const steps: RawRecord[] = [
       { metadata: fitbit(1), startTime: at("2026-10-06", "08:00:00"), endTime: at("2026-10-06", "09:00:00"), count: 4000 },
       { metadata: fitbit(1), startTime: at("2026-10-06", "18:00:00"), endTime: at("2026-10-06", "19:00:00"), count: 2000 },

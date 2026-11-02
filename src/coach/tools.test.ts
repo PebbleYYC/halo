@@ -1,4 +1,4 @@
-// The coach's tools over the 180-day demo seed on the in-memory Store, as Pulse's src/server/coach/tools.test.ts runs
+// The coach's tools over the 180-day demo seed on the in-memory Store, as Halo's src/server/coach/tools.test.ts runs
 // them over its seeded database: each tool returns this person's own numbers (the store bound to the ctx), with
 // reasons for gaps, and nothing from another store.
 import { beforeAll, describe, expect, it } from "vitest";
@@ -86,7 +86,7 @@ describe("coach tools", () => {
     expect(s.asleepMinutes.value).toBeGreaterThan(0);
   });
 
-  it("get_day reads this person's stored scores, with a guidance line and only Pulse's scales", async () => {
+  it("get_day reads this person's stored scores, with a guidance line and only Halo's scales", async () => {
     const day = await call(coachTools(ctx).get_day, { day: "2026-09-30" });
     const stored = await store.getScores("2026-09-30");
     expect(day.day).toBe("2026-09-30");

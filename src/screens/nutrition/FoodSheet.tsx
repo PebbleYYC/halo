@@ -1,5 +1,5 @@
 // The food sheet: add food three ways (a photo, taken or chosen; a few words; or typed in), check an AI estimate as an
-// editable list before saving, and edit a food logged in Pulse. Opened from the Journal's Food tile (Today's quick log
+// editable list before saving, and edit a food logged in Halo. Opened from the Journal's Food tile (Today's quick log
 // lands there through `/journal?log=food`) and from Nutrition.
 //
 // Estimates use the person's own coach provider and key (Settings › Coach); without one the sheet says so, links to
@@ -39,9 +39,9 @@ import { CalmButton, IconTile, Notice, SectionLabel, Sentence, TintPill, useCalm
 
 const PressableView = Animated.createAnimatedComponent(Pressable);
 
-// ── Opening ─────────────────────────────────────────────────────────────────
+// Opening
 
-/** One opening of the sheet: its time and meal to start from, and the Pulse entry being edited, if any. */
+/** One opening of the sheet: its time and meal to start from, and the Halo entry being edited, if any. */
 export type FoodRequest = { id: number; at: string; meal: Meal; edit: FoodItem | null };
 
 let seq = 0;
@@ -69,7 +69,7 @@ export type FoodSheetProps = {
   overviewLink?: boolean;
 };
 
-// ── Small parts ─────────────────────────────────────────────────────────────
+// Small parts
 
 type Step = "start" | "manual" | "estimating" | "review" | "failed";
 type Problem = EstimateProblem | "no_food";
@@ -291,7 +291,7 @@ function problemCopy(p: Problem, provider: string, photo: boolean): { title: str
   }
 }
 
-// ── The sheet ───────────────────────────────────────────────────────────────
+// The sheet
 
 const COACH_SETTINGS = "/coach/settings" as Href;
 
@@ -344,7 +344,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     router.push(href);
   };
 
-  // ── Estimating ──
+  // Estimating
 
   const estimate = async (input: EstimateInput, shot: MealPhoto | null) => {
     if (ended.current) return;
@@ -440,7 +440,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     setStep("manual");
   };
 
-  // ── Saving ──
+  // Saving
 
   const done = (message: string) => {
     onClose();
@@ -493,7 +493,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     setError(null);
   };
 
-  // ── Parts per step ──
+  // Parts per step
 
   const showTyped = step === "manual" || (step === "start" && setup !== undefined && !hasKey);
 

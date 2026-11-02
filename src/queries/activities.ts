@@ -1,4 +1,4 @@
-// Activities `/activities`. Ported from Pulse's src/server/queries/activities.ts.
+// Activities `/activities`. Ported from Halo's src/server/queries/activities.ts.
 import { addDays } from "@/lib/time";
 import { detectedItem, getActivityCost } from "./activityCost";
 import { activityItem, loadDays, type QueryCtx, todayOf, toStrain } from "./common";

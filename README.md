@@ -45,6 +45,12 @@ How each score is calculated is in the app under More › How Halo works. The re
 
 Recovery needs 7 nights of HRV before its first score. More › Diagnostics shows what each app has written if a score stays empty.
 
+## Blood oxygen (SpO2)
+
+The Google Health app doesn't share SpO2 with Health Connect, so Halo can read just that from your Google account while everything else still comes from Health Connect: Settings › Data source › Blood oxygen › **Get SpO2 from Google**. It asks for read-only access to health metrics. A night's SpO2 comes from your journal first, then Health Connect, then Google.
+
+This needs a Google Cloud project with the Google Health API enabled and an Android OAuth client for package `app.halo.health` and the SHA-1 of the key that signs your APK (`keytool -list -v -keystore <your keystore>`). If you build your own APK, register your own key's SHA-1, not the one in `src/google/setup.ts`. You can still type SpO2 in by hand under Journal › Log.
+
 ## Updates
 
 Halo checks this repository's [latest release](../../releases/latest) each time it opens, and in the background. When there's a newer version it shows a notification once and the update dialog every time you open the app, and **Update** downloads the release's APK and opens Android's installer (the first time, Android asks you to allow installs from Halo). The update installs over your current app and keeps your data. More › About › Check for updates checks at once.

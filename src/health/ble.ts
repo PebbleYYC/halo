@@ -4,9 +4,9 @@
 // side (src/state/liveBle.tsx) turns samples into what the screens draw; the parsing is src/health/bleHr.ts.
 //
 // The band (a Fitbit Air with Google Health › Fitbit Air › Connections › Share heart rate on) serves one connection
-// at a time and sharing costs its battery, so Pulse only holds it while it is on screen: 30 s after Pulse leaves the
+// at a time and sharing costs its battery, so Halo only holds it while it is on screen: 30 s after Halo leaves the
 // foreground the link is let go, and it is picked up again on return. The chosen band is remembered
-// ("pulse.ble.device"); with auto-connect on (off by default, for the band's battery) Pulse reconnects to it whenever it
+// ("pulse.ble.device"); with auto-connect on (off by default, for the band's battery) Halo reconnects to it whenever it
 // comes to the foreground. A dropped link retries with exponential backoff, then gives up and says why.
 //
 // Nothing here throws to the UI: no Bluetooth (the emulator), a refused permission or a radio that is off become a
@@ -160,7 +160,7 @@ class LiveHeartRate {
   private found = new Map<string, FoundDevice>();
   private error: string | null = null;
   private retryAt: number | null = null;
-  /** Whether Pulse was in the foreground at the last AppState change (edge detection only; see foreground()). */
+  /** Whether Halo was in the foreground at the last AppState change (edge detection only; see foreground()). */
   private wasForeground = true;
 
   private snapshot: BleSnapshot;
@@ -180,13 +180,13 @@ class LiveHeartRate {
   private beatTimer: ReturnType<typeof setTimeout> | null = null;
   private bgTimer: ReturnType<typeof setTimeout> | null = null;
   private wasLive = false;
-  /** The person disconnected: no automatic connect until they connect again or Pulse restarts. */
+  /** The person disconnected: no automatic connect until they connect again or Halo restarts. */
   private userStopped = false;
   /** The background grace let go of this band; coming back picks it up again. */
   private resume: BleDevice | null = null;
   /**
    * When a scan was asked for while the radio was off or the permission missing: it runs once both are fine, if that
-   * happens within PENDING_SCAN_MS (the dialogs that grant them briefly put Pulse in the background).
+   * happens within PENDING_SCAN_MS (the dialogs that grant them briefly put Halo in the background).
    */
   private pendingScanAt: number | null = null;
   /** Bumped per scan the person starts, so an overtaken scan's end does not reset the state. */
@@ -202,7 +202,7 @@ class LiveHeartRate {
     this.snapshot = this.build();
   }
 
-  // ── Subscriptions ─────────────────────────────────────────────────────────
+  // Subscriptions
 
   getSnapshot = (): BleSnapshot => this.snapshot;
 
@@ -264,7 +264,7 @@ class LiveHeartRate {
   private foreground = () => isForeground(AppState.currentState);
   private ready = () => !!this.manager && this.radio === "on" && this.permission === "granted";
 
-  // ── Start ─────────────────────────────────────────────────────────────────
+  // Start
 
   /** Reads the saved band and settings, the permission and the radio; then connects if it should. Idempotent. */
   start() {
@@ -291,7 +291,7 @@ class LiveHeartRate {
         }
       }
       // Off unless the person switched it on (Settings › Live heart rate › Connect automatically): sharing costs the
-      // band's battery, so opening Pulse never connects to it on its own.
+      // band's battery, so opening Halo never connects to it on its own.
       this.autoConnect = auto === "1";
       // Stopped last time: stay off when the app opens again (no search, no "Connecting…") until Go live.
       this.userStopped = stopped === "1";
@@ -359,7 +359,7 @@ class LiveHeartRate {
     if (this.radio === "on") this.maybeConnect();
   }
 
-  // ── Permissions and the radio ─────────────────────────────────────────────
+  // Permissions and the radio
 
   private permissions(): Permission[] {
     return apiLevel() >= 31
@@ -380,7 +380,7 @@ class LiveHeartRate {
 
   /**
    * Shows Android's Nearby devices dialog. After "Don't allow" twice Android stops showing it ("never ask again"):
-   * then this opens Pulse's page in Android settings instead. Connects afterwards if something was waiting for it.
+   * then this opens Halo's page in Android settings instead. Connects afterwards if something was waiting for it.
    */
   requestPermission = async (): Promise<BlePermission> => {
     const p = await this.askPermission();
@@ -424,7 +424,7 @@ class LiveHeartRate {
   };
 
   /**
-   * Asks Android to turn Bluetooth on: the system "Allow Pulse to turn on Bluetooth?" dialog, else (older Android)
+   * Asks Android to turn Bluetooth on: the system "Allow Halo to turn on Bluetooth?" dialog, else (older Android)
    * the adapter directly, else the Bluetooth settings page. False when none of those could be shown.
    */
   turnOnBluetooth = async (): Promise<boolean> => {
@@ -468,7 +468,7 @@ class LiveHeartRate {
     return this.radio === "on";
   }
 
-  // ── Scanning ──────────────────────────────────────────────────────────────
+  // Scanning
 
   /** Looks for bands sharing heart rate for 15 s; `found` fills as they appear. Turning Bluetooth on resumes it. */
   scan = async (): Promise<void> => {
@@ -564,7 +564,7 @@ class LiveHeartRate {
     });
   }
 
-  // ── Connecting ────────────────────────────────────────────────────────────
+  // Connecting
 
   /** Connects to a band from the scan (or the remembered one) and remembers it. */
   connect = async (id: string): Promise<void> => {
@@ -851,7 +851,7 @@ class LiveHeartRate {
     if (id && this.manager) await this.manager.cancelDeviceConnection(id).catch(() => {});
   }
 
-  // ── Foreground and background ─────────────────────────────────────────────
+  // Foreground and background
 
   private onAppState(next: AppStateStatus) {
     const wasFg = this.wasForeground;
@@ -871,7 +871,7 @@ class LiveHeartRate {
     }
     if (!wasFg) return;
     // Leaving: a scan stops now; a pending reconnect waits; the band itself is let go after the grace period. (A
-    // scan waiting for a permission or Bluetooth dialog stays pending: those dialogs pause Pulse too.)
+    // scan waiting for a permission or Bluetooth dialog stays pending: those dialogs pause Halo too.)
     if (this.link === "scanning") this.endScan("cancel");
     if (this.retryTimer) {
       this.clearRetry();
@@ -885,7 +885,7 @@ class LiveHeartRate {
     if (this.foreground()) return;
     const target = this.want;
     await this.dropWant();
-    // Picked up again when Pulse comes back (maybeConnect), whatever the auto-connect setting: this was a pause.
+    // Picked up again when Halo comes back (maybeConnect), whatever the auto-connect setting: this was a pause.
     this.resume = target;
   }
 }

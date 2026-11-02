@@ -146,7 +146,7 @@ function Effect({ vm }: { vm: RecoveryVM }) {
   return <DriverList variant="recovery" unit="pts" data={m} inCard />;
 }
 
-// ── The week ─────────────────────────────────────────────────────────────────
+// The week
 
 /** The plot's height, its right axis and the bars' width (whole capsules). */
 const WEEK_H = 120;
@@ -241,7 +241,7 @@ function WeekBar({ index, left, top, color, opacity }: { index: number; left: nu
   return <Animated.View style={[{ position: "absolute", left, top, width: BAR_W, height: h, borderRadius: BAR_W / 2, backgroundColor: color, opacity, transformOrigin: "bottom" }, anim]} />;
 }
 
-// ── Tomorrow ─────────────────────────────────────────────────────────────────
+// Tomorrow
 
 /** Tomorrow's estimate: a ring in its band's colour with the number in it, the likely range, then what it rests on. */
 function Forecast({ vm }: { vm: RecoveryVM }) {

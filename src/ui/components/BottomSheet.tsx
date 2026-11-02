@@ -78,7 +78,7 @@ export function useSheetFieldAtTop(ref: React.RefObject<TextInput | null>) {
   }, [set, ref]);
 }
 
-// --- Motion ---
+// Motion
 
 /**
  * The open and close: a critically damped spring (ω ≈ 26 rad/s), 95 % there in 180 ms and settled by about 300 ms,
@@ -98,7 +98,7 @@ const CONTENT_IN = css.keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });
 /** The height the content last had, per sheet title: the next open reserves it, so the sheet opens to its real size. */
 const lastHeight = new Map<string, number>();
 
-// --- The chrome around the content, rendered at the portal host ---
+// The chrome around the content, rendered at the portal host
 
 /**
  * What the sheet's handle, footer, background and content read. The sheet renders at the root's portal host
@@ -233,7 +233,7 @@ function SheetFooter({ animatedFooterPosition }: BottomSheetFooterProps) {
   );
 }
 
-// --- Keyboard ---
+// Keyboard
 
 const SHOWN = KEYBOARD_STATUS.SHOWN;
 const HIDDEN = KEYBOARD_STATUS.HIDDEN;
@@ -313,7 +313,7 @@ const useTrackedScrollHandlers: ScrollEventsHandlersHookType = (ref, contentOffs
   return { ...handlers, handleOnScroll, handleOnEndDrag, handleOnMomentumEnd };
 };
 
-// --- Content ---
+// Content
 
 type ContentProps = { children: React.ReactNode; cacheKey: string | null; estimate: number; footer: boolean; keyboardGap: number; bottom: number };
 

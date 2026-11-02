@@ -1,6 +1,6 @@
 // The chart explorer `/chart?metric=&r=&d=&compare=` (mobile only): any daily metric the Trends and metric screens
 // know, plus the trend cards that live outside that catalogue (sleep efficiency and debt, restorative sleep, workout
-// duration, SpO2, skin temperature, VO2 max, Pulse Age, Energy Bank), over the whole stored history; and the intraday
+// duration, SpO2, skin temperature, VO2 max, Halo Age, Energy Bank), over the whole stored history; and the intraday
 // views behind the day charts (heart rate, Day Strain as it builds, stress, Energy Bank, the night's stages and heart
 // rate). Built from the same day rows and series as the screens' own queries, so every number matches the card it was
 // opened from.
@@ -119,7 +119,7 @@ export const CHART_METRICS: readonly ChartDef[] = [
     format: "decimal1",
     colorBy: "single",
     direction: "down",
-    // One result a week, at the ISO week's end (Pulse Age history's points).
+    // One result a week, at the ISO week's end (Halo Age history's points).
     pick: (r) => (isSunday(r.day) && r.healthspan && r.healthspan.reason === null ? r.healthspan.pulseAge : null),
     mark: "line",
     sparse: true,
@@ -144,7 +144,7 @@ export const DAY_VIEW: Record<DayView, { label: string; unit?: string; format: F
   energy: { label: "Energy Bank", unit: "%", format: "int" },
 };
 
-// ── Daily series ────────────────────────────────────────────────────────────
+// Daily series
 
 /** Up to five years back (the store keeps what the sync imported; most accounts hold months). */
 const MAX_DAYS = 5 * 365 + 1;
@@ -203,7 +203,7 @@ export async function getChartSeries(key: string, ctx: QueryCtx): Promise<ChartS
   return { key: def.key, ...(def.unit && { unit: def.unit }), today, days, values, provisional, partial, baseline, reference };
 }
 
-// ── Intraday views ──────────────────────────────────────────────────────────
+// Intraday views
 
 export type Stage = "awake" | "rem" | "light" | "deep";
 

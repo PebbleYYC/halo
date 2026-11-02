@@ -1,4 +1,4 @@
-// The coach's answer text as blocks, ported from Pulse's Prose.tsx: paragraphs, "- " or "1. " lists and **bold**,
+// The coach's answer text as blocks, ported from Halo's Prose.tsx: paragraphs, "- " or "1. " lists and **bold**,
 // nothing else (the instructions ask for that). A list may follow its lead-in line inside one block ("Here is the
 // plan:\n- …"). Plain data, so the screen renders it with Text and tests read it without React Native.
 

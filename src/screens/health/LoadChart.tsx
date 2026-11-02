@@ -1,4 +1,4 @@
-// Fitness (CTL), fatigue (ATL) and form (TSB) over 90 days (spec §7.10), ported from Pulse's health/fitness/LoadChart.tsx
+// Fitness (CTL), fatigue (ATL) and form (TSB) over 90 days (spec §7.10), ported from Halo's health/fitness/LoadChart.tsx
 // (a Recharts ComposedChart) onto the kit's Skia chart pieces in the Apple Health language: form as thin capsules around
 // a dashed zero line (past days at 35 %, today in full), fitness as a smooth line over a fill that fades to nothing with
 // today's point ringed, fatigue as a thinner line; dashed hairline rows, the value axis on the right, the months under

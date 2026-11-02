@@ -1,7 +1,7 @@
 // Behaviour insights `/journal/insights?m=` (spec §7.12, journey 7), ported from the web's
 // src/app/(app)/journal/insights/{page,Impacts,loading}.tsx, in the iOS look: the heading and explainer over the
 // Recovery / HRV / Sleep segmented control, the impact list (a row opens its detail sheet: the effect as a Health
-// number over an inset list of the figures behind it), then "Keep logging to unlock" as Health cards, each with a
+// number over an inset list of the figures behind it), then "Not enough days yet" as Health cards, each with a
 // capsule that grows to how many of the ten days are logged, and the footnote.
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
@@ -150,14 +150,14 @@ function ImpactList({ vm }: { vm: JournalInsightsVM }) {
   );
 }
 
-/** The reference app's "Keep logging to unlock" group: one Health card per behaviour, its capsule growing to its days logged of ten. */
+/** The "Not enough days yet" group: one Health card per behaviour, its capsule growing to its days logged of ten. */
 function Unlock({ needsMore, word }: { needsMore: JournalInsightsVM["needsMore"]; word: string }) {
   const c = useCalm();
   return (
     <View style={{ gap: 12 }}>
       <View style={{ gap: 4, paddingHorizontal: 4 }}>
         <Title header size={22}>
-          Keep logging to unlock
+          Not enough days yet
         </Title>
         <Sentence>{`Log a behaviour as Yes on at least 5 days and No on at least 5 to see how it changes your next-day ${word}.`}</Sentence>
       </View>

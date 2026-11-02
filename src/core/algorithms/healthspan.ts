@@ -1,4 +1,4 @@
-// Own algorithm: Pulse Age and Pace of Aging, rebuilt on WHOOP's Healthspan method (WHOOP Age white paper, 2025). Each
+// Own algorithm: Halo Age and Pace of Aging, rebuilt on WHOOP's Healthspan method (WHOOP Age white paper, 2025). Each
 // of nine inputs maps to a log hazard ratio (ln HR) of all-cause mortality through a dose-response curve pinned from a
 // cited paper, taken against a reference profile (WHOOP's recommendations where it publishes them), and the weighted sum
 // turns into years at `yearsPerLnHr`. A missing input counts as no effect. The overall shape (curves, reference, sum,
@@ -33,7 +33,7 @@ export interface HealthspanDay {
    * The newest pair of that 7-day window (last night against the night before): minutes in the same state, of those
    * compared. With these, the window's SRI pools every pair once (−100 + 200 · same / compared); averaging the daily
    * 7-day SRIs instead counts a night in up to six of them, so with a few days of data the first nights outweighed the
-   * rest and Pulse Age's consistency differed from the Sleep screen's over the very same nights.
+   * rest and Halo Age's consistency differed from the Sleep screen's over the very same nights.
    */
   sriPair?: SriPair | null;
   /**
@@ -52,7 +52,7 @@ export interface HealthspanDay {
   vo2maxRun?: number | null;
   /** Estimated VO2max from Fitbit or another app: Health Connect's heart-rate-ratio and "other" methods. */
   vo2maxDaily?: number | null;
-  /** Pulse's own estimate (fitnessLevel.ts fitnessEstimate), used only when neither of the above exists. */
+  /** Halo's own estimate (fitnessLevel.ts fitnessEstimate), used only when neither of the above exists. */
   vo2maxEstimated?: number | null;
   /** Fitbit's daily resting HR, bpm. */
   restingHr?: number | null;
@@ -102,9 +102,9 @@ const curveOf = (key: keyof typeof curves, age: number): Knots => (key === "step
 
 export type HealthspanInput = keyof typeof curves | "leanMass";
 
-/** Pulse Age's nine inputs, in contribution order. */
+/** Halo Age's nine inputs, in contribution order. */
 const TERMS: readonly HealthspanInput[] = [...(Object.keys(curves) as (keyof typeof curves)[]), "leanMass"];
-/** How many terms Pulse Age has in all (9). */
+/** How many terms Halo Age has in all (9). */
 export const HEALTHSPAN_TERM_COUNT = TERMS.length;
 
 /**
@@ -120,7 +120,7 @@ export const healthspanConfig = {
   /**
    * Years per unit of Σ w·ln HR. WHOOP's effective age is t = ln HR / ln(HR per year of age) = 10 × ln HR (white paper:
    * mortality rises about 10 % a year of age). WHOOP then removes the overlap between correlated inputs with a
-   * structural equation model fit to its members' data; Pulse can't refit that, so one overlap factor was fit by least
+   * structural equation model fit to its members' data; Halo can't refit that, so one overlap factor was fit by least
    * squares to WHOOP's four Table 2 profiles: 0.477, so 10 × 0.477 ≈ 4.77 (they land at 5.98, −0.58, 7.67 and −0.68
    * against WHOOP's 6, −1.6, 7.5 and −1.6). It was 0.6 with Paluch's all-ages step curve; the age-specific one (no gain
    * past ~8,900 steps under 60) credits WHOOP's 11,000-step members less, which is where the remaining gap is. Summing
@@ -128,15 +128,15 @@ export const healthspanConfig = {
    * 0.26, while their single-factor HRs sum to about 2.3× that ln HR), so a factor well under 1 is expected.
    */
   yearsPerLnHr: 4.77,
-  /** Pulse Age = age ± at most this. */
+  /** Halo Age = age ± at most this. */
   clampYears: 15,
-  /** Pace = 1 + (Δ30d − Δ6mo) / 0.5: the 30-day Pulse Age held for 6 months, against 6 months of calendar time (WHOOP). */
+  /** Pace = 1 + (Δ30d − Δ6mo) / 0.5: the 30-day Halo Age held for 6 months, against 6 months of calendar time (WHOOP). */
   paceScaleYears: 0.5,
   paceMin: -1,
   paceMax: 3,
   /** Pace shows only with at least this many of the last 30 days with data. */
   paceMinDays: 21,
-  /** Weight of an estimated input: Fitbit's or Pulse's VO2max, body fat from BMI. */
+  /** Weight of an estimated input: Fitbit's or Halo's VO2max, body fat from BMI. */
   estimateWeight: 0.5,
   runVo2maxLookbackDays: 90,
   ageWindowDays: 180,
@@ -153,7 +153,7 @@ export const healthspanConfig = {
    * from 60 (WHOOP: lower body fat stops predicting lower mortality in older adults).
    */
   bodyFat: { hrPer10Points: 1.11, maxCreditPoints: 5, noEffectFromAge: 60 },
-  /** The reference profile: Pulse Age = age when every input sits here (WHOOP's recommendations unless noted). */
+  /** The reference profile: Halo Age = age when every input sits here (WHOOP's recommendations unless noted). */
   reference: {
     restingHr: { male: 60, female: 64 },
     sleepHours: 7,
@@ -175,7 +175,7 @@ export const deurenbergBodyFat = (bmi: number, age: number, sex: Sex) => 1.2 * b
 const byAge = (age: number, r: { at: number[]; minutes: number[] }) =>
   piecewiseLinear([[r.at[0], r.minutes[0]], [r.at[1], r.minutes[1]]], age);
 
-/** The profile that scores Pulse Age = chronological age. `leanMass` is lean mass %, 100 − the body-fat reference. */
+/** The profile that scores Halo Age = chronological age. `leanMass` is lean mass %, 100 − the body-fat reference. */
 export function referenceProfile(age: number, sex: Sex): Record<HealthspanInput, number> {
   const r = healthspanConfig.reference;
   return {
@@ -204,9 +204,9 @@ export interface HealthspanContribution {
   /** The window's value in the term's units (weekly minutes for zones and strength, lean mass % for lean mass). */
   value: number;
   reference: number;
-  /** Signed years added to Pulse Age; they sum to the unclamped Δage. */
+  /** Signed years added to Halo Age; they sum to the unclamped Δage. */
   years: number;
-  /** An estimate counted at half weight: Fitbit's or Pulse's VO2max, or body fat from BMI. */
+  /** An estimate counted at half weight: Fitbit's or Halo's VO2max, or body fat from BMI. */
   estimated?: boolean;
 }
 
@@ -227,7 +227,7 @@ export type Vo2maxSource = "run" | "daily" | "estimate";
 
 export interface HealthspanResult {
   pulseAge: number;
-  /** Pulse Age − age, clamped to ±clampYears. */
+  /** Halo Age − age, clamped to ±clampYears. */
   deltaYears: number;
   /** Null with fewer than paceMinDays of the last 30 days with data. */
   paceOfAging: number | null;
@@ -318,7 +318,7 @@ function deltaAge(s: Summary, p: HealthspanProfile, ref: Record<HealthspanInput,
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
-/** A day with any input of its own (Pulse's VO2max estimate is carried from earlier days, so it isn't one). */
+/** A day with any input of its own (Halo's VO2max estimate is carried from earlier days, so it isn't one). */
 const hasInput = (d: HealthspanDay) => Object.entries(d).some(([k, v]) => k !== "day" && k !== "vo2maxEstimated" && v != null);
 
 /** Lean and fat mass for display, from the window's mean weight and the term's body fat. */
@@ -341,7 +341,7 @@ function bodyComposition(days: HealthspanDay[], p: HealthspanProfile, lean: Term
 }
 
 /**
- * Pulse Age over the 6 months to `asOf`, and Pace of Aging from the last 30 days against those 6 months, both at today's
+ * Halo Age over the 6 months to `asOf`, and Pace of Aging from the last 30 days against those 6 months, both at today's
  * age. Null when the 6-month window has fewer than minTerms inputs.
  */
 export function healthspan(days: HealthspanDay[], profile: HealthspanProfile, asOf: string): HealthspanResult | null {
@@ -356,7 +356,7 @@ export function healthspan(days: HealthspanDay[], profile: HealthspanProfile, as
   const sixMonths = within(cfg.ageWindowDays);
   const lastMonth = within(cfg.paceWindowDays);
   const has = (k: keyof HealthspanDay) => sixMonths.some((d) => d[k] != null);
-  // A measured VO2max from the last 90 days at full weight, else Fitbit's estimate, else Pulse's, both at half weight.
+  // A measured VO2max from the last 90 days at full weight, else Fitbit's estimate, else Halo's, both at half weight.
   const sources: Sources = {
     vo2: within(cfg.runVo2maxLookbackDays).some((d) => d.vo2maxRun != null) ? "run" : has("vo2maxDaily") ? "daily" : has("vo2maxEstimated") ? "estimate" : null,
     bodyFat: has("bodyFatPct") ? "measured" : "bmi",
@@ -376,7 +376,7 @@ export function healthspan(days: HealthspanDay[], profile: HealthspanProfile, as
   return {
     pulseAge: profile.age + deltaYears,
     deltaYears,
-    // Unclamped deltas, so a change still shows while Pulse Age sits at the clamp.
+    // Unclamped deltas, so a change still shows while Halo Age sits at the clamp.
     paceOfAging: paceDays >= cfg.paceMinDays ? clamp(1 + (b.years - a.years) / cfg.paceScaleYears, cfg.paceMin, cfg.paceMax) : null,
     paceDays,
     contributions: a.contributions,
@@ -390,7 +390,7 @@ export function healthspan(days: HealthspanDay[], profile: HealthspanProfile, as
 }
 
 /**
- * Pulse Age's zone time for one day as [40–60 %, 60–80 %, ≥ 80 % of heart-rate reserve] seconds, from per-minute mean
+ * Halo Age's zone time for one day as [40–60 %, 60–80 %, ≥ 80 % of heart-rate reserve] seconds, from per-minute mean
  * HR (minute m starts at `start` + 60m). WHOOP counts zone time inside activities, so a minute counts only inside a
  * workout (`sessions`, unix seconds) or within a run of at least `minBoutMin` minutes at or above `bounds.moderate`. A
  * single minute without HR inside a run doesn't end it (and doesn't count); a minute under the floor does.

@@ -98,7 +98,7 @@ describe("sleep", () => {
     expect(sessions[1]).toMatchObject({ id: "bare", day: "2026-10-03", stagesStatus: null, asleepMin: 450, awakeMin: 0 });
   });
 
-  it("keeps a staged night's stage minutes, without segments, when one stage is one Pulse can't place", () => {
+  it("keeps a staged night's stage minutes, without segments, when one stage is one Halo can't place", () => {
     const { sessions, segments } = mapRecords(
       {
         SleepSession: [

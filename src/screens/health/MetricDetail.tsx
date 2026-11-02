@@ -1,4 +1,4 @@
-// A metric's own screen `/metric/[key]?d=&r=` (spec §11 MD1), ported from Pulse's metric/[key]/page.tsx and its
+// A metric's own screen `/metric/[key]?d=&r=` (spec §11 MD1), ported from Halo's metric/[key]/page.tsx and its
 // loading.tsx, as an Apple Health detail page: the large title with the day under it, the hero (the day's value large,
 // rolling into place, against its 30-day average), the history with its range control (W / M / 6M / 1Y, the iOS
 // segmented control) and the range's numbers, then the metric's own sections and what it is.

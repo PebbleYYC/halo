@@ -7,6 +7,7 @@ import { openStore } from "@/data/db";
 import type { Store } from "@/data/store";
 import type { Profile } from "@/data/types";
 import { googleToken } from "@/google/auth";
+import { hasGoogleSpo2, syncGoogleSpo2 } from "@/google/spo2";
 import { syncGoogle } from "@/google/sync";
 import { syncHealthConnect } from "@/health/sync";
 import { localDay } from "@/lib/time";
@@ -88,6 +89,10 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
     if (source === "health_connect") {
       const r = await timed(`sync-health-connect (${opts.owner})`, () => syncHealthConnect(store, { timeZone: opts.timeZone, onProgress: opts.onProgress }));
       warnings.push(...(r.warnings ?? []));
+      if (await hasGoogleSpo2()) {
+        opts.onProgress?.("read:BloodOxygen", 0, 1);
+        warnings.push(...(await syncGoogleSpo2(store, { timeZone: opts.timeZone, token: googleToken })).warnings);
+      }
     } else if (source === "google") {
       const r = await syncGoogle(store, { timeZone: opts.timeZone, token: googleToken, onProgress: opts.onProgress });
       warnings.push(...r.warnings);
@@ -106,7 +111,7 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
   }
 }
 
-// ── The Store for a run outside the app ───────────────────────────────────
+// The Store for a run outside the app
 
 let appStore: Store | null = null;
 /** The app registers its open Store so a task that fires in the same runtime reuses the connection. */

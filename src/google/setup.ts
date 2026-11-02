@@ -1,7 +1,7 @@
 // What Google Cloud needs before "Connect Google account" works: the steps the app shows when Google says sign-in isn't
 // set up (ERR_NOT_CONFIGURED), the same as README.md › "Google account setup".
 
-/** Google finds Pulse's Android OAuth client by this package name and the release signing certificate's SHA-1. */
+/** Google finds Halo's Android OAuth client by this package name and the release signing certificate's SHA-1. */
 export const ANDROID_PACKAGE = "app.halo.health";
 /** SHA-1 of ~/.pulse-mobile/release.keystore, which signs every release APK (plugins/withReleaseSigning.js). */
 export const RELEASE_SHA1 = "DF:68:C9:30:7F:0F:C1:77:F3:31:12:EF:F4:19:D1:87:B7:1A:55:56";

@@ -1,4 +1,4 @@
-// Recovery `/recovery` (spec §7.2). Ported from Pulse's src/server/queries/recovery.ts.
+// Recovery `/recovery` (spec §7.2). Ported from Halo's src/server/queries/recovery.ts.
 import type { ChargeDriver } from "@/core/scoring/drivers";
 import { sleepPerfCenter, sleepPerfScale } from "@/core/scoring/recovery";
 import { addDays } from "@/lib/time";
@@ -169,7 +169,7 @@ function contributorsMetric(row: DayRow | undefined, isToday: boolean): Contribu
       label: "Skin temperature",
       unit: "°C",
       metric: metric("skinTemp", inputs?.skinTempDev, row?.metrics?.nightlyTempC != null ? "calibrating" : missing),
-      // The source's 30-night SD when it gives one, else Pulse's own baseline spread.
+      // The source's 30-night SD when it gives one, else Halo's own baseline spread.
       baseline: row?.metrics?.tempSdC ? { mean: 0, sd: row.metrics.tempSdC } : b?.skinTemp && usable(b.skinTemp) ? { mean: 0, sd: b.skinTemp.sd } : null,
       points: pts("skinTemp"),
       direction: "toward_zero",

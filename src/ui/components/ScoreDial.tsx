@@ -187,7 +187,7 @@ export function ScoreDial(props: ScoreDialProps) {
     soFar: props.extraTags?.includes("so_far"),
   });
 
-  // --- The meter ---
+  // The meter
   const frac = empty || loading ? null : Math.min(Math.max(value, 0), r.max) / r.max;
   const ticks: number[] = [];
   /**
@@ -231,7 +231,7 @@ export function ScoreDial(props: ScoreDialProps) {
     </Txt>
   );
 
-  // --- Compact: the number and a short capsule on one line ---
+  // Compact: the number and a short capsule on one line
   if (compact)
     return (
       <View accessible accessibilityRole="image" accessibilityLabel={aria} style={[{ flexDirection: "row", alignItems: "center", gap: 8 }, props.style]}>
@@ -240,7 +240,7 @@ export function ScoreDial(props: ScoreDialProps) {
       </View>
     );
 
-  // --- lg: the detail screen's hero block, full width, the big ring centred ---
+  // lg: the detail screen's hero block, full width, the big ring centred
   if (lg) {
     const ReasonIcon = reason ? REASON_ICON[reason.code] : null;
     const headline = reason ? (reason.code === "no_data" ? reason.long : reason.short) : null;
@@ -330,7 +330,7 @@ export function ScoreDial(props: ScoreDialProps) {
     );
   }
 
-  // --- sm: number, capsule, label; centred, sized to its column (Goals, the forecast, report rows) ---
+  // sm: number, capsule, label; centred, sized to its column (Goals, the forecast, report rows)
   if (size === "sm") {
     const body = (
       <View style={[{ alignSelf: "stretch", minWidth: 64, alignItems: "center", gap: 6 }, !onPress && props.style]}>
@@ -356,7 +356,7 @@ export function ScoreDial(props: ScoreDialProps) {
     );
   }
 
-  // --- md: Home's score tile, filling its column ---
+  // md: Home's score tile, filling its column
   const tile = (
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

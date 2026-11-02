@@ -72,7 +72,7 @@ describe("all targets", () => {
 });
 
 describe("the person's own targets", () => {
-  it("reads a field: blank is Pulse's suggestion, else a whole number in range", () => {
+  it("reads a field: blank is Halo's suggestion, else a whole number in range", () => {
     expect(parseTarget("protein", " ")).toEqual({ value: null, error: null });
     expect(parseTarget("kcal", "2,300")).toEqual({ value: 2300, error: null });
     expect(parseTarget("protein", "120.5")).toEqual({ value: null, error: "Whole numbers only" });

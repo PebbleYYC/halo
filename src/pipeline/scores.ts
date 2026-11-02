@@ -1,7 +1,7 @@
 // Stage 2's per-day scorers, one per daily_scores column. Each reads the day and the fold (state built
 // from earlier days only) and returns its row; the few that feed later days push onto the fold.
-// stage2.ts calls them in a fixed order, which the pushes depend on. From Pulse's src/server/pipeline/scores.ts; the
-// mobile changes (Training load's missing Effort, Pulse Age's HR coverage) are marked where they are.
+// stage2.ts calls them in a fixed order, which the pushes depend on. From Halo's src/server/pipeline/scores.ts; the
+// mobile changes (Training load's missing Effort, Halo Age's HR coverage) are marked where they are.
 import type { ReasonCode } from "@/lib/reasons";
 import { addDays, fractionalYears, localMidnight, localMinutes, wholeYears } from "@/lib/time";
 import { deviation, isTrusted, isUsable, sigma } from "@/core/scoring/baselines";
@@ -83,7 +83,7 @@ export const newFold = () => ({
   readinessRows: [] as ReadinessDay[],
   monitorRows: [] as HealthMonitorDay[],
   hsRows: [] as HealthspanDay[],
-  /** Today's newest SRI pair (scoreSleep: last night against the night before), for Pulse Age's row (scoreHealthspan). */
+  /** Today's newest SRI pair (scoreSleep: last night against the night before), for Halo Age's row (scoreHealthspan). */
   sriPair: null as SriPair | null,
   /** Fitness Age's days: resting HR and bout-counted zone minutes, each minute once (hsRows' zone13Min doubles some). */
   fitnessDays: [] as FitnessEstimateDay[],
@@ -189,7 +189,7 @@ function nightOf(main: Session, segments: Segment[] | undefined): NonNullable<Sl
   };
 }
 
-// ── Sleep ────────────────────────────────────────────────────────────────────
+// Sleep
 
 export function scoreSleep(data: Data, inputs: Inputs, f: Fold, d: Day, tz: string): SleepRow {
   const { day, main, naps, mainSession } = d;
@@ -233,7 +233,7 @@ export function scoreSleep(data: Data, inputs: Inputs, f: Fold, d: Day, tz: stri
 
 /**
  * SRI over the 7 nights ending on D: noon-to-noon periods, so tonight's sleep never counts toward today. Also the window's
- * newest pair (last night against the night before), which Pulse Age pools over its own window, each pair once; and
+ * newest pair (last night against the night before), which Halo Age pools over its own window, each pair once; and
  * WHOOP-style Sleep Consistency (sleepRegularity.ts): the last 24 hours, noon to noon, against each of the 4 before.
  */
 function sleepRegularity(data: Data, cached: Map<string, Cached>, day: string, tz: string): { sri: number | null; newest: SriPair | null; consistency: number | null } {
@@ -245,7 +245,7 @@ function sleepRegularity(data: Data, cached: Map<string, Cached>, day: string, t
   }
   // A period is covered when the band was worn for at least half of it, and (mobile) some sleep was recorded in it: with
   // heart rate but no sleep sessions (sleep not shared to Health Connect) every minute read as awake on both days, a
-  // "perfectly regular" SRI of 100 that Pulse Age then credited.
+  // "perfectly regular" SRI of 100 that Halo Age then credited.
   const covered = Array.from({ length: 7 }, (_, k) => {
     const pm = cached.get(addDays(day, k - 7))?.s1.hrMinutesPm ?? 0;
     const am = cached.get(addDays(day, k - 6))?.s1.hrMinutesAm ?? 0;
@@ -260,13 +260,13 @@ function sleepRegularity(data: Data, cached: Map<string, Cached>, day: string, t
   return { sri: all === null ? null : sriOf(all.same, all.pairs), newest: pairs[pairs.length - 1] ?? null, consistency: whoopConsistency(lagged) };
 }
 
-// ── Recovery (forecast filled in by forecastOf, once tonight's plan exists) ──
+// Recovery (forecast filled in by forecastOf, once tonight's plan exists)
 
 export function scoreRecovery(f: Fold, d: Day, sleep: SleepRow): RecoveryRow {
   const { dm, mainSession, main } = d;
   const { hrvB, hrvLnB, rhrB, respB, skinB } = f;
   const hrv = dm?.hrvMs ?? null;
-  // Google's daily resting HR first; Pulse's sleep-session estimate only on days Google has none.
+  // Google's daily resting HR first; Halo's sleep-session estimate only on days Google has none.
   const rhr = dm?.rhrBpm ?? d.cache.sessionRhr;
   const resp = dm?.respBpm ?? null;
   // Shown and passed on to Health Monitor; not part of Recovery since version 17 (WHOOP 2026).
@@ -335,7 +335,7 @@ export function scoreRecovery(f: Fold, d: Day, sleep: SleepRow): RecoveryRow {
   };
 }
 
-/** Last night's skin temperature against Google's baseline (its 30-night median), else Pulse's own causal one. */
+/** Last night's skin temperature against Google's baseline (its 30-night median), else Halo's own causal one. */
 function skinDeviation(d: Day, skinB: BaselineState | null): number | null {
   const t = d.dm?.nightlyTempC;
   if (t == null) return null;
@@ -343,7 +343,7 @@ function skinDeviation(d: Day, skinB: BaselineState | null): number | null {
   return skinB && isUsable(skinB) ? t - skinB.baseline : null;
 }
 
-// ── Training load and readiness (today's strain counts toward today's ACWR) ──
+// Training load and readiness (today's strain counts toward today's ACWR)
 
 export function scoreTrainingLoad(f: Fold, d: Day, rec: RecoveryRow): TrainingLoadRow {
   const { hrv, rhr, resp } = rec.inputs;
@@ -368,14 +368,14 @@ export function scoreTrainingLoad(f: Fold, d: Day, rec: RecoveryRow): TrainingLo
   };
 }
 
-// ── Strain Target: prior days' Effort and ACWR ───────────────────────────────
+// Strain Target: prior days' Effort and ACWR
 
 export const scoreStrainTarget = (f: Fold, rec: RecoveryRow): StrainTargetRow =>
   rec.value == null
     ? { reason: rec.reason!, ...(rec.nightsLeft !== undefined && { nightsLeft: rec.nightsLeft }) }
     : { reason: null, ...strainTarget(f.efforts.slice(), rec.value, f.prevAcwr) };
 
-// ── Sleep Planner (tonight) ──────────────────────────────────────────────────
+// Sleep Planner (tonight)
 
 export function scorePlanner(f: Fold, d: Day, sleep: SleepRow, tz: string) {
   const { day, main } = d;
@@ -413,7 +413,7 @@ export const forecastOf = (f: Fold, d: Day, rec: RecoveryRow, plan: SleepPlan, t
       })
     : null;
 
-// ── Stress (baseline from earlier days' aggregates) ──────────────────────────
+// Stress (baseline from earlier days' aggregates)
 
 export function scoreStress(f: Fold, d: Day, inputs: Inputs) {
   const { start, end } = d;
@@ -456,7 +456,7 @@ function longestRun(xs: (number | null)[], hit: (v: number | null) => boolean, s
   return best;
 }
 
-// ── Energy Bank ──────────────────────────────────────────────────────────────
+// Energy Bank
 
 export function scoreEnergyBank(
   data: Data,
@@ -532,7 +532,7 @@ export function scoreEnergyBank(
   };
 }
 
-// ── HRV Status (Garmin-style, version 19) ──────────────────────────────────
+// HRV Status (Garmin-style, version 19)
 
 /** HRV Status from the nights to today (hrvStatus.ts); its history feeds Training Status. */
 export function scoreHrvStatus(f: Fold, rec: RecoveryRow): HrvStatusRow {
@@ -542,7 +542,7 @@ export function scoreHrvStatus(f: Fold, rec: RecoveryRow): HrvStatusRow {
   return row;
 }
 
-// ── Training: Training Effect, Recovery Time, Training Readiness and Status (Garmin-style, version 19) ──
+// Training: Training Effect, Recovery Time, Training Readiness and Status (Garmin-style, version 19)
 
 export function scoreTraining(
   data: Data,
@@ -669,7 +669,7 @@ export function scoreTraining(
 /** Whole days from a to b (yyyy-MM-dd). */
 const daysApart = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
-// ── Health Monitor (nightly rows, oldest first) ──────────────────────────────
+// Health Monitor (nightly rows, oldest first)
 
 export function scoreHealthMonitor(f: Fold, d: Day, inputs: Inputs, rec: RecoveryRow): HealthMonitorRow {
   const { hrv, rhr, resp, skinTempDev } = rec.inputs;
@@ -693,7 +693,7 @@ export function scoreHealthMonitor(f: Fold, d: Day, inputs: Inputs, rec: Recover
 
 /**
  * Google's ranges for last night: resting HR and HRV from its personal-range roll-ups, skin temperature as
- * ± 2 of its 30-night SD around the baseline (the deviation's zero). A vital without one keeps Pulse's.
+ * ± 2 of its 30-night SD around the baseline (the deviation's zero). A vital without one keeps Halo's.
  */
 function googleRanges(d: Day): Partial<Record<VitalKey, { low: number; high: number }>> {
   const m = d.dm;
@@ -707,9 +707,9 @@ function googleRanges(d: Day): Partial<Record<VitalKey, { low: number; high: num
   return out;
 }
 
-// ── Healthspan ───────────────────────────────────────────────────────────────
+// Healthspan
 
-/** Minutes with heart rate a day needs before its zone, strength and step counts count toward Pulse Age (12 h). */
+/** Minutes with heart rate a day needs before its zone, strength and step counts count toward Halo Age (12 h). */
 export const HEALTHSPAN_MIN_HR_MINUTES = 720;
 
 /** Pace of Aging is published on Mondays (WHOOP: weekly), once this many of the last 31 days have a Recovery score. */
@@ -748,9 +748,9 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
     bodyFatPct: dm?.bodyFatPct ?? null,
   };
   f.hsRows.push(row);
-  // Fitness Age and Pulse's own VO2max estimate from the last 7 days (fitnessLevel.ts, after noop's FitnessAgeEngine).
-  // Pulse Age reads the estimate only when there is no measured or Fitbit VO2max. Its activity index takes real minutes
-  // (active minutes a day, the share at 80 %+): the doubled 60–80 % minutes above are Pulse Age's dose only, and fed
+  // Fitness Age and Halo's own VO2max estimate from the last 7 days (fitnessLevel.ts, after noop's FitnessAgeEngine).
+  // Halo Age reads the estimate only when there is no measured or Fitbit VO2max. Its activity index takes real minutes
+  // (active minutes a day, the share at 80 %+): the doubled 60–80 % minutes above are Halo Age's dose only, and fed
   // here they made more days "active", lengthened them and shrank the vigorous share.
   const activeSec = bouts ? (bouts.length === 3 ? bouts[0] + bouts[1] : bouts[0]) : null;
   f.fitnessDays.push({ restingHr: row.restingHr, zone13Min: activeSec === null ? null : activeSec / 60, zone45Min: row.zone45Min });
@@ -777,7 +777,7 @@ export function scoreHealthspan(data: Data, f: Fold, d: Day, sleep: SleepRow, op
       };
 }
 
-// ── Fitness level: latest run VO2max in 90 days, else the latest daily value ──
+// Fitness level: latest run VO2max in 90 days, else the latest daily value
 
 export function scoreFitness(f: Fold, d: Day, opts: PipelineOptions): FitnessRow {
   const age = d.age.years;
@@ -793,7 +793,7 @@ export function scoreFitness(f: Fold, d: Day, opts: PipelineOptions): FitnessRow
   return { reason: null, vo2max: pick.v, source: pick.source, sourceDay: pick.sourceDay, age, ...fitnessLevel(pick.v, age, opts.profile.sex) };
 }
 
-// ── Journal outcomes and the reports' day rows ───────────────────────────────
+// Journal outcomes and the reports' day rows
 
 export function recordOutcomes(f: Fold, d: Day, rec: RecoveryRow, sleep: SleepRow, tl: TrainingLoadRow) {
   const { day, main, s1, dm } = d;

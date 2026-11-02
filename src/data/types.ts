@@ -1,4 +1,4 @@
-// The row shapes Pulse's pipeline and queries read. Field names and semantics mirror the web app's
+// The row shapes Halo's pipeline and queries read. Field names and semantics mirror the web app's
 // src/server/pipeline/data.ts and its Postgres schema, so the ported pipeline and queries stay line-for-line.
 // All timestamps are unix seconds. `day` is a local civil date "YYYY-MM-DD".
 
@@ -11,7 +11,7 @@ export type Profile = {
   /** The person's own max HR; null means Tanaka (208 − 0.7·age). */
   maxHr: number | null;
   heightCm: number | null;
-  /** Waist circumference, cm (mobile, optional): sharpens Pulse's VO2max estimate (Nes 2011). Absent on older profiles. */
+  /** Waist circumference, cm (mobile, optional): sharpens Halo's VO2max estimate (Nes 2011). Absent on older profiles. */
   waistCm?: number | null;
   /** IANA zone, e.g. "Asia/Kolkata". */
   timeZone: string;
@@ -109,7 +109,7 @@ export type HrSample = { ts: number; bpm: number };
 /** Steps in the minute starting at `ts` (a whole minute, unix seconds). */
 export type StepsMinute = { ts: number; v: number };
 
-/** "Shown, never scored" extras keyed like Pulse's daily_values (e.g. "distance_m", "floors", "height_cm" on day "latest"). */
+/** "Shown, never scored" extras keyed like Halo's daily_values (e.g. "distance_m", "floors", "height_cm" on day "latest"). */
 export type DailyValue = { day: string; key: string; value: number };
 
 export type JournalEntry = { day: string; tag: string; value: number };

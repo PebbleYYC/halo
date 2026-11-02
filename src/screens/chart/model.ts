@@ -101,7 +101,7 @@ export function daySeries(vm: ChartDayVM, label: string, unit: string | undefine
   };
 }
 
-// --- Day views: what sits beside each, and what the header says it draws ---
+// Day views: what sits beside each, and what the header says it draws
 
 /** The day views that share a clock and can sit on one chart, with the metric that opens each. */
 export const DAY_COMPARE: readonly { view: DayView; key: string }[] = [
@@ -233,7 +233,7 @@ export function runningStats(series: Series, from: number, to: number): { start:
   return { start, end, gained: end - start };
 }
 
-// --- Text ---
+// Text
 
 /** The unit after a value: "%" tight, words after a space. */
 export const unitText = (unit?: string) => (!unit ? "" : isSymbolUnit(unit) ? unit : ` ${unit}`);
@@ -298,7 +298,7 @@ export function windowText(mode: "daily" | "day", from: number, to: number, days
   return a === b ? fmt(a) : `${fmt(a)} – ${fmt(b)}`;
 }
 
-// --- Windows and axes ---
+// Windows and axes
 
 /** The x window a range shows: daily ranges end on day index `end`; the day view and All show everything. */
 export function windowFor(range: Range, series: Series, end: number): { start: number; span: number } {

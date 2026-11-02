@@ -53,7 +53,7 @@ function useNotificationSettings() {
   return { settings, permission, setPermission, update, refresh };
 }
 
-// ── Background sync ──────────────────────────────────────────────────────────
+// Background sync
 
 const RESULT_WORD: Record<RunLogEntry["result"], string> = { ok: "Synced", skipped: "Skipped", failed: "Failed" };
 
@@ -179,7 +179,7 @@ function BackgroundSync({ s, start }: { s: ReturnType<typeof useNotificationSett
   );
 }
 
-// ── Notifications ────────────────────────────────────────────────────────────
+// Notifications
 
 /** HH:mm as text, applied on blur; a bad value shows a hint and keeps the last good one. A row with the field on the right. */
 function TimeRow({ value, onCommit, disabled }: { value: string; onCommit: (v: string) => void; disabled?: boolean }) {

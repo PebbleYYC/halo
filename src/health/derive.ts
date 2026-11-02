@@ -10,7 +10,7 @@
 //     on heart-rate reserve, resting + share × (max − resting) (Google Health Help, "Track your heart rate with your
 //     Pixel Watch or Fitbit device"), not on a share of max HR: on max HR alone, an unfit person with a resting HR of
 //     78 earned zone minutes from 95 bpm, a slow walk. Max HR is the profile's (own or Tanaka), as everywhere in
-//     Pulse (Fitbit's own is 220 − age); resting HR is the day's (restingHrOn).
+//     Halo (Fitbit's own is 220 − age); resting HR is the day's (restingHrOn).
 //   • Active minutes (moderate + vigorous): a minute is active with 60 steps or more, or a mean HR in the fat burn zone
 //     or above; it counts only inside a bout of 10 or more consecutive active minutes (Fitbit awards active minutes after
 //     10 minutes of continuous moderate-to-intense activity). The minutes of a shorter bout count as light instead.

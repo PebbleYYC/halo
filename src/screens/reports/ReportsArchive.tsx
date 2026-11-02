@@ -1,4 +1,4 @@
-// Reports archive `/reports?view=&all=` (More, U21), ported from Pulse's src/app/(app)/reports/page.tsx and its
+// Reports archive `/reports?view=&all=` (More, U21), ported from Halo's src/app/(app)/reports/page.tsx and its
 // loading.tsx: one period kind at a time (Weekly / Monthly), newest first. Weeks are grouped by month and only the
 // last few months show until "Show earlier weeks"; months are grouped by year. The view lives in the route params,
 // as the web keeps it in the URL, so Back keeps it.

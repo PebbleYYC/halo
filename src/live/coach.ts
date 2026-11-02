@@ -1,7 +1,7 @@
 // Strain Coach for Live Workout: the moment-to-moment half. Watches the live heart rate against a target band gated by
 // today's Recovery and says when to push or ease off, at most one cue at a time and silence when on track. Ported
 // constant for constant (one exception, marked) from noop's analytics/LiveSessionEngine.kt (© 2026 NoopApp, PolyForm
-// Noncommercial 1.0.0), with noop's charge as Pulse's Recovery (0–100) and time in (fractional) seconds. Its rules:
+// Noncommercial 1.0.0), with noop's charge as Halo's Recovery (0–100) and time in (fractional) seconds. Its rules:
 //
 //   1. A wrong buzz is worse than a missed one: dwell, cool-down and hysteresis bias hard toward silence.
 //   2. Never fabricate: impossible samples are rejected before they can cue, and a stale stream pauses coaching.
@@ -9,7 +9,7 @@
 // Then `guidance()` puts that together with Day Strain against today's Strain Target (the WHOOP-like half: push
 // toward the range, ease off once in it or past it) as the line the screen shows. Pure, for vitest.
 
-// ── Tuning (noop's values) ───────────────────────────────────────────────────
+// Tuning (noop's values)
 export const CEILING_PCT_LOW_CHARGE = 0.6;
 export const CEILING_PCT_HIGH_CHARGE = 0.82;
 export const BAND_WIDTH_PCT_HRR = 0.15;
@@ -36,7 +36,7 @@ export const CEILING_DRIFT_MAX_BPM = 8;
 
 export const MIN_PLAUSIBLE_BPM = 25;
 /**
- * noop rejects anything 5 bpm over HRmax. Pulse's max is often Tanaka's estimate, which a hard interval can pass, and
+ * noop rejects anything 5 bpm over HRmax. Halo's max is often Tanaka's estimate, which a hard interval can pass, and
  * a rejected beat reads as a dropped stream, so here the cut-off is 20 bpm over it.
  */
 export const ABOVE_HRMAX_REJECT_BPM = 20;
@@ -224,7 +224,7 @@ export class LiveCoach {
   }
 }
 
-// ── The line on screen ───────────────────────────────────────────────────────
+// The line on screen
 
 export type GuidanceTone = "push" | "steady" | "ease" | "wait";
 export type Guidance = { tone: GuidanceTone; title: string; body: string };

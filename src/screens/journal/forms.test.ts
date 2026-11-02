@@ -1,4 +1,4 @@
-// Ported from Pulse's src/app/(app)/journal/CheckIn.test.tsx (changedEntries) plus the Log sheet's form parsing.
+// Ported from Halo's src/app/(app)/journal/CheckIn.test.tsx (changedEntries) plus the Log sheet's form parsing.
 import { describe, expect, it } from "vitest";
 import { METRIC } from "@/lib/units";
 import { changedEntries, EMPTY, EMPTY_FOOD, foodFormOf, foodItemOf, mealAt, toInput, wallNow, when } from "./forms";
