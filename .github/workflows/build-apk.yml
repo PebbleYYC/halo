@@ -1,8 +1,10 @@
 # Builds a signed release APK and publishes it as a GitHub release, which Halo's in-app updater offers.
-# Run it from the Actions tab: Build APK › Run workflow. Needs one secret, KEYSTORE_PASSWORD.
+# Runs on every push to main, or from the Actions tab: Build APK › Run workflow. Needs one secret, KEYSTORE_PASSWORD.
 name: Build APK
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       bump:
@@ -27,7 +29,7 @@ jobs:
       PULSE_KEY_ALIAS: halo
       EXPECTED_SHA1: FF:C1:8B:55:5B:3B:AC:39:88:5D:AB:0B:03:3B:E7:41:65:FC:F0:29
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check the signing secret
         run: |
@@ -38,22 +40,22 @@ jobs:
           keytool -list -keystore "$PULSE_KEYSTORE_FILE" -storepass "$PULSE_KEYSTORE_PASSWORD" > /dev/null \
             || { echo "::error::KEYSTORE_PASSWORD doesn't open signing/halo-release.p12."; exit 1; }
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - run: npm ci
 
       - name: Bump the version
-        if: inputs.bump
+        if: github.event_name == 'push' || inputs.bump
         run: |
           node scripts/bump-version.mjs
           git config user.name "github-actions[bot]"
