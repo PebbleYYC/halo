@@ -80,9 +80,11 @@ jobs:
           apk=android/app/build/outputs/apk/release/app-release.apk
           # keytool only reads v1 (JAR) signatures; a minSdk 26 APK has v2/v3 only, so ask apksigner.
           apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          sha1=$("$apksigner" verify --print-certs "$apk" | awk -F': ' '/Signer #1 certificate SHA-1 digest/ {print $2}')
+          certs=$("$apksigner" verify --print-certs "$apk")
+          echo "$certs"
           want=$(echo "$EXPECTED_SHA1" | tr -d ':' | tr 'A-F' 'a-f')
-          [ "$sha1" = "$want" ] || { echo "::error::APK is signed with '$sha1', expected $want"; exit 1; }
+          # The label differs by apksigner version ("Signer #1", "Signer (minSdkVersion=…)"), so match the digest alone.
+          echo "$certs" | grep -qiE "SHA-1 digest: *$want" || { echo "::error::APK isn't signed with $want"; exit 1; }
           cp "$apk" Halo.apk
 
       - name: Publish the release
