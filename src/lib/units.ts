@@ -25,8 +25,11 @@ export const METRIC: Units = { weight: "kg", height: "cm", distance: "km", tempe
 /** United States customary units. */
 export const IMPERIAL: Units = { weight: "lb", height: "ftin", distance: "mi", temperature: "f", fluid: "floz" };
 
-export type Preset = "metric" | "imperial";
-export const PRESETS: Record<Preset, Units> = { metric: METRIC, imperial: IMPERIAL };
+/** Canada's everyday mix: pounds and feet for the body, metric for everything else. */
+export const CANADIAN: Units = { weight: "lb", height: "ftin", distance: "km", temperature: "c", fluid: "ml" };
+
+export type Preset = "metric" | "canadian" | "imperial";
+export const PRESETS: Record<Preset, Units> = { metric: METRIC, canadian: CANADIAN, imperial: IMPERIAL };
 
 const OPTIONS: { [K in UnitKind]: readonly Units[K][] } = {
   weight: ["kg", "lb"],
@@ -40,6 +43,7 @@ const OPTIONS: { [K in UnitKind]: readonly Units[K][] } = {
 export function presetOf(u: Units): Preset | null {
   if (UNIT_KINDS.every((k) => u[k] === METRIC[k])) return "metric";
   if (UNIT_KINDS.every((k) => u[k] === IMPERIAL[k])) return "imperial";
+  if (UNIT_KINDS.every((k) => u[k] === CANADIAN[k])) return "canadian";
   return null;
 }
 

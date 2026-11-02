@@ -51,6 +51,7 @@ import { useNow } from "../health/shells";
 import { progressLabel } from "../home/status";
 import { useCalm } from "../settings/calmKit";
 import { ProfileCard, SearchField } from "../settings/list";
+import { useMe } from "@/state/me";
 import { ConfirmDialog } from "../settings/parts";
 import { About } from "./About";
 import { SCORE_DOCS } from "./howItWorksContent";
@@ -100,6 +101,7 @@ function search(groups: Group[], query: string): LinkListRow[] {
 
 export default function MoreScreen() {
   const router = useRouter();
+  const me = useMe();
   const app = useApp();
   const syncProgress = useSyncProgress();
   const c = useCalm();
@@ -117,7 +119,7 @@ export default function MoreScreen() {
   // Settings › Units' row says which units are on: a preset by name, else "Custom".
   const { units } = useUnits();
   const preset = presetOf(units);
-  const unitsAside = preset === "metric" ? "Metric" : preset === "imperial" ? "Imperial (US)" : "Custom";
+  const unitsAside = preset === "metric" ? "Metric" : preset === "canadian" ? "Mixed" : preset === "imperial" ? "US" : "Custom";
 
   const syncing = app.status === "syncing";
   const failed = app.error ?? app.sync.lastError;
@@ -275,7 +277,7 @@ export default function MoreScreen() {
           )
         ) : (
           [
-            <ProfileCard key="profile" title="Your profile" subtitle={profileLine} onPress={() => router.push("/settings?s=profile" as Href)} />,
+            <ProfileCard key="profile" title={me.name ?? "Your profile"} subtitle={profileLine} photo={me.photo} initial={me.name?.[0]?.toUpperCase()} onPress={() => router.push("/settings?s=profile" as Href)} />,
             ...page.map((g) => <LinkList key={g.key} title={g.title} rows={g.rows} footer={g.footer} />),
             <About key="about" version={vm?.version ?? APP_VERSION} scoringVersion={vm?.scoringVersion ?? SCORING_VERSION} />,
           ]

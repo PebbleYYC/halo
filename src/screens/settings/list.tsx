@@ -7,7 +7,7 @@
 // menu, the disclosure's chevron and the search field's Cancel move on Reanimated springs, and stay still under Reduce
 // motion. A list straight on a bottom sheet takes the sheet's raised fill, so it reads in both schemes.
 import * as React from "react";
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, useWindowDimensions, View, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, Image, Keyboard, Pressable, StyleSheet, TextInput, type StyleProp, type ViewStyle, useWindowDimensions, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowUpRight, Check, ChevronDown, ChevronRight, ChevronsUpDown, Search, UserRound, X, type LucideIcon } from "lucide-react-native";
@@ -553,7 +553,8 @@ export function PageHead({ title, children }: { title: string; children: string 
 }
 
 /** The profile's monogram: a circle in a sky-to-indigo gradient with the initial (or a person) in white. */
-export function ProfileAvatar({ size = 60, initial }: { size?: number; initial?: string }) {
+export function ProfileAvatar({ size = 60, initial, photo }: { size?: number; initial?: string; photo?: string | null }) {
+  if (photo) return <Image source={{ uri: photo }} style={{ width: size, height: size, borderRadius: size / 2 }} accessibilityIgnoresInvertColors />;
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
       <LinearGradient colors={["#64d2ff", "#5e5ce6"]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -569,14 +570,14 @@ export function ProfileAvatar({ size = 60, initial }: { size?: number; initial?:
 }
 
 /** The profile card at the top of More, iOS Settings' account card: the monogram, a name, the line under it, a chevron. */
-export function ProfileCard({ title, subtitle, onPress }: { title: string; subtitle: string; onPress: () => void }) {
+export function ProfileCard({ title, subtitle, onPress, photo, initial }: { title: string; subtitle: string; onPress: () => void; photo?: string | null; initial?: string }) {
   const c = useCalm();
   const press = usePress();
   const pressed = usePressStyle(press, { dim: 0.85 });
   return (
     <Pressable onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut} accessibilityRole="button" accessibilityLabel={`${title}. ${subtitle}`}>
       <Animated.View style={[{ borderRadius: 20, backgroundColor: c.card, padding: 14, paddingRight: 16, flexDirection: "row", alignItems: "center", gap: 14 }, pressed]}>
-        <ProfileAvatar size={60} />
+        <ProfileAvatar size={60} photo={photo} initial={initial} />
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Txt size={22} lineHeight={28} weight={600} style={{ color: c.ink }}>
             {title}

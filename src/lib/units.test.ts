@@ -50,6 +50,7 @@ describe("presets and the stored choice", () => {
     expect(presetOf(METRIC)).toBe("metric");
     expect(presetOf(IMPERIAL)).toBe("imperial");
     expect(presetOf({ ...METRIC, weight: "lb" })).toBeNull();
+    expect(presetOf({ ...METRIC, weight: "lb", height: "ftin" })).toBe("canadian");
   });
 
   it("keeps the known fields of what was stored and falls back to metric for the rest", () => {

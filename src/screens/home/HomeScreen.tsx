@@ -15,6 +15,8 @@ import { CircleAlert } from "lucide-react-native";
 import Animated from "react-native-reanimated";
 import { RevealScroll, useRevealScroll } from "@/ui/motion/Rise";
 import { dayLabel } from "@/lib/format";
+import { greeting } from "@/lib/greeting";
+import { firstName, useMe } from "@/state/me";
 import { dayHref, useDay } from "@/lib/day";
 import { getHealthHub, getHome, getRecovery, getSleep, getStrain, getTrends } from "@/queries";
 import { prefetchQuery, useApp, useQuery, useQueryCtx, useQueryStamp, useSyncProgress } from "@/state/app";
@@ -40,6 +42,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const clearance = useBottomClearance("tabs");
   const { d, today, isToday } = useDay();
+  const me = useMe();
   // My Dashboard's saved metrics (null: the default list); the editor's save refetches Home.
   const dashboard = useDashboardKeys();
   const home = useQuery((ctx) => getHome(d, ctx, { dashboardKeys: dashboard ?? undefined }), [d, dashboard], homeKey(d, dashboard));
@@ -152,7 +155,7 @@ export default function HomeScreen() {
             contentInsetAdjustmentBehavior="never"
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: clearance }}
           >
-            <TodayTitle y={scrollY} day={d} today={today} firstDay={app.sync.firstDay} loading={dayLoading} onChange={setDay} />
+            <TodayTitle y={scrollY} day={d} today={today} firstDay={app.sync.firstDay} loading={dayLoading} onChange={setDay} greeting={greeting(Date.now() / 1000, app.timeZone, firstName(me.name))} />
             <RevealScroll.Provider value={scrollY}>
               <View style={{ gap: 12, marginTop: 10, opacity: dayLoading ? 0.6 : 1 }}>{content}</View>
             </RevealScroll.Provider>

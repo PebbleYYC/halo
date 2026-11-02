@@ -350,7 +350,7 @@ export function GoogleSpo2Group() {
           title="Blood oxygen"
           footer="The Google Health app doesn’t share SpO2 with Health Connect. Halo can read just that from your Google account, with read-only access to health metrics. Everything else still comes from Health Connect."
         >
-          <ButtonRow label={busy ? "Connecting…" : "Get SpO2 from Google"} busy={busy} onPress={() => void connect()} disabled={busy || syncing} />
+          <ButtonRow label={busy ? "Connecting…" : "Get SpO2 from Google"} busy={busy} onPress={() => void connect()} disabled={busy} />
         </InsetGroup>
         {error && <SignInProblem error={error} onRetry={() => void connect()} busy={busy} />}
       </>
@@ -362,7 +362,7 @@ export function GoogleSpo2Group() {
         <InfoRow label="From Google" value={app.google.email ?? "Connected"} />
         {signIn && <NavRow icon={TriangleAlert} system="yellow" label="Sign in to Google again" description="Google wants you to sign in before Halo can read SpO2." action />}
         {failed && !signIn && <NavRow icon={TriangleAlert} system="yellow" label="Last SpO2 read failed" description="Halo will try again on the next sync." action />}
-        {signIn && <ButtonRow label="Connect again" onPress={() => void connect()} disabled={busy || syncing} />}
+        {signIn && <ButtonRow label="Connect again" onPress={() => void connect()} disabled={busy} />}
         <ButtonRow label="Disconnect" danger onPress={() => setConfirm(true)} disabled={syncing} />
       </InsetGroup>
       {error && <SignInProblem error={error} onRetry={() => void connect()} busy={busy} />}
