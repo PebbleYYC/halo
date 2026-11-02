@@ -1,10 +1,10 @@
-// Pure mapping from Health Connect records to Pulse rows. No native imports: `react-native-health-connect` is
+// Pure mapping from Health Connect records to Halo rows. No native imports: `react-native-health-connect` is
 // referenced for its types only, and the two enum tables it exports are copied here (checked against the
 // library's declarations at compile time) so this file and its tests run in plain Node.
 //
 // The rules mirror how the web app maps Google Health:
 //   sleep   → one Session per SleepSession, `day` = local wake day, segments only for a full hypnogram; a staged
-//             night with a stage Pulse can't place keeps its stage minutes as a summary
+//             night with a stage Halo can't place keeps its stage minutes as a summary
 //   HR      → one HrSample per sample, deduped by second
 //   steps   → interval counts spread over the minutes they cover, MAX across sources per minute, never the sum;
 //             the day's total is the largest source's own total
@@ -28,7 +28,7 @@ import { emptyMetrics } from "@/data/types";
 import { addDays, localDay, localMidnight } from "@/lib/time";
 import { finish, PAUSE_EVERY, type Steps } from "@/lib/yield";
 
-// ───────────────────────────── enum tables (copied; tsc checks they match the library) ─────────────────────────────
+// enum tables (copied; tsc checks they match the library)
 
 export const SleepStageType = {
   UNKNOWN: 0,
@@ -159,7 +159,7 @@ export const Vo2MaxMeasurementMethod = {
 
 /**
  * VO2max methods that measure it (a lab's metabolic cart, or a field test: Cooper, multistage, Rockport), stored as
- * `vo2maxRun` and counted in full by Pulse Age. Heart-rate ratio and "other" (how a watch estimates it, Fitbit's
+ * `vo2maxRun` and counted in full by Halo Age. Heart-rate ratio and "other" (how a watch estimates it, Fitbit's
  * Cardio Fitness Score among them) are estimates, stored as `vo2maxDaily` and counted at half weight.
  */
 const MEASURED_VO2_METHODS = new Set<number>([
@@ -192,7 +192,7 @@ const exerciseTypeNames = new Map<number, ExerciseTypeName>(
 /** The `ExerciseType` key for a numeric exercise type; unknown codes read as OTHER_WORKOUT. */
 export const exerciseTypeName = (code: number): ExerciseTypeName => exerciseTypeNames.get(code) ?? "OTHER_WORKOUT";
 
-// ───────────────────────────── input ─────────────────────────────
+// input
 
 export type SleepSessionRecord = RecordResult<"SleepSession">;
 export type HeartRateRecord = RecordResult<"HeartRate">;
@@ -265,7 +265,7 @@ export type MappedRecords = {
   externalEntries: LoggedEntryRow[];
 };
 
-// ───────────────────────────── helpers ─────────────────────────────
+// helpers
 
 /** Unix seconds from an ISO instant (Health Connect gives millisecond precision). */
 export const ts = (iso: string) => Math.floor(Date.parse(iso) / 1000);
@@ -318,7 +318,7 @@ const inside = (t: number, w: Interval) => t >= w.startTs && t < w.endTs;
 // (sync.ts runs them with sliced(), src/lib/yield.ts). The exported functions run them straight through with finish(),
 // so the results are the same either way.
 
-// ───────────────────────────── sleep ─────────────────────────────
+// sleep
 
 /** Health Connect's STAGE_TYPE_AWAKE_IN_BED (API 34+); the library's constants stop at REM. */
 export const AWAKE_IN_BED = 7;
@@ -379,7 +379,7 @@ export function mapSleep(records: SleepSessionRecord[], tz: string): { sessions:
         const named = stageNames[s.stage];
         if (named === "light" || named === "deep" || named === "rem") sec[named] += d;
       }
-      // A night the source did stage (it has deep or REM) but with a stage Pulse can't place (SLEEPING, UNKNOWN) is
+      // A night the source did stage (it has deep or REM) but with a stage Halo can't place (SLEEPING, UNKNOWN) is
       // what the web gets from Google as stagesStatus SUCCEEDED with an unreadable stage: no hypnogram (no segments),
       // but the stage minutes stay as the night's summary and the night still gets a Recovery. Dropping them made the
       // whole night unstaged: its restorative part scored 0 and Recovery said "no HRV" over one stray segment.
@@ -409,7 +409,7 @@ export function mapSleep(records: SleepSessionRecord[], tz: string): { sessions:
   return { sessions, segments };
 }
 
-// ───────────────────────────── heart rate ─────────────────────────────
+// heart rate
 
 /** One sample per second, last wins; `clip` keeps only samples with clip.startTs <= ts < clip.endTs. */
 export function mapHr(records: HeartRateRecord[], clip?: Interval): HrSample[] {
@@ -432,7 +432,7 @@ export function* mapHrSteps(records: HeartRateRecord[], clip?: Interval): Steps<
   return [...byTs].map(([t, bpm]) => ({ ts: t, bpm })).sort((a, b) => a.ts - b.ts);
 }
 
-// ───────────────────────────── steps ─────────────────────────────
+// steps
 
 /**
  * A record's source: its app and its device, as Pulse's web keys steps by platform, device and package. One app can
@@ -468,7 +468,7 @@ function stepsBySource(records: StepsRecord[], clip?: Interval): Map<string, Map
 }
 
 /**
- * Like Pulse's mapStepsMinutes: each record's count is split evenly over the whole minutes it touches, summed
+ * Like Halo's mapStepsMinutes: each record's count is split evenly over the whole minutes it touches, summed
  * within a source (app and device), then the MAX across sources is taken per minute (phone and watch both count the
  * same steps). Only for movement gating and the derived minutes, as on the web: the day's total is stepsPerDay.
  * `clip` keeps only minutes with clip.startTs <= ts < clip.endTs.
@@ -522,7 +522,7 @@ export function* stepsPerDaySteps(records: StepsRecord[], tz: string, clip?: Int
   return out;
 }
 
-// ───────────────────────────── exercises ─────────────────────────────
+// exercises
 
 export function mapExercises(
   sessions: ExerciseSessionRecord[],
@@ -571,7 +571,7 @@ export function* mapExercisesSteps(
   return out.sort((a, b) => a.startTs - b.startTs);
 }
 
-// ───────────────────────────── daily values ─────────────────────────────
+// daily values
 
 /**
  * Per-day totals of interval records, each record pro-rated over the local days it spans. `measured`: a quantity
@@ -646,12 +646,12 @@ export function* mapDailyValuesSteps(input: HealthInput, tz: string): Steps<Dail
   return out.sort((a, b) => a.day.localeCompare(b.day) || a.key.localeCompare(b.key));
 }
 
-// ───────────────────────────── logged entries from Health Connect ─────────────────────────────
+// logged entries from Health Connect
 
 /** A record's stable id: Health Connect's own (it survives a re-read), else the kind and the record's time. */
 const recordId = (r: { metadata?: { id?: string } }, kind: string, t: number) => `hc-${kind}-${r.metadata?.id ?? t}`;
 
-/** Pulse's log vocabulary (src/queries/log.ts) for Health Connect's codes; unknown codes fall back as noted. */
+/** Halo's log vocabulary (src/queries/log.ts) for Health Connect's codes; unknown codes fall back as noted. */
 const MEAL_NAME: Record<number, "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK"> = {
   [MealType.BREAKFAST]: "BREAKFAST",
   [MealType.LUNCH]: "LUNCH",
@@ -675,7 +675,7 @@ const OVULATION_NAME: Record<number, "POSITIVE" | "ESTROGEN_SURGE" | "NEGATIVE" 
 export const MAX_PERIOD_DAYS = 60;
 
 /**
- * Water, food and cycle records as rows of Pulse's log, `source: "health_connect"` (the Journal shows them as
+ * Water, food and cycle records as rows of Halo's log, `source: "health_connect"` (the Journal shows them as
  * "Logged in Fitbit", read-only). Shapes match the Journal's own LogData (src/queries/log.ts):
  *   Hydration → hydration-log { ml }, on the record's start time.
  *   Nutrition → nutrition-log { name, meal, kcal, protein, carbs, fat }: one row per record (Fitbit logs one per food);
@@ -765,7 +765,7 @@ export function mapExternalEntries(input: HealthInput, tz: string): LoggedEntryR
   return out.sort((a, b) => a.ts - b.ts || a.id.localeCompare(b.id));
 }
 
-// ───────────────────────────── metrics ─────────────────────────────
+// metrics
 
 export type MetricsInput = Pick<
   HealthInput,
@@ -876,9 +876,9 @@ export function* mapMetricsSteps(input: MetricsInput, sessions: Session[], steps
   return [...rows.values()].sort((a, b) => a.day.localeCompare(b.day));
 }
 
-// ───────────────────────────── everything ─────────────────────────────
+// everything
 
-/** Maps one sync's records to Pulse rows. `tz` is the person's IANA zone; civil days are local to it. */
+/** Maps one sync's records to Halo rows. `tz` is the person's IANA zone; civil days are local to it. */
 export function mapRecords(input: HealthInput, tz: string): MappedRecords {
   const { sessions, segments } = mapSleep(input.SleepSession ?? [], tz);
   const hr = mapHr(input.HeartRate ?? []);

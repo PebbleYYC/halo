@@ -17,7 +17,7 @@ const PROFILE: Profile = { birthDate: "1999-06-01", sex: "male", maxHr: null, he
 const dayAt = (i: number) => addDays(FIRST, i);
 /** The only resting-HR reading: Fitbit's daily value on day 5. */
 const RHR_DAY = 5;
-/** HR from 08:00 to 14:00 only (6 h): too little for the day's zone and strength minutes in Pulse Age. */
+/** HR from 08:00 to 14:00 only (6 h): too little for the day's zone and strength minutes in Halo Age. */
 const SHORT_DAY = 20;
 /** Ten HR samples: too few for an Effort. */
 const SCRAP_DAY = 21;
@@ -83,7 +83,7 @@ describe("resting HR without Fitbit's daily value or a sleep session", () => {
   });
 });
 
-describe("Pulse Age on sparse data", () => {
+describe("Halo Age on sparse data", () => {
   it("leaves zone and strength minutes out of a day with under 12 h of HR, instead of counting 0", async () => {
     const hs = (await store.getScores(TODAY))!.healthspan as HealthspanRow;
     if (hs.reason !== null) throw new Error("no healthspan");
@@ -113,7 +113,7 @@ describe("Pulse Age on sparse data", () => {
     const hs = (await store.getScores(TODAY))!.healthspan as HealthspanRow;
     if (hs.reason !== null) throw new Error("no healthspan");
     // Steps, zones 1–3, zones 4–5, strength, resting HR (day 5) and lean mass (body fat on day 2); no sleep, consistency
-    // or VO2max (Pulse's own estimate needs 4 of 7 days with a resting HR, and there is one reading in 50 days).
+    // or VO2max (Halo's own estimate needs 4 of 7 days with a resting HR, and there is one reading in 50 days).
     expect(hs.contributions.map((c) => c.key).sort()).toEqual(["leanMass", "restingHr", "steps", "strength", "zone13", "zone45"]);
     expect(hs).toMatchObject({ termsUsed: 6, provisional: true, vo2maxSource: null, fitnessEstimate: null });
     // The unfit, heavier 27-year-old is older than his age, about 4.5 years with these six inputs (missing ones count 0).

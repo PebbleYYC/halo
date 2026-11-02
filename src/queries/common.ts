@@ -1,5 +1,5 @@
 // Shared by the screen queries: the batched day loader over the Store and the Metric builders.
-// Ported from Pulse's src/server/queries/common.ts; every Postgres read is a Store read.
+// Ported from Halo's src/server/queries/common.ts; every Postgres read is a Store read.
 import type { DetectedActivity } from "@/core/algorithms/autoWorkout";
 import { STRENGTH_TYPES } from "@/core/algorithms/healthspan";
 import { tanakaHRmax, toStrainScale } from "@/core/scoring/strain";
@@ -78,7 +78,7 @@ export async function loadDays(ctx: QueryCtx, from: string, to: string): Promise
   for (const m of metricRows) if (m.day >= from && m.day <= to) metrics.set(m.day, m);
   const extra = new Map<string, Partial<Record<ExtraKey, number>>>();
   for (const r of extraRows) if (r.day >= from && r.day <= to) extra.set(r.day, { ...extra.get(r.day), [r.key as ExtraKey]: r.value });
-  // Water logged in Pulse never reaches Health Connect (Pulse writes nothing there), so it adds to the synced total here,
+  // Water logged in Halo never reaches Health Connect (Halo writes nothing there), so it adds to the synced total here,
   // as the Log's waterOn does: the water goal, the Water screen and Trends count what the Log shows.
   for (const e of logged) {
     if (e.type !== "hydration-log" || e.source !== "pulse" || e.day < from || e.day > to) continue;
@@ -87,7 +87,7 @@ export async function loadDays(ctx: QueryCtx, from: string, to: string): Promise
     const day = extra.get(e.day) ?? {};
     extra.set(e.day, { ...day, water: (day.water ?? 0) + ml });
   }
-  // Food logged in Pulse, the same way: its calories and macros add to the synced totals (calories eaten, protein,
+  // Food logged in Halo, the same way: its calories and macros add to the synced totals (calories eaten, protein,
   // carbs, fat), except entries that repeat a meal Fitbit's log already counts (src/queries/food.ts).
   for (const [day, add] of pulseFoodByDay(logged, from, to)) extra.set(day, withFood(extra.get(day) ?? {}, add));
   const out = new Map<string, DayRow>();
@@ -136,7 +136,7 @@ export async function lastStored(ctx: QueryCtx, today: string, lookback = 60): P
   return last ?? today;
 }
 
-// ── Metric builders ─────────────────────────────────────────────────────────
+// Metric builders
 
 export const finite = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x);
 
@@ -215,7 +215,7 @@ export function minutePoints(series: (number | null)[] | null, dayStart: number,
 
 export const dayStartOf = (ctx: QueryCtx, day: string) => localMidnight(day, ctx.timeZone);
 
-// ── Activities and plans ─────────────────────────────────────────────────────
+// Activities and plans
 
 export function activityKind(type: string): ActivityKind {
   if (/RUN/.test(type)) return "run";

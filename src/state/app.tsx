@@ -14,7 +14,7 @@ import { openStore } from "@/data/db";
 import { seedDemo } from "@/data/seed";
 import type { Store } from "@/data/store";
 import type { HrSample, Profile, SyncState } from "@/data/types";
-import { connectGoogleAccount, disconnectGoogleAccount, forgetGoogleToken, googleConnection, googleToken } from "@/google/auth";
+import { connectGoogleAccount, connectSpo2Account, disconnectGoogleAccount, forgetGoogleToken, googleConnection, googleToken } from "@/google/auth";
 import { pullGoogleHeartRate } from "@/google/live";
 import { clearConnection, forgetGoogleSync, type GoogleConnection } from "@/google/state";
 import { askPermissions, availability, permissionState, type Availability } from "@/health/connect";
@@ -68,7 +68,7 @@ type State = {
   liveHr: LiveHr;
   /** Bumped when a live refresh brings new samples, so a screen reading today's heart rate can refetch (not part of the query ctx: only that screen pays). */
   liveVersion: number;
-  /** The last completed sync's hints (e.g. "no_fitbit_records"), so Settings can explain an empty Pulse. */
+  /** The last completed sync's hints (e.g. "no_fitbit_records"), so Settings can explain an empty Halo. */
   syncWarnings: string[];
   /** The connected Google account (the Google Health API source), or null. */
   google: GoogleConnection | null;
@@ -86,8 +86,10 @@ type Actions = {
    * connected, or the typed sign-in failure (not configured, cancelled, no Play services, scope not granted…).
    */
   connectGoogle(): Promise<GoogleSignInError | null>;
+  /** Health Connect stays the source; a Google account fills in the SpO2 it lacks. Resolves null once connected. */
+  connectGoogleSpo2(): Promise<GoogleSignInError | null>;
   /**
-   * Revokes Pulse's access to the Google account and forgets it; what was imported stays on the phone. With Google as
+   * Revokes Halo's access to the Google account and forgets it; what was imported stays on the phone. With Google as
    * the source, the source is cleared too (the data-source choice opens). Resolves whether Google confirmed.
    */
   disconnectGoogle(): Promise<{ revoked: boolean }>;
@@ -115,7 +117,7 @@ const EMPTY_SYNC: SyncState = { lastSyncTs: null, firstDay: null, lastError: nul
 /**
  * Before importing from `next` ("health_connect" or "google:<email>"): drops what another source (or another Google
  * account) imported, rows, samples and scores, so the same night never sits there twice, and both importers' cursors,
- * so the new one reads its whole history window. The profile, the journal and Pulse's own logs stay. `current` is
+ * so the new one reads its whole history window. The profile, the journal and Halo's own logs stay. `current` is
  * where the rows came from on an install from before IMPORTED_KEY.
  */
 async function claimImports(st: Store, next: string, current: string | null): Promise<void> {
@@ -414,6 +416,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await run(store, profile, "google");
       return null;
     },
+    async connectGoogleSpo2() {
+      if (!store || !state.profile || state.source !== "health_connect") return null;
+      try {
+        patch({ google: await connectSpo2Account() });
+      } catch (e) {
+        return toSignInError(e);
+      }
+      await run(store, state.profile, "health_connect");
+      return null;
+    },
     async disconnectGoogle() {
       const r = await disconnectGoogleAccount();
       if (state.source === "google") {
@@ -439,7 +451,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await store.clearAll();
       await AsyncStorage.multiRemove([SOURCE_KEY, OWN_PROFILE_KEY, IMPORTED_KEY]);
       await forgetChanges();
-      // The Google grant stays with Google (Disconnect revokes it); Pulse forgets the account and its cursors.
+      // The Google grant stays with Google (Disconnect revokes it); Halo forgets the account and its cursors.
       await forgetGoogleSync();
       await clearConnection();
       forgetGoogleToken();
@@ -462,6 +474,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       useDemo: () => actionsRef.current.useDemo(),
       connectHealth: () => actionsRef.current.connectHealth(),
       connectGoogle: () => actionsRef.current.connectGoogle(),
+      connectGoogleSpo2: () => actionsRef.current.connectGoogleSpo2(),
       disconnectGoogle: () => actionsRef.current.disconnectGoogle(),
       refresh: () => actionsRef.current.refresh(),
       reimport: () => actionsRef.current.reimport(),
@@ -540,7 +553,7 @@ export function useQueryCtx(): QueryCtx | null {
 
 export type QueryResult<T> = { data: T | undefined; error: Error | null; loading: boolean };
 
-// ── The view-model cache ─────────────────────────────────────────────────────
+// The view-model cache
 // A keyed view model is worked out once per scoring run and shared: screens showing the same day reuse it (Today,
 // Activity and Health all read the day's Home model), a screen opened again has its numbers at once, and Today warms
 // the other tabs' models in the background (prefetchQuery). The stamp (scoring run, day, zone, units) retires an entry.

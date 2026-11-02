@@ -1,10 +1,10 @@
-// The few helpers the queries need from Pulse's src/lib/{format,bands,url,extraMetrics,dashboard}.ts and
+// The few helpers the queries need from Halo's src/lib/{format,bands,url,extraMetrics,dashboard}.ts and
 // src/lib/log.ts, copied here so src/queries depends on nothing outside src/core, src/lib/time, src/lib/reasons and
 // src/lib/units (the UI's own port of those libs is written separately). Keep each function identical to the web's.
 // The units below are what the Store holds (metric); src/queries/units.ts converts them for display.
 import { acwrBand, type AcwrBand } from "@/core/scoring/readiness";
 
-// ── format.ts ───────────────────────────────────────────────────────────────
+// format.ts
 
 export const LOCALE = "en-US";
 const MINUS = "−";
@@ -89,7 +89,7 @@ export function clock(ms: number, timeZone?: string) {
   return f.format(ms);
 }
 
-// ── url.ts ──────────────────────────────────────────────────────────────────
+// url.ts
 
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
@@ -108,7 +108,7 @@ export const RANGE_DAYS: Record<TrendRange, number> = { w: 7, m: 30, "6m": 182, 
 /** A metric's own detail screen (Steps, Distance, Weight, …): `/metric/steps`. The mobile router maps it to a route. */
 export const metricHref = (key: string) => `/metric/${key}`;
 
-// ── bands.ts ────────────────────────────────────────────────────────────────
+// bands.ts
 
 export type RecoveryBand = "green" | "yellow" | "red";
 
@@ -136,7 +136,7 @@ const ACWR_TONE: Record<AcwrBand, ChipTone> = { LOAD_RAMPING_DOWN: "neutral", LO
 /** Training load (ACWR) chip tone, on Garmin's 2026 bands: below 0.8 neutral, [0.8, 1.5) optimal, [1.5, 2.0) warning, then alert. */
 export const acwrTone = (acwr: number): ChipTone => ACWR_TONE[acwrBand(acwr)];
 
-// ── extraMetrics.ts ─────────────────────────────────────────────────────────
+// extraMetrics.ts
 
 export type ExtraMetric = {
   key: string;
@@ -185,7 +185,7 @@ export type ExtraKey = (typeof EXTRA_METRICS)[number]["key"];
 export const EXTRA_KEYS = EXTRA_METRICS.map((m) => m.key) as ExtraKey[];
 export const extraMetric = (key: ExtraKey): ExtraMetric => EXTRA_METRICS.find((m) => m.key === key)!;
 
-// ── dashboard.ts ────────────────────────────────────────────────────────────
+// dashboard.ts
 
 export const DASHBOARD_GROUPS = [
   { key: "recovery", label: "Recovery & sleep" },
@@ -239,13 +239,13 @@ export const PHONE_DEFAULT: DashboardKey[] = ["steps", "distance", "calories", "
 /** Phone Home's lead card (spec §11 CD2): what a phone records without a band. */
 export const PHONE_STATS: DashboardKey[] = ["steps", "distance", "calories", "active_minutes"];
 
-// ── log.ts (types only: the metric screen's "entries" section shape) ────────
+// log.ts (types only: the metric screen's "entries" section shape)
 
 export const LOG_TYPES = ["hydration-log", "nutrition-log", "weight", "body-fat", "oxygen-saturation", "moods", "symptoms", "menstrual-period", "ovulation-test"] as const;
 export type LogType = (typeof LOG_TYPES)[number];
 
 /**
- * One entry logged from Pulse, as the metric screen lists it. mobile: `source` says whether it was logged in Pulse or
+ * One entry logged from Halo, as the metric screen lists it. mobile: `source` says whether it was logged in Halo or
  * read from Health Connect (logged in Fitbit); the latter are shown read-only.
  */
 export type LoggedEntry = { id: string; type: LogType; ts: number; day: string; title: string; detail: string; atGoogle: boolean; source: "pulse" | "health_connect" };

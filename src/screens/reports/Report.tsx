@@ -1,4 +1,4 @@
-// Reports `/reports/[period]` (spec §7.13, journey 8), ported from Pulse's src/app/(app)/reports/[period]/page.tsx and
+// Reports `/reports/[period]` (spec §7.13, journey 8), ported from Halo's src/app/(app)/reports/[period]/page.tsx and
 // its loading.tsx. `period` is `YYYY-Www` or `YYYY-MM`. Phone additions: the Performance Assessment (focus points, the
 // biggest changes, sleep against need and activity against the Weekly Plan's targets) and a Share button that sends
 // the report as text (./share.ts). In the look of Apple's weekly summary: the period switcher and the Week / Month

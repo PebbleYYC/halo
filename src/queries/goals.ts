@@ -1,5 +1,5 @@
 // Daily goals (Fitbit-style, a phone-only addition): how far `day` has come toward each target the person set, with a
-// week of history for the rings and streaks, and Active Zone Minutes against the weekly target. Pulse's own screens
+// week of history for the rings and streaks, and Active Zone Minutes against the weekly target. Halo's own screens
 // never set goals; they are kept on the phone (src/state/goals.ts) and come in as `goals`. Pure over the Store. Targets
 // are kept metric (km, ml); the rows come out in the person's units.
 import { addDays } from "@/lib/time";
@@ -11,7 +11,7 @@ import { unitsOf } from "./units";
 export type GoalKey = "steps" | "distance" | "floors" | "azm" | "active_minutes" | "active_calories" | "water" | "sleep";
 export const GOAL_KEYS: readonly GoalKey[] = ["steps", "distance", "floors", "azm", "active_minutes", "active_calories", "water", "sleep"];
 
-/** Targets per day (sleep: hours a night; null = Pulse's sleep need for that night) and Active Zone Minutes per week. */
+/** Targets per day (sleep: hours a night; null = Halo's sleep need for that night) and Active Zone Minutes per week. */
 export type GoalTargets = {
   steps: number;
   /** km */
@@ -26,7 +26,7 @@ export type GoalTargets = {
   active_calories: number;
   /** ml */
   water: number;
-  /** hours a night; null follows Pulse's sleep need */
+  /** hours a night; null follows Halo's sleep need */
   sleep: number | null;
 };
 export type Goals = { targets: GoalTargets; enabled: Record<GoalKey, boolean> };
@@ -101,7 +101,7 @@ export type GoalsDayVM = {
 
 /** Streaks look back this far. */
 const WINDOW = 35;
-/** Sleep's fallback need before Pulse has scored a night. */
+/** Sleep's fallback need before Halo has scored a night. */
 const DEFAULT_SLEEP_NEED_H = 8;
 
 const valueOf = (key: GoalKey, r: DayRow | undefined): number | null => {

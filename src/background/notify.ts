@@ -12,7 +12,7 @@ export const CHECK_IN_ID = "pulse.checkin";
 export const BEDTIME_ID = "pulse.bedtime";
 
 let handlerInstalled = false;
-/** Shows notifications that arrive while Pulse is in the foreground too (expo-notifications drops them otherwise). */
+/** Shows notifications that arrive while Halo is in the foreground too (expo-notifications drops them otherwise). */
 export function installNotificationHandler(): void {
   if (handlerInstalled) return;
   handlerInstalled = true;

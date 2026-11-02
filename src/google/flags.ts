@@ -3,7 +3,5 @@
  * the source was being built (a build could ship from a half-done tree); switching it off again hides the choice, and
  * the sync, background task and live pull keep working for anyone whose saved source is already "google".
  */
-// Off (2026-10-08): the person chose Google Health (via Health Connect) for now and doesn't want the Google Cloud setup.
-// The native sign-in module is also left out of the build (modules/pulse-google/expo-module.config.json.disabled);
-// turning this back on means renaming that file back to expo-module.config.json and rebuilding.
+// Off: Health Connect stays the source. The sign-in module is built in for the SpO2 supplement (google/spo2.ts).
 export const GOOGLE_SOURCE_ENABLED = false;

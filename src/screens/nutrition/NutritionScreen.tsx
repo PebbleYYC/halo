@@ -1,6 +1,6 @@
 // Nutrition `/nutrition` (a phone-only screen): today's calories, protein, carbs and fat against the person's targets
 // (protein 1.6 g per kg of their weight by default, worded in pounds when they chose them; all four editable), their
-// 7- and 30-day daily averages, daily protein and calories over the last month, and today's food: Pulse's entries to
+// 7- and 30-day daily averages, daily protein and calories over the last month, and today's food: Halo's entries to
 // edit or delete, Fitbit's read-only.
 // Opened from the Journal's food sheet and from Today's journal card.
 //
@@ -41,7 +41,7 @@ const grams = (v: number) => FORMATS.int(v);
 /** A value, or the missing dash. */
 const show = (v: number | null, f: (x: number) => string) => (v === null ? "--" : f(v));
 
-// ── Today ───────────────────────────────────────────────────────────────────
+// Today
 
 /** Each macro's colour, so the three meters read apart at a glance: protein blue, carbs orange, fat indigo. */
 const MACRO_TINT: Record<"protein" | "carbs" | "fat", CalmTint> = { protein: "sky", carbs: "peach", fat: "lavender" };
@@ -132,7 +132,7 @@ function TodayCard({ vm }: { vm: NutritionVM }) {
   );
 }
 
-// ── Targets ─────────────────────────────────────────────────────────────────
+// Targets
 
 const TARGET_LABEL: Record<TargetKey, string> = { kcal: "Calories", protein: "Protein", carbs: "Carbs", fat: "Fat" };
 const unitOf = (k: TargetKey) => TARGET_LIMITS[k].unit;
@@ -170,7 +170,7 @@ function TargetsCard({ targets, onEdit }: { targets: Targets; onEdit: () => void
   );
 }
 
-/** Edit the targets: a field each, blank for Pulse's suggestion (shown as the placeholder). */
+/** Edit the targets: a field each, blank for Halo's suggestion (shown as the placeholder). */
 function TargetsSheet({ open, onClose, suggested, custom, onSave }: { open: boolean; onClose: () => void; suggested: Targets; custom: CustomTargets; onSave: (next: CustomTargets) => Promise<void> }) {
   const [text, setText] = React.useState<Record<TargetKey, string>>(() => Object.fromEntries(TARGET_KEYS.map((k) => [k, custom[k] === null ? "" : String(custom[k])])) as Record<TargetKey, string>);
   const [errors, setErrors] = React.useState<Partial<Record<TargetKey, string>>>({});
@@ -238,7 +238,7 @@ function TargetsSheet({ open, onClose, suggested, custom, onSave }: { open: bool
   );
 }
 
-// ── Averages ────────────────────────────────────────────────────────────────
+// Averages
 
 /** One period's daily averages as a Health tile: its name in the nutrition colour, the calories, each macro in its colour, then how many days had food. */
 function AverageTile({ title, a }: { title: string; a: Averages }) {
@@ -276,7 +276,7 @@ function AverageTile({ title, a }: { title: string; a: Averages }) {
   );
 }
 
-// ── Chart ───────────────────────────────────────────────────────────────────
+// Chart
 
 type ChartKey = "protein" | "kcal";
 
@@ -316,7 +316,7 @@ function HistoryChart({ vm }: { vm: NutritionVM }) {
   );
 }
 
-// ── Today's food ────────────────────────────────────────────────────────────
+// Today's food
 
 const VIA_ICON: Record<NonNullable<FoodItem["via"]>, LucideIcon> = { photo: Camera, text: Sparkles, manual: Utensils };
 
@@ -337,8 +337,8 @@ function RowLink({ label, onPress, accessibilityLabel }: { label: string; onPres
 }
 
 /**
- * One food: its icon (how it was logged), name and portion, numbers, time and source; edit and delete for Pulse's. A
- * Pulse entry taken for a repeat of a Fitbit one says so, numbers struck through, with "Count it too" for when it isn't.
+ * One food: its icon (how it was logged), name and portion, numbers, time and source; edit and delete for Halo's. A
+ * Halo entry taken for a repeat of a Fitbit one says so, numbers struck through, with "Count it too" for when it isn't.
  */
 function FoodRow({ f, today, timeZone, onEdit, onDelete, onSeparate }: { f: FoodItem; today: string; timeZone: string; onEdit: () => void; onDelete: () => void; onSeparate: (separate: boolean) => void }) {
   const c = useCalm();
@@ -450,7 +450,7 @@ function MealList({ vm, google, onEdit, onDelete, onSeparate, onAdd }: { vm: Nut
   );
 }
 
-// ── The screen ──────────────────────────────────────────────────────────────
+// The screen
 
 /** Today's card while it loads: its head, the ring's bare track beside three meters' bars, the line under them. */
 function Loading() {

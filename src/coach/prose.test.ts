@@ -1,4 +1,4 @@
-// Ported from Pulse's Prose.test.tsx, on the parsed blocks the screen renders.
+// Ported from Halo's Prose.test.tsx, on the parsed blocks the screen renders.
 import { describe, expect, it } from "vitest";
 import { parseProse, type Span } from "./prose";
 

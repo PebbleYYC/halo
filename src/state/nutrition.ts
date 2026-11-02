@@ -1,5 +1,5 @@
 // The person's own nutrition targets (Nutrition › Targets), kept on the phone (AsyncStorage "pulse.nutrition.targets"):
-// a number per target they set, null where Pulse's suggestion applies (src/nutrition/targets.ts). One module-level
+// a number per target they set, null where Halo's suggestion applies (src/nutrition/targets.ts). One module-level
 // store like the goals (src/state/goals.ts), so every screen sees a save at once.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as React from "react";

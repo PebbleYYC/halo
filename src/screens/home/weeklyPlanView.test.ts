@@ -30,7 +30,7 @@ describe("Weekly Plan card text", () => {
     expect(planCaption({ key: "steps", target: 8000, format: "grouped", value: null, status: "no_data", expected: null, streak: none })).toBe("No data yet");
   });
 
-  it("Pulse Age's years, signed with a real minus", () => {
+  it("Halo Age's years, signed with a real minus", () => {
     expect(ageText(-0.64)).toBe(`−0.6${S}yr`);
     expect(ageText(1.25)).toBe(`+1.3${S}yr`);
     expect(ageText(0.02)).toBe(`0.0${S}yr`);

@@ -45,3 +45,6 @@ yarn-error.*
 
 # local Claude Code settings
 .claude/
+
+# Gradle output from local module builds
+modules/*/android/build/

@@ -57,7 +57,7 @@ describe("planDays", () => {
 });
 
 describe("getWeeklyPlan", () => {
-  it("scores this week against the defaults, with Pulse Age's years per habit", async () => {
+  it("scores this week against the defaults, with Halo Age's years per habit", async () => {
     const vm = await getWeeklyPlan(TODAY, ctx, PLAN_DEFAULTS);
     expect(vm).toMatchObject({ monday: MONDAY, sunday: "2026-10-04", day: TODAY, today: TODAY, isCurrentWeek: true, elapsed: 4 });
     expect(vm.items.map((i) => i.key)).toEqual(PLAN_KEYS);

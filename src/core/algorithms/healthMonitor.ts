@@ -30,7 +30,7 @@ export interface VitalReading {
   value: number | null;
   /** null while the baseline is not usable and no range was given. */
   range: { low: number; high: number } | null;
-  /** Where the range came from: Google's own, or Pulse's baseline. */
+  /** Where the range came from: Google's own, or Halo's baseline. */
   rangeSource?: "google" | "pulse";
   /** no_data when the value or a usable baseline is missing. */
   status: VitalStatus;

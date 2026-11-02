@@ -1,4 +1,4 @@
-// The coach's instructions for one request, ported from Pulse's src/server/coach/instructions.ts: the default wording
+// The coach's instructions for one request, ported from Halo's src/server/coach/instructions.ts: the default wording
 // (texts.ts) with today's date and the person's time zone filled in, so "today" is their local day, then one sentence
 // on their units (Settings › Units): the tools return metric, and the answer is written in what they read. Their own
 // notes come last and are framed as preferences, so they can shape the tone but never loosen the rules above them.

@@ -1,4 +1,4 @@
-// Heart rate `/health/heart-rate?d=`, ported from Pulse's health/heart-rate/page.tsx, LiveHeartRate.tsx and loading.tsx,
+// Heart rate `/health/heart-rate?d=`, ported from Halo's health/heart-rate/page.tsx, LiveHeartRate.tsx and loading.tsx,
 // as an Apple Health detail page: the latest reading (today) or the day's average large, rolling into place, with the
 // day's range, average and resting rate under it, then the day's minutes and time in zones.
 //
@@ -8,7 +8,7 @@
 // the ticker's own newest reading. Full syncs (on open, after 10 minutes away, pull to refresh) re-run the query too.
 // The "2 minutes ago" line ticks on its own.
 //
-// Live over Bluetooth (src/state/liveBle.tsx): while the band shares heart rate and Pulse is connected, today's hero
+// Live over Bluetooth (src/state/liveBle.tsx): while the band shares heart rate and Halo is connected, today's hero
 // becomes the Live section — the band's bpm, the heart-rate zone it is in (the day's zones from the pipeline: resting
 // to max on heart-rate reserve, the profile's max when the day has none yet), the last 2 minutes and the live RMSSD.
 // Otherwise the hero offers "Go live". Live readings are display-only; the chart and zones below stay Health Connect's.

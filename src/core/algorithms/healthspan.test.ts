@@ -56,7 +56,7 @@ const weekly = (x: { sleep: number; sri: number; steps: number; z13: number; z45
   bodyFatPct: x.fat,
 });
 
-describe("Pulse Age against WHOOP's Table 2 (white paper; hs-calc/calc2.py)", () => {
+describe("Halo Age against WHOOP's Table 2 (white paper; hs-calc/calc2.py)", () => {
   // Average US adults and average WHOOP members at 30, and WHOOP Age − age as the paper prints it.
   const TABLE_2 = [
     { name: "US man", sex: "male", whoop: 6, x: { sleep: 6.35, sri: 70, steps: 5200, z13: 69, z45: 0, str: 0, vo2: 42.4, rhr: 67, fat: 26.1 } },
@@ -74,8 +74,8 @@ describe("Pulse Age against WHOOP's Table 2 (white paper; hs-calc/calc2.py)", ()
   });
 });
 
-describe("Pulse Age", () => {
-  it("the reference profile scores Pulse Age = chronological age, with nine terms at 0", () => {
+describe("Halo Age", () => {
+  it("the reference profile scores Halo Age = chronological age, with nine terms at 0", () => {
     const r = run(series(180));
     expect(r.pulseAge).toBeCloseTo(35, 10);
     expect(r.contributions).toHaveLength(9);
@@ -157,7 +157,7 @@ describe("Pulse Age", () => {
     expect(noSleep.termsUsed).toBe(6);
     expect(noSleep.deltaYears).toBeGreaterThan(3.5);
     expect(noSleep.deltaYears).toBeLessThan(5.5);
-    // Typical for this person: 40 bouted minutes a week, 6.6 h of sleep, consistency 75, and Pulse's own VO2max
+    // Typical for this person: 40 bouted minutes a week, 6.6 h of sleep, consistency 75, and Halo's own VO2max
     // estimate at half weight.
     const typical = run(series(180, () => ({ ...sparse, zone13Min: 40 / 7, sleepHours: 6.6, sri: 75, vo2maxEstimated: vo2 }), () => ({})), p);
     expect(typical).toMatchObject({ termsUsed: 9, vo2maxSource: "estimate" });
@@ -178,14 +178,14 @@ describe("VO2max source rule", () => {
     expect(r.contributions.find((c) => c.key === "vo2max")!.estimated).toBeUndefined();
   });
 
-  it("with only Fitbit's estimate, the same value moves Pulse Age half as much", () => {
+  it("with only Fitbit's estimate, the same value moves Halo Age half as much", () => {
     const r = run(series(180, () => ({ vo2maxRun: null, vo2maxDaily: plus7 })));
     expect(r.vo2maxSource).toBe("daily");
     expect(r.deltaYears).toBeCloseTo(full / 2, 10);
     expect(r.contributions.find((c) => c.key === "vo2max")!.estimated).toBe(true);
   });
 
-  it("Pulse's own estimate counts at half weight only when there is no measured or Fitbit value", () => {
+  it("Halo's own estimate counts at half weight only when there is no measured or Fitbit value", () => {
     const own = run(series(180, () => ({ vo2maxRun: null, vo2maxEstimated: plus7 })));
     expect(own.vo2maxSource).toBe("estimate");
     expect(own.deltaYears).toBeCloseTo(full / 2, 10);
@@ -223,7 +223,7 @@ describe("Pace of Aging", () => {
     expect(run(series(180, () => ({ restingHr: 68, steps: 7000 }))).paceOfAging).toBeCloseTo(1, 10);
   });
 
-  it("is 1 + (Δ30 − Δ180) / 0.5: a 30-day Pulse Age 0.25 years above the 6-month one is 1.5x", () => {
+  it("is 1 + (Δ30 − Δ180) / 0.5: a 30-day Halo Age 0.25 years above the 6-month one is 1.5x", () => {
     // Resting HR x in the last 30 days and the reference before: Δ180 = c(x − 60)/6 and Δ30 = c(x − 60).
     const c = (K * Math.log(1.09)) / 10;
     const x = 60 + (0.25 * 6) / (5 * c);
@@ -413,15 +413,15 @@ describe("scoreHealthspan's coverage gate", () => {
       expect(r.strengthMin, r.day).toBe(full ? 0 : null);
       expect(r.restingHr, r.day).toBe(70);
     }
-    if (!row || row.reason !== null) throw new Error("no Pulse Age");
+    if (!row || row.reason !== null) throw new Error("no Halo Age");
     // 5,000 a day on the covered days; the 500-step short days would have pulled the mean to 3,500.
     expect(row.contributions.find((c) => c.key === "steps")!.value).toBe(5000);
-    // Pulse's own VO2max estimate (Uth, no waist) stands in for the missing VO2max, at half weight.
+    // Halo's own VO2max estimate (Uth, no waist) stands in for the missing VO2max, at half weight.
     expect(row.fitnessEstimate).toMatchObject({ method: "uth" });
     expect(row.vo2maxSource).toBe("estimate");
   });
 
-  it("counts each zone minute once for Pulse Age (WHOOP's time in zone) and for Fitness Age", () => {
+  it("counts each zone minute once for Halo Age (WHOOP's time in zone) and for Fitness Age", () => {
     // Every day: 25 bouted minutes at 60–80 % of the reserve and 10 at 80 % or more.
     const day = (i: number) => {
       const d = dayOf(i, true);
@@ -430,8 +430,8 @@ describe("scoreHealthspan's coverage gate", () => {
     const f = newFold();
     let row: ReturnType<typeof scoreHealthspan> | undefined;
     for (let i = 0; i < 30; i++) row = scoreHealthspan(data, f, day(i), sleep, opts);
-    if (!row || row.reason !== null) throw new Error("no Pulse Age");
-    // Pulse Age: 25 minutes a day in zones 1–3, 175 a week (version 18; the 60–80 % minutes counted twice before, 350).
+    if (!row || row.reason !== null) throw new Error("no Halo Age");
+    // Halo Age: 25 minutes a day in zones 1–3, 175 a week (version 18; the 60–80 % minutes counted twice before, 350).
     expect(row.contributions.find((c) => c.key === "zone13")!.value).toBeCloseTo(175, 9);
     // Fitness Age: 35 active minutes a day, 10 vigorous (a share of 0.29): HUNT 5 × 2 × 0.75 = 7.5. Fed the doubled 60
     // minutes (a vigorous share of 0.17) it read 5 × 2 × 1.0 = 10.
@@ -500,7 +500,7 @@ describe("Halo Age's WHOOP definitions (version 18)", () => {
     const f = newFold();
     let last: ReturnType<typeof scoreHealthspan> | undefined;
     for (let i = 0; i < 60; i++) last = scoreHealthspan(data, f, dayOf(i), sleep, opts);
-    if (!last || last.reason !== null) throw new Error("no Pulse Age");
+    if (!last || last.reason !== null) throw new Error("no Halo Age");
     expect(last.paceOfAging).toBeNull();
     expect(last.paceDays).toBe(0);
     expect(last.paceDaily).not.toBeNull();

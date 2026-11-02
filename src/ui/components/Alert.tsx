@@ -62,7 +62,7 @@ export function Alert({ variant = "default", icon: Icon, title, description, act
   );
 }
 
-// ── The modal alert ──────────────────────────────────────────────────────────
+// The modal alert
 
 export type AlertAction = {
   label: string;
@@ -234,7 +234,7 @@ export function AlertDialog({ open, onClose, title, message, error, actions, loc
   );
 }
 
-// ── The action sheet ─────────────────────────────────────────────────────────
+// The action sheet
 
 export type SheetAction = { label: string; onPress: () => void; destructive?: boolean; disabled?: boolean };
 

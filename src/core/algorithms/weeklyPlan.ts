@@ -1,4 +1,4 @@
-// Own algorithm (a phone addition, after WHOOP's Weekly Plan): weekly targets for the habits Pulse Age scores (moderate
+// Own algorithm (a phone addition, after WHOOP's Weekly Plan): weekly targets for the habits Halo Age scores (moderate
 // and vigorous minutes, strength sessions, daily steps, sleep regularity and sleep against need), each week's progress
 // and pace, and streaks of weeks met. Pure: the query (src/queries/weeklyPlan.ts) maps the Store's days into PlanDay.
 import { weekStreaks, type Streaks } from "./streaks";
@@ -10,7 +10,7 @@ export type PlanSettings = { targets: PlanTargets; enabled: Record<PlanKey, bool
 
 /**
  * Evidence-based defaults. Moderate 150 and vigorous 75 min a week: WHO 2020 guidelines (Bull et al., BJSM 54:1451),
- * Pulse Age's own reference for both. Strength on 2 days a week: the same guidelines. 8,000 steps a day: Paluch 2022
+ * Halo Age's own reference for both. Strength on 2 days a week: the same guidelines. 8,000 steps a day: Paluch 2022
  * (Lancet Public Health), where the benefit levels off for most adults (8–10k under 60, 6–8k from 60). Consistency
  * 80: the Sleep screen's optimal band, past the middle quintile of Windred 2024 where most of the SRI benefit is.
  * Sleep need met on 5 nights of 7 (*tunable*): a week with a late night or two still counts.
@@ -82,13 +82,13 @@ export const withPlanTarget = (plan: PlanSettings, key: PlanKey, value: number):
 /** `plan` with one target switched on or off. */
 export const withPlanEnabled = (plan: PlanSettings, key: PlanKey, on: boolean): PlanSettings => ({ ...plan, enabled: { ...plan.enabled, [key]: on } });
 
-// ── Evaluation ──────────────────────────────────────────────────────────────
+// Evaluation
 
 /** One local day's inputs; null where the day has none. */
 export interface PlanDay {
   day: string;
   /**
-   * Moderate minutes: 40 % of heart-rate reserve to the top of Zone 3, Pulse Age's band but every minute once (no bout
+   * Moderate minutes: 40 % of heart-rate reserve to the top of Zone 3, Halo Age's band but every minute once (no bout
    * rule, no doubling of 60–80 %). Null without HR.
    */
   zone13Min: number | null;

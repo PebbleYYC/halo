@@ -1,5 +1,5 @@
-// The Pulse Age orb in 3D (orb3dShader.ts): a glowing, speckled blob whose surface keeps flowing, so its outline is
-// never the same twice, turning slowly with its specks sweeping past at different depths. The Pulse Age, its label
+// The Halo Age orb in 3D (orb3dShader.ts): a glowing, speckled blob whose surface keeps flowing, so its outline is
+// never the same twice, turning slowly with its specks sweeping past at different depths. The Halo Age, its label
 // and the gap to your age sit on its pale core. It grows in when it first shows; press and hold and it livens up
 // (bigger waves, a faster turn, a light tap of haptics), then settles when let go. Drawn on the GPU: JavaScript only
 // advances one clock a frame, and only while the screen is in view with the app open (a still orb under reduced
@@ -46,7 +46,7 @@ export function AgeOrb3D({ age, deltaYears, provisional = false, size = 220, rea
   const reduce = useReduceMotion();
   const running = focused && appActive && !reduce;
 
-  // The rim colours of this Pulse Age (greens younger, oranges and rust older), the pale core and the highlight.
+  // The rim colours of this Halo Age (greens younger, oranges and rust older), the pale core and the highlight.
   const colors = React.useMemo(() => {
     const rim = orbColors(delta, (tok) => hexRGB(c[tok]));
     return { top: unit(rim.top), bottom: unit(rim.bottom), core: unit(hexRGB(c.orbCore)), hilite: [1, 1, 1], rim: rim.top };

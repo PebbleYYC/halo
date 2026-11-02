@@ -1,4 +1,4 @@
-// Trends `/trends?metric=&r=` (More, U21), ported from Pulse's trends/page.tsx, parts.tsx, MetricSheet.tsx and
+// Trends `/trends?metric=&r=` (More, U21), ported from Halo's trends/page.tsx, parts.tsx, MetricSheet.tsx and
 // loading.tsx, as an Apple Health detail page: the metric on show as a card (its area's coloured icon square, the area
 // in small capitals over the metric's name, the up-down chevrons that open the picker), the chart with its headline and
 // range control (W / M / 6M / 1Y), then each range's average against the one before as a grouped list.

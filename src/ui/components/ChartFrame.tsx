@@ -47,7 +47,7 @@ export type { Band };
  */
 export const AXIS = { fontSize: 11, tickMargin: 6, xAxisHeight: 26, gap: 6 } as const;
 
-// --- The chart colours ---
+// The chart colours
 
 /**
  * What every chart paints with, from the active palette (src/ui/calm.ts): a dashed hairline grid in the separator
@@ -140,7 +140,7 @@ export function pastel(color: string, k: ChartInk, p = 0.55): string {
   return mix(color, k.card, p);
 }
 
-// --- Typefaces ---
+// Typefaces
 
 export type FaceWeight = 500 | 600 | 700;
 /** Inter, the app's face, as Skia fonts for numerals and words, created once per weight and size. */
@@ -249,7 +249,7 @@ export function clockLabels(ts: readonly number[], timeZone?: string): string[] 
   });
 }
 
-// --- Mounting and draw-in ---
+// Mounting and draw-in
 
 const DRAW_IN_MS = 520;
 
@@ -410,7 +410,7 @@ export function NativeReveal({ progress, mode, width, height, children }: { prog
   );
 }
 
-// --- Gestures ---
+// Gestures
 
 /** A scrub: `toIndex` (a worklet) maps a finger's x on the canvas to the index it points at, -1 for none. */
 export type Scrub = { active: SharedValue<number>; toIndex: (x: number, width: number) => number };
@@ -495,7 +495,7 @@ function useChartGesture(width: number, press: (() => void) | null, scrub?: Scru
   }, [width, press, active, toIndex]);
 }
 
-// --- The figure ---
+// The figure
 
 export type ChartRender = { width: number; fonts: ChartFonts };
 
@@ -624,7 +624,7 @@ export function useStableBy<T>(value: T, sig: string): T {
   return React.useMemo(() => value, [sig]);
 }
 
-// --- Layout helpers (unchanged from the SVG kit) ---
+// Layout helpers (unchanged from the SVG kit)
 
 /** Tick text for a numeric axis: whole numbers drop their ".0" (48, not 48.0); others keep the metric's format. */
 export const wholeTick = (fmt: (v: number) => string) => (v: number) => (Number.isInteger(v) ? Math.round(v).toLocaleString("en-US") : fmt(v));
@@ -638,7 +638,7 @@ export const labelGutter = (labels: (string | false | null | undefined)[], base 
   return widest ? Math.max(base, widest + 16) : base;
 };
 
-// --- Marks ---
+// Marks
 
 type Anchor = "start" | "middle" | "end";
 
@@ -893,7 +893,7 @@ export function barPath(x: number, y: number, w: number, h: number, top: number,
 /** A bar's top corner radius at width `w`: Apple Health's fully rounded top, half the width. */
 export const barRadius = (w: number) => w / 2;
 
-// --- Scrub layers (React Native views over the canvas, moved on the UI thread) ---
+// Scrub layers (React Native views over the canvas, moved on the UI thread)
 
 /** The scrub cursor's width: a hairline a point wide, as Apple Health's selection rule. */
 const CURSOR_W = 1;
@@ -1071,7 +1071,7 @@ export function ScrubLabel({
   );
 }
 
-// --- The explorer affordance ---
+// The explorer affordance
 
 /** The ↗ in a chart card's header (SectionShell `action`): a 32 px round quiet button that opens the chart explorer. */
 export function ExpandButton({ onPress, label = "Open chart explorer" }: { onPress: () => void; label?: string }) {

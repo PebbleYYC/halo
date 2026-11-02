@@ -13,7 +13,7 @@ import { hrvStatusConfig } from "@/core/algorithms/hrvStatus";
 import { fromReason, loadDays, ms, none, ok, type QueryCtx, todayOf } from "./common";
 import type { TimePoint } from "./types";
 
-// ── Words ────────────────────────────────────────────────────────────────────
+// Words
 
 export const READINESS_WORD: Record<ReadinessBand, string> = { prime: "Prime", high: "High", moderate: "Moderate", low: "Low", poor: "Poor" };
 export const READINESS_TONE: Record<ReadinessBand, ChipTone> = { prime: "optimal", high: "optimal", moderate: "neutral", low: "warning", poor: "alert" };
@@ -93,7 +93,7 @@ const BENEFIT_LINE: Record<PrimaryBenefit, string> = {
 export const HRV_WORD = { balanced: "Balanced", unbalanced: "Unbalanced", low: "Low" } as const;
 export const HRV_TONE = { balanced: "optimal", unbalanced: "warning", low: "alert" } as const satisfies Record<keyof typeof HRV_WORD, ChipTone>;
 
-// ── View models ──────────────────────────────────────────────────────────────
+// View models
 
 export type TrainingReadinessVM = {
   score: number;

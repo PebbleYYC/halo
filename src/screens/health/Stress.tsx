@@ -1,4 +1,4 @@
-// Stress Monitor `/health/stress?d=` (spec §7.9), ported from Pulse's health/stress/page.tsx and its loading.tsx, as an
+// Stress Monitor `/health/stress?d=` (spec §7.9), ported from Halo's health/stress/page.tsx and its loading.tsx, as an
 // Apple Health detail page: the large title with the day under it, the gauge ring (it sweeps to the latest score as the
 // number rolls in), the insight, the day's line, the day's minutes per level as one capsule over the typical same
 // weekday's (dimmed) with each level's time in a grouped list, the breathing entry, then the 30-day trend.

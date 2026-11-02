@@ -2,7 +2,7 @@ import * as React from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import type { Scheme, Tokens } from "@/ui/theme";
 
-// Pulse 2 "calm data" retired the soft pools of colour behind the dials: heroes sit on the flat ground, so nothing is
+// Halo 2 "calm data" retired the soft pools of colour behind the dials: heroes sit on the flat ground, so nothing is
 // drawn here any more. The exports stay so existing imports compile; every glow is a no-op.
 
 /** The cap on a glow's centre opacity (kept for callers; nothing draws). */

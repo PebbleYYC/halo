@@ -6,7 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const SETTINGS_KEY = "pulse.background.settings";
 
 export type BackgroundSettings = {
-  /** WorkManager wakes Pulse every 15-30 min to import Health Connect and rescore. */
+  /** WorkManager wakes Halo every 15-30 min to import Health Connect and rescore. */
   backgroundSync: boolean;
   /** "Recovery ready", once a day, when today's Recovery first appears. */
   recoveryReady: boolean;

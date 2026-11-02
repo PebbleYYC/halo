@@ -1,4 +1,4 @@
-// The coach's wording, ported from Pulse's src/server/coach/texts.ts: the instructions, each tool's description and
+// The coach's wording, ported from Halo's src/server/coach/texts.ts: the instructions, each tool's description and
 // each parameter's description, verbatim. The web lets an admin override them from a dashboard; the phone has no admin,
 // so the defaults here are the wording. What a tool reads and its parameter types stay in tools.ts.
 import { TREND_METRICS } from "@/queries/trends";

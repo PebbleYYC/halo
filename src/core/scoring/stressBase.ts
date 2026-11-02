@@ -147,7 +147,7 @@ export function analyze(hr: HrSample[], tzOffsetSeconds = 0, mode: ScoringMode =
   };
 }
 
-// ── DaytimeBaselines ───────────────────────────────────────────────────────
+// DaytimeBaselines
 
 /** One day's daytime-HR aggregate: P10 of its gated waking-hour mean HRs, or null. */
 export function dayDaytimeAggregate(hr: HrSample[], tzOffsetSeconds = 0): number | null {

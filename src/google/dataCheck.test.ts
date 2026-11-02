@@ -1,4 +1,4 @@
-// The Google data check over a stubbed API and an in-memory Store: per day, Google's values next to Pulse's.
+// The Google data check over a stubbed API and an in-memory Store: per day, Google's values next to Halo's.
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
@@ -18,7 +18,7 @@ const fixture = (name: string): unknown[] => {
 };
 
 describe("Google data check", () => {
-  it("shows each day's Google values by source beside Pulse's, and says what it couldn't read", async () => {
+  it("shows each day's Google values by source beside Halo's, and says what it couldn't read", async () => {
     const store = new MemoryStore();
     await store.upsertMetrics([{ ...emptyMetrics("2026-10-01"), rhrBpm: 57, steps: 8421, spo2Pct: 96.4 }]);
     const fetch = vi.fn(async (input: string | URL | Request) => {
@@ -39,7 +39,7 @@ describe("Google data check", () => {
     expect(line("spo2").sources[0].value).toBe(96.4);
     expect(oct1.sleep.sources.map((x) => x.detail)).toEqual(["23:30–07:10, 6 stages [SUCCEEDED], main"]);
     expect(r.errors).toEqual(["Breathing: [google] daily-respiratory-rate: INVALID_ARGUMENT (HTTP 400)"]);
-    expect(r.text).toContain("Halo data check — Google Health API");
+    expect(r.text).toContain("Halo data check: Google Health API");
     expect(r.text).toContain("Resting HR: Halo 57 bpm");
     expect(r.text).toContain("Not read:");
   });

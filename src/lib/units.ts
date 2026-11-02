@@ -65,7 +65,7 @@ export function parseUnits(raw: string | null | undefined): Units {
   return out as Units;
 }
 
-// ── Exact factors (international yard and pound, US fluid ounce) ────────────
+// Exact factors (international yard and pound, US fluid ounce)
 
 export const KG_PER_LB = 0.45359237;
 export const CM_PER_IN = 2.54;
@@ -105,7 +105,7 @@ export function cmToFtIn(cm: number, inchDecimals = 0): { ft: number; in: number
 }
 export const ftInToCm = (ft: number, inches: number) => inToCm(ft * IN_PER_FT + inches);
 
-// ── A metric unit as shown ───────────────────────────────────────────────────
+// A metric unit as shown
 
 /** How a metric value is shown: the unit's label and the linear map `metric × factor + offset`. */
 export type Conversion = { unit: string; factor: number; offset: number };
@@ -168,7 +168,7 @@ export const UNIT_NAME: { [K in UnitKind]: Record<Units[K], string> } = {
   fluid: { ml: "Millilitres", floz: "US fluid ounces" },
 };
 
-// ── Text ─────────────────────────────────────────────────────────────────────
+// Text
 
 const NBSP = "\u00a0";
 const fmts = new Map<number, Intl.NumberFormat>();
@@ -201,7 +201,7 @@ export function fluidText(ml: number, units: Units): string {
   return units.fluid === "ml" ? `${amount(ml, 0)}${NBSP}ml` : `${amount(mlToFlOz(ml), 1)}${NBSP}fl oz`;
 }
 
-// ── Input ────────────────────────────────────────────────────────────────────
+// Input
 
 const NUMBER = /^\d+([.,]\d+)?$/;
 /** A typed number: null when blank, NaN when not a plain non-negative number ("1,5" reads 1.5). */

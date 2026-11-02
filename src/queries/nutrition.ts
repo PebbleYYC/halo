@@ -1,7 +1,7 @@
 // Nutrition `/nutrition` (a phone-only screen): today's calories and macros against the person's targets, their 7- and
-// 30-day averages, 30 days of daily protein and calories, and today's food, Pulse's entries (editable) beside those
+// 30-day averages, 30 days of daily protein and calories, and today's food, Halo's entries (editable) beside those
 // read from Health Connect (logged in Fitbit). Every number is counted as the metric screens count it: the source's
-// daily roll-up plus Pulse's own entries, a meal logged in both apps once (food.ts).
+// daily roll-up plus Halo's own entries, a meal logged in both apps once (food.ts).
 import { metricsWithLoggedBody } from "@/data/body";
 import { addDays, localMidnight } from "@/lib/time";
 import { BURN_DAYS, NO_CUSTOM, resolveTargets, type CustomTargets, type Targets } from "@/nutrition/targets";
@@ -10,7 +10,7 @@ import { countedPulse, EMPTY_TOTALS, foodEntry, mealOverlaps, roundNutrient, sum
 import { MEALS, type Meal } from "./log";
 import { unitsOf } from "./units";
 
-/** The nutrients the overview averages and charts (fiber is Pulse's alone, so it shows only in today's total). */
+/** The nutrients the overview averages and charts (fiber is Halo's alone, so it shows only in today's total). */
 export const MACROS = ["kcal", "protein", "carbs", "fat"] as const;
 export type Macro = (typeof MACROS)[number];
 
@@ -30,12 +30,12 @@ export type FoodItem = {
   fat: number | null;
   fiber: number | null;
   ts: number;
-  /** Pulse's own (editable), or read from Health Connect (logged in Fitbit, read-only). */
+  /** Halo's own (editable), or read from Health Connect (logged in Fitbit, read-only). */
   source: "pulse" | "health_connect";
   via: FoodVia | null;
-  /** A Pulse entry that repeats this Fitbit entry: the meal counts once, as Fitbit's. */
+  /** A Halo entry that repeats this Fitbit entry: the meal counts once, as Fitbit's. */
   duplicateOf: string | null;
-  /** The person said this Pulse entry is a food of its own ("Count it too"): never taken for a repeat. */
+  /** The person said this Halo entry is a food of its own ("Count it too"): never taken for a repeat. */
   separate: boolean;
 };
 
@@ -45,7 +45,7 @@ export type MealGroup = {
   /** The calories this meal counts (repeats left out). */
   kcal: number;
   items: FoodItem[];
-  /** Pulse and Fitbit both logged this meal with entries that don't match: maybe one meal twice. */
+  /** Halo and Fitbit both logged this meal with entries that don't match: maybe one meal twice. */
   overlap: boolean;
 };
 
@@ -54,9 +54,9 @@ export type NutritionVM = {
   timeZone: string;
   /** Today so far, as the metrics count it. */
   totals: Totals;
-  /** The targets in force: the person's own where set, else Pulse's suggestion. */
+  /** The targets in force: the person's own where set, else Halo's suggestion. */
   targets: Targets;
-  /** Pulse's suggestions alone (the edit sheet's placeholders). */
+  /** Halo's suggestions alone (the edit sheet's placeholders). */
   suggested: Targets;
   /** The 7 and 30 days before today (today is still running, so it never counts in an average). */
   week: Averages;
@@ -70,7 +70,7 @@ export type NutritionVM = {
    * null when the list accounts for it all.
    */
   unlisted: Totals | null;
-  /** Today has food logged in Pulse (some counted, some maybe repeats). */
+  /** Today has food logged in Halo (some counted, some maybe repeats). */
   pulseToday: number;
 };
 
@@ -97,7 +97,7 @@ export function averagesOf(rows: (DayRow | undefined)[], span: number): Averages
   return out;
 }
 
-/** The latest weight on or before `day`, logged in Pulse or synced. */
+/** The latest weight on or before `day`, logged in Halo or synced. */
 async function latestWeight(ctx: QueryCtx, day: string): Promise<number | null> {
   const rows = await metricsWithLoggedBody(ctx.store);
   for (let i = rows.length - 1; i >= 0; i--) {
@@ -137,7 +137,7 @@ export function mealGroups(entries: FoodEntry[]): MealGroup[] {
   });
 }
 
-/** Nutrition for today, against `custom` targets (the person's own; null fields follow Pulse's suggestion). */
+/** Nutrition for today, against `custom` targets (the person's own; null fields follow Halo's suggestion). */
 export async function getNutrition(ctx: QueryCtx, custom: CustomTargets): Promise<NutritionVM> {
   const today = todayOf(ctx);
   const from = addDays(today, -30);

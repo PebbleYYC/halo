@@ -1,25 +1,25 @@
-// Food logged in Pulse's Journal and food read from Health Connect (logged in Fitbit): what a day adds up to, and which
-// of Pulse's entries repeat a meal Fitbit already counts. Pure over logged rows (plus one Store read in nutritionOn), so
+// Food logged in Halo's Journal and food read from Health Connect (logged in Fitbit): what a day adds up to, and which
+// of Halo's entries repeat a meal Fitbit already counts. Pure over logged rows (plus one Store read in nutritionOn), so
 // the day loader (common.ts), the Nutrition screen (nutrition.ts), the Log and the tests share one rule.
 //
 // Counting: the source's daily roll-up (`daily_values` calories_in / protein / carbs / fat, the sync's sum of Health
-// Connect's nutrition records, Fitbit's included) already holds every Fitbit entry, so only Pulse's own entries are
-// added to it, the way water is. Pulse never writes to Health Connect, so its entries can't be in the roll-up; the one
-// way a meal counts twice is the person logging it in both apps. A Pulse entry that matches a Fitbit entry of the same
+// Connect's nutrition records, Fitbit's included) already holds every Fitbit entry, so only Halo's own entries are
+// added to it, the way water is. Halo never writes to Health Connect, so its entries can't be in the roll-up; the one
+// way a meal counts twice is the person logging it in both apps. A Halo entry that matches a Fitbit entry of the same
 // day (same meal, and the same food by name, or the same calories within the hour and a half) is that meal logged
-// twice: Fitbit's stays counted, Pulse's is left out of every total and shown as such.
+// twice: Fitbit's stays counted, Halo's is left out of every total and shown as such.
 import type { DailyValue } from "@/data/types";
 import type { EntrySource, LoggedEntryRow, Store } from "@/data/store";
 import { localMidnight } from "@/lib/time";
 import type { ExtraKey } from "./_lib";
 import type { Meal } from "./log";
 
-/** How a Pulse entry was made: estimated from a photo or a description, or typed in. */
+/** How a Halo entry was made: estimated from a photo or a description, or typed in. */
 export type FoodVia = "photo" | "text" | "manual";
 
 /**
  * A food log entry's data (LogData["nutrition-log"]). Entries read from Health Connect carry the first six fields;
- * Pulse's may add the portion, fiber and how they were made. A nutrient left out is null: unknown, never zero.
+ * Halo's may add the portion, fiber and how they were made. A nutrient left out is null: unknown, never zero.
  */
 export type FoodData = {
   name: string | null;
@@ -66,7 +66,7 @@ export function foodEntry(r: LoggedEntryRow): FoodEntry | null {
   return { id: r.id, ts: r.ts, day: r.day, source: r.source, data };
 }
 
-// ── Sums ────────────────────────────────────────────────────────────────────
+// Sums
 
 export const NUTRIENTS = ["kcal", "protein", "carbs", "fat", "fiber"] as const;
 export type Nutrient = (typeof NUTRIENTS)[number];
@@ -91,7 +91,7 @@ export function sumFood(entries: FoodEntry[]): Totals {
   return t;
 }
 
-// ── One meal, logged twice ──────────────────────────────────────────────────
+// One meal, logged twice
 
 /** Words that say nothing about which food it is: amounts, units, sizes and fillers. */
 const NOISE = new Set([
@@ -128,14 +128,14 @@ export function similarNames(a: string | null | undefined, b: string | null | un
   return shared === Math.min(A.length, B.length) || shared / (A.length + B.length - shared) >= 0.5;
 }
 
-/** A Fitbit entry with no meal can be the same food as a Pulse one logged this close to it. */
+/** A Fitbit entry with no meal can be the same food as a Halo one logged this close to it. */
 export const NEAR_S = 3 * 3600;
 /** Same calories (within 5 %, or 10 kcal) count as the same food only this close in time. */
 export const CLOSE_S = 90 * 60;
 const sameKcal = (a: number, b: number) => Math.abs(a - b) <= Math.max(10, 0.05 * Math.max(a, b));
 
 /**
- * Whether Pulse's entry `p` and Fitbit's `f` are one food logged in both apps: the same day, the same meal (or Fitbit
+ * Whether Halo's entry `p` and Fitbit's `f` are one food logged in both apps: the same day, the same meal (or Fitbit
  * didn't name one and they are within NEAR_S), and the same food by name, or the same calories within CLOSE_S.
  */
 export function sameFood(p: FoodEntry, f: FoodEntry): boolean {
@@ -149,8 +149,8 @@ export function sameFood(p: FoodEntry, f: FoodEntry): boolean {
 }
 
 /**
- * Pulse's entries that repeat a Fitbit entry, as Pulse id → Fitbit id. Each Fitbit entry stands for one Pulse entry at
- * most (two bananas logged in Pulse against one in Fitbit leave one counted): the closest pairs are made first, a
+ * Halo's entries that repeat a Fitbit entry, as Halo id → Fitbit id. Each Fitbit entry stands for one Halo entry at
+ * most (two bananas logged in Halo against one in Fitbit leave one counted): the closest pairs are made first, a
  * name match before a calorie match, then the nearest in time.
  */
 export function duplicates(entries: FoodEntry[]): Map<string, string> {
@@ -175,21 +175,21 @@ export function duplicates(entries: FoodEntry[]): Map<string, string> {
 }
 
 /**
- * Named meals of one day with entries from both Pulse and Fitbit that didn't match each other: maybe one meal logged
- * twice under different names. Pulse can't tell, so the Nutrition screen asks.
+ * Named meals of one day with entries from both Halo and Fitbit that didn't match each other: maybe one meal logged
+ * twice under different names. Halo can't tell, so the Nutrition screen asks.
  */
 export function mealOverlaps(entries: FoodEntry[], dup: Map<string, string>): Meal[] {
   const matched = new Set([...dup.keys(), ...dup.values()]);
   const out: Meal[] = [];
   for (const meal of ["BREAKFAST", "LUNCH", "DINNER", "SNACK"] as const) {
-    // A Pulse entry the person marked as its own food has been answered for.
+    // A Halo entry the person marked as its own food has been answered for.
     const left = entries.filter((e) => e.data.meal === meal && !matched.has(e.id) && !e.data.separate);
     if (left.some((e) => e.source === "pulse") && left.some((e) => e.source !== "pulse")) out.push(meal);
   }
   return out;
 }
 
-// ── What Pulse adds to a day ────────────────────────────────────────────────
+// What Halo adds to a day
 
 /** The extra-metric keys food feeds, and the nutrient behind each. */
 export const FOOD_KEYS = [
@@ -215,7 +215,7 @@ function byDay(rows: LoggedEntryRow[], from: string, to: string): Map<string, Fo
   return out;
 }
 
-/** Pulse's entries of one day that count (those repeating no Fitbit entry), and the repeats found. */
+/** Halo's entries of one day that count (those repeating no Fitbit entry), and the repeats found. */
 export function countedPulse(entries: FoodEntry[]): { counted: FoodEntry[]; dup: Map<string, string> } {
   const dup = duplicates(entries);
   return { counted: entries.filter((e) => e.source === "pulse" && !dup.has(e.id)), dup };
@@ -232,7 +232,7 @@ function extrasOf(t: Totals): FoodExtras {
 }
 
 /**
- * Per day in [from, to]: what Pulse's own food adds to the source's daily totals, Fitbit's repeats left out. A
+ * Per day in [from, to]: what Halo's own food adds to the source's daily totals, Fitbit's repeats left out. A
  * nutrient none of the counted entries gave is absent (the day's protein stays the source's, or no data).
  */
 export function pulseFoodByDay(rows: LoggedEntryRow[], from: string, to: string): Map<string, FoodExtras> {
@@ -244,7 +244,7 @@ export function pulseFoodByDay(rows: LoggedEntryRow[], from: string, to: string)
   return out;
 }
 
-/** `synced` (a day's extra metrics) with Pulse's `add` on top, rounded as the importer rounds. */
+/** `synced` (a day's extra metrics) with Halo's `add` on top, rounded as the importer rounds. */
 export function withFood<T extends Partial<Record<ExtraKey, number>>>(synced: T, add: FoodExtras | undefined): T {
   if (!add) return synced;
   const out: Partial<Record<ExtraKey, number>> = { ...synced };
@@ -256,8 +256,8 @@ export function withFood<T extends Partial<Record<ExtraKey, number>>>(synced: T,
 }
 
 /**
- * The nutrients of `day`: the source's roll-up plus Pulse's own entries (Fitbit's repeats left out), as loadDays counts
- * them. Fiber is Pulse's alone: the roll-up has none.
+ * The nutrients of `day`: the source's roll-up plus Halo's own entries (Fitbit's repeats left out), as loadDays counts
+ * them. Fiber is Halo's alone: the roll-up has none.
  */
 export function dayTotals(values: DailyValue[], rows: LoggedEntryRow[], day: string): Totals {
   const synced: Partial<Record<ExtraKey, number>> = {};

@@ -1,4 +1,4 @@
-// Coach settings `/coach/settings`, ported from Pulse's coach/CoachSettings.tsx (Settings › Coach on the web), as an
+// Coach settings `/coach/settings`, ported from Halo's coach/CoachSettings.tsx (Settings › Coach on the web), as an
 // iOS settings page: the provider, model and key (as ••••last4 only, with a red Remove key), the person's notes for
 // the coach, then Change provider and the two red actions (delete every chat, turn the coach off), each confirmed by
 // an alert. With the coach off: its feature header and Set up. The groups rise into place as the page opens.

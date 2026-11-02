@@ -24,7 +24,7 @@ export function bandStops(top: number, bottom: number, bands: Band[]): { offset:
   return stops;
 }
 
-// --- Hypnogram ---
+// Hypnogram
 
 export type Stage = "awake" | "rem" | "light" | "deep";
 export const STAGES: Stage[] = ["awake", "rem", "light", "deep"];
@@ -50,7 +50,7 @@ export function hypnogramSeries(segments: StageSegment[]) {
   return { connector, stages };
 }
 
-// --- Time axes ---
+// Time axes
 
 const MINUTE = 60_000;
 function localMinuteOfDay(ms: number, timeZone?: string) {
@@ -78,7 +78,7 @@ export function paddedDomain(values: (number | null)[]): [number, number] {
   return [Math.floor((Math.min(...v) - 10) / 10) * 10, Math.ceil((Math.max(...v) + 10) / 10) * 10];
 }
 
-// --- ScoreDial slices (data, not angles) ---
+// ScoreDial slices (data, not angles)
 
 /** Strain Target band on the 0-21 track: [before, band, after]. */
 export function targetSlices(lo: number, hi: number, max = 21) {
@@ -111,7 +111,7 @@ export function ringRadii(diameter: number, ring: number, inset = 2) {
   };
 }
 
-// --- Arcs (Recharts angles: counter-clockwise from 3 o'clock; a decreasing angle sweeps clockwise) ---
+// Arcs (Recharts angles: counter-clockwise from 3 o'clock; a decreasing angle sweeps clockwise)
 
 /** Every current ring opens with a 4° gap each side of 12 o'clock: start 86, a 352° clockwise sweep. */
 export const DIAL_ARC = { start: 86, sweep: 352 } as const;
@@ -137,7 +137,7 @@ export function arcPath(cx: number, cy: number, r: number, startDeg: number, swe
 /** Length of an arc of `sweepDeg` on radius `r`. */
 export const arcLength = (r: number, sweepDeg: number) => (2 * Math.PI * r * sweepDeg) / 360;
 
-// --- Cartesian scales and curves ---
+// Cartesian scales and curves
 
 export type Scale = ((v: number) => number) & { domain: [number, number]; range: [number, number] };
 
@@ -231,7 +231,7 @@ export function areaPath(linePathD: string, first: XY, last: XY, floorY: number)
   return `${linePathD}L${last.x.toFixed(2)} ${floorY.toFixed(2)}L${first.x.toFixed(2)} ${floorY.toFixed(2)}Z`;
 }
 
-// --- Activity rings (angles in degrees clockwise from 12 o'clock, as a watch face reads) ---
+// Activity rings (angles in degrees clockwise from 12 o'clock, as a watch face reads)
 
 /** The point at `deg` degrees clockwise from 12 o'clock on a circle of radius `r` around (cx, cy). */
 export function clockPoint(cx: number, cy: number, r: number, deg: number): XY {
@@ -302,7 +302,7 @@ export function colorAt(colors: readonly string[], t: number): string {
  */
 export const ringShades = (color: string): [string, string, string] => [mix(color, "#000000", 0.84), color, mix(color, "#ffffff", 0.8)];
 
-// --- Heart-rate ranges ---
+// Heart-rate ranges
 
 /** One bucket of readings: its time span, its lowest and highest reading and how many readings it holds. */
 export type RangeBucket = { start: number; end: number; min: number; max: number; count: number };

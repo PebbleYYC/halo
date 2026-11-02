@@ -61,7 +61,7 @@ describe("getChartSeries", () => {
     expect((await getChartSeries("hrv", ctx)).partial.every((p) => !p)).toBe(true);
   });
 
-  it("shades a normal range for vitals and labels Pulse Age with your age", async () => {
+  it("shades a normal range for vitals and labels Halo Age with your age", async () => {
     const hrv = await getChartSeries("hrv", ctx);
     expect(hrv.baseline?.sd).toBeGreaterThan(0);
     const age = await getChartSeries("pulse_age", ctx);

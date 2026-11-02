@@ -1,4 +1,4 @@
-// The coach's tools, ported from Pulse's src/server/coach/tools.ts: read-only, bound to this person's QueryCtx by
+// The coach's tools, ported from Halo's src/server/coach/tools.ts: read-only, bound to this person's QueryCtx by
 // closure (the model never names a person or a store), each a compact digest of an existing screen query. A metric
 // without a value carries its reason code instead, so the model can say "calibrating" rather than guess. No chart
 // series, ids or raw payloads.

@@ -1,5 +1,5 @@
 // Loading: the daily rows, sessions and exercises both stages fold over, and small shared helpers.
-// Ported from Pulse's src/server/pipeline/data.ts: the Postgres reads are Store calls, the row types live in
+// Ported from Halo's src/server/pipeline/data.ts: the Postgres reads are Store calls, the row types live in
 // src/data/types.ts, and the hash is src/pipeline/hash.ts.
 import type { Store } from "@/data/store";
 import type { Exercise, Metrics, Segment, Session } from "@/data/types";

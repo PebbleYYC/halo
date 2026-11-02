@@ -19,7 +19,7 @@ export function sameUuid(a: string, b: string): boolean {
   return full(a) === full(b);
 }
 
-// ── Base64 ──────────────────────────────────────────────────────────────────
+// Base64
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const LOOKUP = (() => {
@@ -54,7 +54,7 @@ export function base64ToBytes(b64: string): Uint8Array {
   return Uint8Array.from(out);
 }
 
-// ── Heart Rate Measurement (0x2A37) ─────────────────────────────────────────
+// Heart Rate Measurement (0x2A37)
 
 export type HrMeasurement = {
   /** Beats per minute as the band sends it; 0 means it has no reading (some sensors send that off the skin). */
@@ -94,7 +94,7 @@ export function parseHrMeasurement(bytes: ArrayLike<number>): HrMeasurement | nu
 /** parseHrMeasurement on a characteristic's base64 value (react-native-ble-plx's `Characteristic.value`). */
 export const parseHrMeasurementBase64 = (b64: string): HrMeasurement | null => parseHrMeasurement(base64ToBytes(b64));
 
-// ── RR intervals and RMSSD ──────────────────────────────────────────────────
+// RR intervals and RMSSD
 
 /** Physiological RR bounds (200 → 30 bpm) and the largest beat-to-beat change kept. */
 export const RR_MIN_MS = 300;
@@ -176,7 +176,7 @@ export function since<T extends { t: number }>(xs: T[], from: number): T[] {
   return k === 0 ? xs : xs.slice(k);
 }
 
-// ── The live trace ──────────────────────────────────────────────────────────
+// The live trace
 
 /** The trace's span and slot: 60 points over the last 2 minutes. */
 export const TRACE_MS = 120_000;
@@ -200,7 +200,7 @@ export function liveTrace(history: readonly { t: number; bpm: number }[], now: n
   return sum.map((s, k) => (count[k] ? Math.round(s / count[k]) : null));
 }
 
-// ── Devices and reconnects ──────────────────────────────────────────────────
+// Devices and reconnects
 
 export type ScannedHr = { id: string; name: string | null; rssi: number | null };
 

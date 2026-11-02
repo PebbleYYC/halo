@@ -46,7 +46,7 @@ export function RowIcon({ icon: Icon, node, tint = "sky", system, size = ROW_ICO
   );
 }
 
-// ── The group ────────────────────────────────────────────────────────────────
+// The group
 
 /**
  * A card's fill where it sits: the card colour on the grouped ground, the sheet's raised fill straight on a bottom sheet
@@ -128,7 +128,7 @@ function PressRow({ onPress, disabled, accessibilityRole = "button", accessibili
   );
 }
 
-// ── Rows ─────────────────────────────────────────────────────────────────────
+// Rows
 
 /**
  * A switch row, iOS's: an optional coloured icon square, the label with its sentence under it, and the green switch on
@@ -381,7 +381,7 @@ export function Appear({ index = 0, children, style }: { index?: number; childre
   );
 }
 
-// ── Pull-down menu ───────────────────────────────────────────────────────────
+// Pull-down menu
 
 /** A menu's choice: its full name in the menu, and (optional) a shorter one for the row's value. */
 export type MenuOption<V extends string> = { value: V; label: string; short?: string };
@@ -495,7 +495,7 @@ export function MenuRow<V extends string>({ icon, tint = "sky", system, label, d
   );
 }
 
-// ── Heads ────────────────────────────────────────────────────────────────────
+// Heads
 
 /** A feature header's sentence longer than this is set from the left rather than centred. */
 const LONG_BODY = 140;
@@ -649,7 +649,7 @@ export function SearchField({ value, onChangeText, placeholder = "Search" }: { v
   );
 }
 
-// ── Steps ────────────────────────────────────────────────────────────────────
+// Steps
 
 /** A numbered step: the number in a small circle of the family's soft fill, the title, then what to do under it. */
 export function Step({ n, title, tint = "sky", children }: { n: number; title: string; tint?: CalmTint; children?: React.ReactNode }) {

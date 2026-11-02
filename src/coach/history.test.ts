@@ -1,4 +1,4 @@
-// Ported from Pulse's src/server/coach/history.test.ts: older turns are summarised once, the full archive is kept, a
+// Ported from Halo's src/server/coach/history.test.ts: older turns are summarised once, the full archive is kept, a
 // verified checkpoint is reused, and an edit or a shorter (regenerated) chat invalidates it.
 import type { UIMessage } from "ai";
 import { MockLanguageModelV4 } from "ai/test";

@@ -44,7 +44,7 @@ function useFillOn(on: On): string {
   return on === "card" ? softFill(c, "card") : c.card;
 }
 
-// ── Type ─────────────────────────────────────────────────────────────────────
+// Type
 
 /**
  * A number with its unit beside it, sharing the baseline: Inter bold (tabular) in the number's colour, the unit half
@@ -110,7 +110,7 @@ export function Sentence({ children, color, weight = 400, size = 15, align, styl
   );
 }
 
-// ── Surfaces ─────────────────────────────────────────────────────────────────
+// Surfaces
 
 /**
  * The icon square, iOS Settings': the family's system colour with the icon in white (or `color`), its corners a quarter
@@ -274,7 +274,7 @@ export function Group({ title, right, footer, padding = 16, gap, children, style
   );
 }
 
-// ── Grouped list ─────────────────────────────────────────────────────────────
+// Grouped list
 
 export type GroupRowProps = {
   label: string;
@@ -410,7 +410,7 @@ export function InfoLine({ label, value, numeric = false, valueColor, children }
   );
 }
 
-// ── Controls ─────────────────────────────────────────────────────────────────
+// Controls
 
 export type CalmButtonVariant = "primary" | "secondary" | "quiet" | "danger";
 

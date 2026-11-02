@@ -1,7 +1,7 @@
-// The Pulse Age orb in 3D, drawn by one Skia runtime shader: each pixel casts a ray at a living blob (a sphere whose
+// The Halo Age orb in 3D, drawn by one Skia runtime shader: each pixel casts a ray at a living blob (a sphere whose
 // surface swells and folds with slow travelling waves, so its outline never holds still) and lights what it hits. The
 // orb keeps its old character: a pale glowing core (the number sits on it) fading out to the rim colour of the
-// Pulse Age (greens younger, oranges and rust older), the top and bottom tones blended up its height, a soft halo, and
+// Halo Age (greens younger, oranges and rust older), the top and bottom tones blended up its height, a soft halo, and
 // fine specks of light inside that turn with the orb, so it reads as a solid in space. A key highlight and a rim light
 // finish it. No mesh and no per-frame JavaScript beyond one clock: the time, the turn and a press's "energy" are
 // uniforms. Kept free of React Native imports so a Node script can render it with CanvasKit to check the look.

@@ -18,7 +18,7 @@ export const TARGET_KEYS: readonly TargetKey[] = ["steps", "distance", "floors",
 
 /**
  * Fitbit's defaults: 10,000 steps, 8 km, 10 floors, 22 Active Zone Minutes a day (150 a week), 30 active minutes and
- * 2,000 ml of water; active calories off (Fitbit sets a total-burn goal instead); sleep follows Pulse's own need.
+ * 2,000 ml of water; active calories off (Fitbit sets a total-burn goal instead); sleep follows Halo's own need.
  */
 export const DEFAULT_GOALS: Goals = {
   targets: { steps: 10_000, distance: 8, floors: 10, azm: 22, azmWeek: 150, active_minutes: 30, active_calories: 500, water: 2000, sleep: null },
@@ -32,7 +32,7 @@ export type TargetLimit = {
   decimals: number;
   /** After the field: "steps a day", "km a day", "min a week". */
   unit: string;
-  /** May be empty: sleep follows Pulse's need. */
+  /** May be empty: sleep follows Halo's need. */
   optional?: boolean;
 };
 
@@ -148,7 +148,7 @@ export function trendGoal(goals: Goals, metricKey: string, units: Units = METRIC
   return k && target !== null ? shown(target, conversionOf(k, units)) : null;
 }
 
-// ── Persistence ─────────────────────────────────────────────────────────────
+// Persistence
 
 /** undefined until read; then what is stored (or the defaults). */
 let saved: Goals | undefined;

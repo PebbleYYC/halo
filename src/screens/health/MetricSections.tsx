@@ -1,5 +1,5 @@
 // The per-metric sections of `/metric/[key]` (spec §11 MD1), one component per Section kind of the view model,
-// ported from Pulse's metric/[key]/sections.tsx and RangeStats.tsx, as Apple Health cards: the columns charts, the
+// ported from Halo's metric/[key]/sections.tsx and RangeStats.tsx, as Apple Health cards: the columns charts, the
 // week's minutes against the WHO's target (the total rolling in, the capsule filling once), and the rows of numbers.
 import * as React from "react";
 import { View } from "react-native";

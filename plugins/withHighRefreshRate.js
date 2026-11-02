@@ -1,7 +1,7 @@
-// Asks Android for the display's highest refresh rate while Pulse is on screen. Without this, ColorOS/OxygenOS (and
+// Asks Android for the display's highest refresh rate while Halo is on screen. Without this, ColorOS/OxygenOS (and
 // other skins with per-app refresh control) keep third-party apps at 60 Hz even on a 120/165 Hz panel, so every
 // scroll and animation looked like 60 Hz or less. The system still caps the request at the user's own setting
-// (e.g. "High" = 120 Hz), and it only applies to Pulse's window. Survives `expo prebuild --clean`.
+// (e.g. "High" = 120 Hz), and it only applies to Halo's window. Survives `expo prebuild --clean`.
 const { withMainActivity } = require("@expo/config-plugins");
 
 const MARKER = "// pulse:high-refresh-rate";
@@ -23,7 +23,7 @@ const KOTLIN = `
           window.attributes = lp
         }
       }
-      // Android 15+: don't let adaptive refresh save power by dropping Pulse's frame rate while content animates.
+      // Android 15+: don't let adaptive refresh save power by dropping Halo's frame rate while content animates.
       if (Build.VERSION.SDK_INT >= 35) window.setFrameRatePowerSavingsBalanced(false)
     } catch (_: Throwable) {
       // Best effort: a skin that refuses the request keeps its default rate.

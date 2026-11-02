@@ -1,6 +1,6 @@
-// Where the coach's model comes from: the person's own key with one of these providers (BYOK), ported from Pulse's
+// Where the coach's model comes from: the person's own key with one of these providers (BYOK), ported from Halo's
 // src/server/coach/providers.ts. The phone calls the provider directly over HTTPS; every provider gets the fetch the
-// app passes in (expo/fetch on the device, which streams response bodies), so nothing goes through a Pulse server.
+// app passes in (expo/fetch on the device, which streams response bodies), so nothing goes through a Halo server.
 // Users never enter a URL: OpenRouter goes through the OpenAI-compatible client with its fixed URL.
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";

@@ -1,4 +1,4 @@
-// Sleep `/sleep` (spec §7.5). Ported from Pulse's src/server/queries/sleep.ts: the hypnogram's segments come
+// Sleep `/sleep` (spec §7.5). Ported from Halo's src/server/queries/sleep.ts: the hypnogram's segments come
 // from store.segmentsFor and the night's heart rate from store.readHr over the sleep window only.
 import { addDays, localMinutes } from "@/lib/time";
 import {

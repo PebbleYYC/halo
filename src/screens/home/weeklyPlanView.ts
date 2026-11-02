@@ -1,5 +1,5 @@
 // The Weekly Plan sheet's words (src/screens/home/WeeklyPlanCard.tsx): value and target text, the status word and
-// colour, the line under each target, and Pulse Age's years. Pure, so it is tested without React.
+// colour, the line under each target, and Halo Age's years. Pure, so it is tested without React.
 import type { PlanStatus } from "@/core/algorithms/weeklyPlan";
 import { formatValue, MISSING, NBSP } from "@/lib/format";
 import type { PlanRow } from "@/queries/weeklyPlan";
@@ -76,7 +76,7 @@ export function planCaption(it: Row): string {
   }
 }
 
-/** Pulse Age's years for the habit: "−0.6 yr", "+1.2 yr"; null without a Pulse Age. Negative is younger (good). */
+/** Halo Age's years for the habit: "−0.6 yr", "+1.2 yr"; null without a Halo Age. Negative is younger (good). */
 export function ageText(years: number | null): string | null {
   if (years === null) return null;
   const r = Math.round(years * 10) / 10;

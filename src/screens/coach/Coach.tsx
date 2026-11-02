@@ -1,4 +1,4 @@
-// The chat (spec §7.21), ported from Pulse's coach/Coach.tsx at phone width, in the look of Messages and Apple
+// The chat (spec §7.21), ported from Halo's coach/Coach.tsx at phone width, in the look of Messages and Apple
 // Intelligence: the person's words in blue bubbles on the right, the coach's answers as plain text on the ground with
 // Apple Health style evidence cards under them, and a floating Liquid Glass composer (a capsule field with a round send
 // button) riding the keyboard, under a floating bar whose glass buttons bend the chat scrolling beneath. useChat drives
@@ -100,7 +100,7 @@ const COMPOSER_H = 44;
 /** The round send and stop buttons inside the capsule. */
 const SEND = 36;
 
-// ── Small pieces ─────────────────────────────────────────────────────────────
+// Small pieces
 
 /** A blue dot that breathes while something runs (Reanimated, UI thread); still in the background and under Reduce motion. */
 function LiveDot({ live }: { live: boolean }) {
@@ -186,7 +186,7 @@ const copy = (text: string) =>
     () => toast("Couldn’t copy that."),
   );
 
-// ── Arrivals ─────────────────────────────────────────────────────────────────
+// Arrivals
 
 /**
  * Which messages have made their entrance: the ones on screen when the chat opened start "arrived", so only a message
@@ -222,7 +222,7 @@ function useArrival(id: string, arrivals: Arrivals, kind: "user" | "answer") {
   );
 }
 
-// ── Messages ─────────────────────────────────────────────────────────────────
+// Messages
 
 type UserRowProps = { m: UIMessage; busy: boolean; arrivals: Arrivals; onEdit: (id: string, text: string) => void; onEditing: (open: boolean) => void };
 
@@ -336,7 +336,7 @@ const AssistantRow = React.memo(function AssistantRow({ m, done, canRegenerate, 
   );
 });
 
-// ── The empty chat ───────────────────────────────────────────────────────────
+// The empty chat
 
 /** A starter question as a capsule chip: the family's glyph and the whole question (it wraps; never cut). */
 function Chip({ icon: Icon, color, label, ink, onPress }: { icon: LucideIcon; color: string; label: string; ink?: string; onPress: () => void }) {
@@ -385,7 +385,7 @@ function Empty({ providerLabel, suggestions, onAsk, style, onLayout }: { provide
   );
 }
 
-// ── The bar ──────────────────────────────────────────────────────────────────
+// The bar
 
 /** One glyph in the bar's glass capsule. */
 const BAR_SLOT = 34;
@@ -467,7 +467,7 @@ export function ChatBar({ onBack, chatCount, chatOpen, onNew, providerLabel }: C
   );
 }
 
-// ── The composer ─────────────────────────────────────────────────────────────
+// The composer
 
 /** The round button at the capsule's right: Send (blue, white arrow; grey until there is something to send) or Stop. */
 function ComposerButton({ variant, onPress, disabled, label }: { variant: "send" | "stop"; onPress: () => void; disabled?: boolean; label: string }) {
@@ -531,7 +531,7 @@ function Composer({ inputRef, value, onChange, onSend, onStop, busy, bottom, onH
   );
 }
 
-// ── The list's scroll view ───────────────────────────────────────────────────
+// The list's scroll view
 
 /** The scroll view's methods the chat calls (react-native-keyboard-controller's chat scroll view, a Reanimated ScrollView). */
 type ChatScroller = {
@@ -562,7 +562,7 @@ const ChatScrollView = React.forwardRef<Reanimated.ScrollView, ChatScrollProps>(
 const Gap = () => <View style={{ height: MESSAGE_GAP }} />;
 const keyOf = (m: UIMessage) => m.id;
 
-// ── The chat ─────────────────────────────────────────────────────────────────
+// The chat
 
 export type CoachProps = ChatBarProps & {
   id: string;

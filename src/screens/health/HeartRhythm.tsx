@@ -1,4 +1,4 @@
-// Health Monitor's Heart rhythm section, ported from Pulse's health/monitor/HeartRhythm.tsx, as an iOS grouped list: a
+// Health Monitor's Heart rhythm section, ported from Halo's health/monitor/HeartRhythm.tsx, as an iOS grouped list: a
 // caps header, one card of rows (a pink icon square, the name with its line under it, the value and a thin chevron,
 // hairlines inset to the text between rows) and the disclaimer as the list's footer. ECG readings and irregular rhythm
 // notifications come only from a Google account (the Google Health API); Health Connect carries neither, so with it

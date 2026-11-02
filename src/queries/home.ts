@@ -1,4 +1,4 @@
-// Home `/` (spec §7.1). Ported from Pulse's src/server/queries/home.ts.
+// Home `/` (spec §7.1). Ported from Halo's src/server/queries/home.ts.
 import { addDays, localMinutes } from "@/lib/time";
 import { energyBand } from "@/core/algorithms/energyBank";
 import {

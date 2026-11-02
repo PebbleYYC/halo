@@ -1,4 +1,4 @@
-// Health Monitor `/health/monitor?d=` (spec §7.8), ported from Pulse's health/monitor/page.tsx and its loading.tsx, as an
+// Health Monitor `/health/monitor?d=` (spec §7.8), ported from Halo's health/monitor/page.tsx and its loading.tsx, as an
 // Apple Health detail page: the large title with the night under it, the hero (a ring that sweeps to the share of
 // last night's vitals in your range, the count rolling into place in it, and the status chip), the illness signal when
 // several moved together, the five vitals as tiles with their in-range chips, Heart rhythm as a grouped list, then the

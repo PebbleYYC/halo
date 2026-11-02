@@ -1,4 +1,4 @@
-// View-model → kit-prop mappers for the Health screens, ported from Pulse's src/app/(app)/_lib/view.tsx.
+// View-model → kit-prop mappers for the Health screens, ported from Halo's src/app/(app)/_lib/view.tsx.
 import * as React from "react";
 import { View } from "react-native";
 import {

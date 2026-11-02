@@ -1,4 +1,4 @@
-// Ported from Pulse's src/server/log.test.ts: the Google writer cases have no counterpart (nothing leaves the phone).
+// Ported from Halo's src/server/log.test.ts: the Google writer cases have no counterpart (nothing leaves the phone).
 import { beforeEach, describe, expect, it } from "vitest";
 import { openMemoryStore } from "@/data/memory";
 import type { Store } from "@/data/store";
@@ -84,7 +84,7 @@ describe("describeEntry", () => {
 });
 
 describe("waterOn", () => {
-  it("adds what Pulse logged that day to Health Connect's roll-up", async () => {
+  it("adds what Halo logged that day to Health Connect's roll-up", async () => {
     await saveEntries(store, [{ type: "hydration-log", ts: T, data: { ml: 250 } }], { tz: TZ, now: T });
     expect(await waterOn(store, "2026-10-02", TZ)).toBe(250); // nothing synced
     await store.upsertDailyValues([{ day: "2026-10-02", key: "water", value: 1000 }]);
@@ -117,7 +117,7 @@ describe("getLog", () => {
     expect(female.kinds).toEqual([...LOG_KINDS]);
     expect(female.recent.map((e) => e.type)).toEqual(["hydration-log", "menstrual-period"]);
     expect(female.demo).toBe(true);
-    // Everything is kept in Pulse: no sheet is blocked on a Google grant.
+    // Everything is kept in Halo: no sheet is blocked on a Google grant.
     expect(Object.values(female.access).every((a) => a === "demo")).toBe(true);
   });
 
@@ -127,7 +127,7 @@ describe("getLog", () => {
     expect((await getLog(ctxOf("male"))).recent.map((e) => e.detail)).toEqual(["200 ml"]);
   });
 
-  it("shows Fitbit's entries beside Pulse's, cycle ones to a female profile only", async () => {
+  it("shows Fitbit's entries beside Halo's, cycle ones to a female profile only", async () => {
     await store.replaceExternalEntries({ from: "2026-10-01", to: "2026-10-02" }, [
       { id: "hc-water-1", type: "hydration-log", ts: T - 60, day: "2026-10-02", data: { ml: 330 }, createdAt: T - 60, source: "health_connect" },
       { id: "hc-spotting-1", type: "menstrual-period", ts: T - 3600, day: "2026-10-02", data: { start: "2026-10-02", end: "2026-10-02", flow: "SPOTTING", spotting: true }, createdAt: T - 3600, source: "health_connect" },

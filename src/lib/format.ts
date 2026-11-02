@@ -59,7 +59,7 @@ export function formatValue(key: FormatKey, v: number | null | undefined): strin
 /** Symbol units sit tight against the value (2 px); word units get a gap (4 px). */
 export const isSymbolUnit = (unit: string) => unit === "%" || unit === "x";
 
-// --- Dates and clock times ---
+// Dates and clock times
 
 const dates = new Map<string, Intl.DateTimeFormat>();
 /**
@@ -141,7 +141,7 @@ export function agoShort(ms: number, now: number) {
   return h < 48 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
-// --- Spoken labels (accessibility) ---
+// Spoken labels (accessibility)
 
 const UNIT_WORDS: Record<string, string> = {
   "%": "percent",

@@ -9,7 +9,7 @@
 import { APICallError, generateText, NoObjectGeneratedError, Output, RetryError, type LanguageModel, type UserContent } from "ai";
 import { z } from "zod";
 
-// ── The schema the model answers in ─────────────────────────────────────────
+// The schema the model answers in
 
 const grams = (what: string) => z.number().describe(`${what} in grams for this portion`);
 
@@ -55,7 +55,7 @@ export const ESTIMATE_INSTRUCTIONS = `You estimate the nutrition of food for a p
 - Answer only with JSON of this shape, numbers as numbers:
 {"foods":[{"name":"…","portion":"…","kcal":0,"protein_g":0,"carbs_g":0,"fat_g":0,"fiber_g":0,"confidence":"low|medium|high"}],"totals":{"kcal":0,"protein_g":0,"carbs_g":0,"fat_g":0,"fiber_g":0},"note":"…"}`;
 
-// ── Reading an answer ───────────────────────────────────────────────────────
+// Reading an answer
 
 /** A number the model may send as a string ("12", "12,5 g"); anything else is 0. */
 const looseNumber = z.preprocess((v) => (typeof v === "string" ? Number.parseFloat(v.replace(",", ".")) : v), z.number().refine(Number.isFinite)).catch(0);
@@ -152,7 +152,7 @@ export function extractJson(text: string | undefined): unknown {
 export const looksLikeRefusal = (text: string | undefined) =>
   !!text && !text.includes("{") && /\b(can(no|')?t|unable|won't|will not|not able|sorry|decline|not allowed)\b/i.test(text);
 
-// ── The request ─────────────────────────────────────────────────────────────
+// The request
 
 export type EstimateInput = { image: { base64: string; mediaType: string } } | { text: string };
 

@@ -1,5 +1,5 @@
 // Stage 2: folds every day, oldest first, over the daily rows and stage 1's cached results, then
-// writes only the rows and series whose JSON changed. Ported from Pulse's src/server/pipeline/stage2.ts;
+// writes only the rows and series whose JSON changed. Ported from Halo's src/server/pipeline/stage2.ts;
 // the fold, the scorer order and the journal-impact memo are the web's, the reads and writes are Store calls.
 import type { ReportRow, ScoreRow, SeriesKind, Store } from "@/data/store";
 import { addDays } from "@/lib/time";
@@ -124,7 +124,7 @@ export async function stage2(store: Store, data: Data, opts: PipelineOptions, on
   onProgress?.("stage2", days.length, days.length);
   await putActivityCost(store, data, out);
 
-  // ── Journal impact: as of each day, memoised on its inputs ────────────────
+  // Journal impact: as of each day, memoised on its inputs
   onProgress?.("journal", 0, days.length);
   const entries: JournalDay[] = [...journal].map(([day, es]) => ({ day, tags: Object.fromEntries(es.map((e) => [e.tag, e.value])) }));
   const rows = new Map<string, Stage2Row>();
@@ -144,7 +144,7 @@ export async function stage2(store: Store, data: Data, opts: PipelineOptions, on
   }
   onProgress?.("journal", days.length, days.length);
 
-  // ── Writes ────────────────────────────────────────────────────────────────
+  // Writes
   // Only rows whose version or JSON changed are written, so an unchanged run writes nothing.
   for (const day of days) {
     await slice();

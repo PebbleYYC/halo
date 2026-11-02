@@ -34,7 +34,7 @@ export type BreathCue = { offsetMs: number; phase: BreathPhase; loops: number; s
 
 export const PHASE_LABEL: Record<BreathPhase, string> = { inhale: "Breathe in", hold: "Hold", exhale: "Breathe out" };
 
-// ── The pacer (BreathPacer.kt) ──────────────────────────────────────────────
+// The pacer (BreathPacer.kt)
 
 /** Pulses for an inhale onset (one light) and an exhale onset (two, heavier); holds are silent. */
 export const INHALE_LOOPS = 1;
@@ -63,7 +63,7 @@ export function pacedStages(bpm: number, inhaleFraction = DEFAULT_INHALE_FRACTIO
   ];
 }
 
-// ── The catalog (BreathProtocolCatalog.kt, four of its paces plus the sigh) ──
+// The catalog (BreathProtocolCatalog.kt, four of its paces plus the sigh)
 
 export const PROTOCOLS: readonly BreathProtocol[] = [
   {
@@ -157,7 +157,7 @@ export function scheduleCues(stages: readonly BreathStage[], sessionMs: number):
   return out;
 }
 
-// ── The phase clock ─────────────────────────────────────────────────────────
+// The phase clock
 
 export type PhaseAt = {
   /** Index into the stages. */

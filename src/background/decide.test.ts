@@ -59,7 +59,7 @@ describe("decide: Recovery ready", () => {
   });
 });
 
-describe("decide: Pulse can't sync", () => {
+describe("decide: Halo can't sync", () => {
   const stale = { ...base, recoveryToday: null, lastSyncTs: NOW - CANT_SYNC_AFTER_S - 7200 };
 
   it("sends when the last sync is 36 h or older, naming the gap, linking to the data source", () => {

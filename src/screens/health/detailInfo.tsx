@@ -1,6 +1,6 @@
-// Info-sheet copy for Healthspan, Fitness and Heart rate, ported from Pulse's health/{healthspan,fitness,heart-rate}/page.tsx.
-// Final copy: do not reword, except where the web names its data path (band → Fitbit → Google Health → Pulse): on the
-// phone the Google Health app writes to Health Connect, and Pulse reads it when it syncs, not every minute. Healthspan
+// Info-sheet copy for Healthspan, Fitness and Heart rate, ported from Halo's health/{healthspan,fitness,heart-rate}/page.tsx.
+// Final copy: do not reword, except where the web names its data path (band → Fitbit → Google Health → Halo): on the
+// phone the Google Health app writes to Health Connect, and Halo reads it when it syncs, not every minute. Healthspan
 // and Fitness describe the mobile model (WHOOP's Healthspan method; Fitness Age after noop).
 import * as React from "react";
 import { alpha } from "@/lib/utils";
@@ -34,7 +34,7 @@ export const FITNESS_INFO: InfoContent = {
   ),
 };
 
-/** Web: "Fitbit uploads it to Google Health… Pulse checks for new readings every minute". The phone reads Health Connect when it syncs. */
+/** Web: "Fitbit uploads it to Google Health… Halo checks for new readings every minute". The phone reads Health Connect when it syncs. */
 export const HEART_RATE_INFO: InfoContent = {
   title: "About heart rate",
   body: (

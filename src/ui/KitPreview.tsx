@@ -65,7 +65,7 @@ import { font, useAppFonts } from "./fonts";
 import { GlassTarget, LiquidGlass } from "./glass";
 import { GrowIn } from "./motion/Rise";
 
-// --- Sample data (deterministic, so the preview looks the same on every run) ---
+// Sample data (deterministic, so the preview looks the same on every run)
 
 const TODAY = "2026-10-07";
 const TZ = "Europe/London";
@@ -169,7 +169,7 @@ const RECOVERY_INFO: InfoContent = {
   ),
 };
 
-// --- Preview chrome ---
+// Preview chrome
 
 function H({ children }: { children: string }) {
   return (

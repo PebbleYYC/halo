@@ -24,7 +24,7 @@ export const GOOGLE_GROUPS: { key: string; label: string; types: string[] }[] = 
   { key: "rhythm", label: "ECG and irregular rhythm", types: ["electrocardiogram", "irregular-rhythm-notification"] },
 ];
 
-/** Shown-only types and Google inputs Pulse falls back from: they never hold the first import's progress open. */
+/** Shown-only types and Google inputs Halo falls back from: they never hold the first import's progress open. */
 const OPTIONAL_GROUPS = new Set(["zones", "ranges", "activity", "nutrition", "vitals", "rhythm"]);
 const CORE_TYPES = new Set(GOOGLE_GROUPS.filter((g) => !OPTIONAL_GROUPS.has(g.key)).flatMap((g) => g.types));
 

@@ -26,7 +26,7 @@ export const DATA_COLORS = {
 } as const satisfies Record<string, { fill: ColorToken; text: ColorToken }>;
 export type DataColor = keyof typeof DATA_COLORS;
 
-// --- Recovery (and Energy Bank, which bands exactly like Recovery) ---
+// Recovery (and Energy Bank, which bands exactly like Recovery)
 
 export type RecoveryBand = "green" | "yellow" | "red";
 
@@ -37,7 +37,7 @@ export function recoveryBand(value: number): RecoveryBand {
   return "red";
 }
 
-/** What a recovery band means, in words (Pulse's own: WHOOP names its bands by colour). */
+/** What a recovery band means, in words (Halo's own: WHOOP names its bands by colour). */
 export const BAND_WORD: Record<RecoveryBand, string> = { green: "Ready", yellow: "Steady", red: "Recover" };
 export const BAND_COLOR: Record<RecoveryBand, DataColor> = {
   green: "recovery-green",
@@ -52,7 +52,7 @@ export function dialColor(variant: "recovery" | "strain" | "sleep", value: numbe
   return variant;
 }
 
-// --- Stress 0-3 ---
+// Stress 0-3
 
 export type StressLevel = "low" | "medium" | "high";
 export function stressLevel(value: number): StressLevel {
@@ -67,7 +67,7 @@ export const STRESS_COLOR: Record<StressLevel, DataColor> = {
   high: "stress-high",
 };
 
-// --- Direction-aware deltas (KeyStatRow, ContributorRow, TrendChart) ---
+// Direction-aware deltas (KeyStatRow, ContributorRow, TrendChart)
 
 /** Which way is good. `neutral` still shows the arrow direction, never a good/bad tone. */
 export type GoodDirection = "up" | "down" | "neutral" | "toward_zero";
@@ -109,7 +109,7 @@ export function deltaTone(direction: GoodDirection, value: number, average: numb
 /** Text token of a tone: good optimal, bad warning, neutral secondary (DeltaMark, diff text). */
 export const TONE_TEXT: Record<Tone, ColorToken> = { good: "optimal", bad: "warning", neutral: "foregroundSecondary" };
 
-// --- Status chips (spec §5.0) ---
+// Status chips (spec §5.0)
 
 export type ChipTone = "optimal" | "warning" | "alert" | "neutral";
 /** Chip paint: `bg` at `bgAlpha`, text in `text` (the web's `bg-optimal/15 text-optimal` and friends). */

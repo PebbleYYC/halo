@@ -1,4 +1,4 @@
-// Healthspan `/health/healthspan?d=` (spec §7.7), ported from Pulse's health/healthspan/page.tsx and its loading.tsx, as
+// Healthspan `/health/healthspan?d=` (spec §7.7), ported from Halo's health/healthspan/page.tsx and its loading.tsx, as
 // the design's Halo Age page: the large title with its week under it, the hero (the age in its gradient, rolling into
 // place, the sentence, the scale of years against your real age, the Pace of Aging and week-on-week pills), then Pace of
 // Aging on its ruler, the insight, the Halo Age history, and "What moves it": the nine inputs as grouped lists by area.
@@ -18,7 +18,7 @@ import { Sentence } from "@/screens/detail/calmKit";
 import { useOpenChart } from "@/screens/chart/href";
 import { ContributorList, ContributorListSkeleton } from "./ContributorCard";
 import { HEALTHSPAN_INFO } from "./detailInfo";
-import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, PaceScale, type AgePill } from "./PulseAge";
+import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, PaceScale, type AgePill } from "./HaloAge";
 import { DetailScreen, ErrorState } from "./shells";
 import { weekBefore } from "./format";
 

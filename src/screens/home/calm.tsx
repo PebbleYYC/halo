@@ -62,7 +62,7 @@ const spokenHm = (min: number | null) => {
   return t ? `${t.h} hours ${t.m} minutes` : "no sleep recorded";
 };
 
-// ── The bar ──────────────────────────────────────────────────────────────────
+// The bar
 
 /** The streak, a glass capsule: the flame, the count in bold figures and "day streak" in grey. */
 function StreakCapsule({ days }: { days: number }) {
@@ -114,7 +114,7 @@ export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<
   );
 }
 
-// ── The large title ──────────────────────────────────────────────────────────
+// The large title
 
 /**
  * A round step button beside the large title, iOS's tinted button: a light blue fill under a bold blue chevron, so it
@@ -201,7 +201,7 @@ export function TodayTitle({ y, day, today, firstDay, loading, onChange }: { y: 
   );
 }
 
-// ── The hero: the three rings ────────────────────────────────────────────────
+// The hero: the three rings
 
 /** The rings start once the card has begun to rise; each value lands with its own ring. */
 const RINGS_DELAY = 120;
@@ -317,7 +317,7 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
   );
 }
 
-// ── Week cards: Sleep (the Sleep tab) and Recovery (the Health tab) ─────────
+// Week cards: Sleep (the Sleep tab) and Recovery (the Health tab)
 
 /** The right-hand axis's width: its labels ("8h", "100") sit in it, Apple Health's way. */
 const AXIS_W = 30;

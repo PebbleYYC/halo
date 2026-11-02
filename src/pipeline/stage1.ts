@@ -1,7 +1,7 @@
 // Stage 1: per-sample work for the days whose inputs changed. Reads heart rate and steps (the Store's hr_days /
 // steps_days buckets) and caches each day's strain, activities, session resting HR and per-minute series, and (mobile)
 // the workouts it detects from sustained elevated HR.
-// Ported from Pulse's src/server/pipeline/stage1.ts; only the reads and writes changed.
+// Ported from Halo's src/server/pipeline/stage1.ts; only the reads and writes changed.
 import type { ScoreRow, Store } from "@/data/store";
 import { addDays } from "@/lib/time";
 import { slice } from "@/lib/yield";
@@ -248,7 +248,7 @@ function stage1Day(
   const n = means.length;
   const steps = new Array<number>(n).fill(0);
   for (const s of stepRows) steps[Math.floor((s.ts - start) / 60)] = s.steps;
-  // Google's daily resting HR first; Pulse's sleep-session estimate only on days Google has none; then (mobile) the last
+  // Google's daily resting HR first; Halo's sleep-session estimate only on days Google has none; then (mobile) the last
   // known one carried up to 30 days, then the day's own still heart rate, then 60 bpm (restingHr.ts).
   const dailyRhr = data.metrics.get(day)?.rhrBpm ?? null;
   const workouts = touching(data.exercises, start, end).map((x) => ({ start: x.startTs, end: x.endTs }));
@@ -259,7 +259,7 @@ function stage1Day(
   const tiz = (xs: HrSample[]) => timeInZone(xs, zoneSet);
 
   const dayTiz = tiz(dayHr);
-  // Pulse Age's moderate-activity floor, 40 % of the reserve: Zone 1's lower edge since version 15 (WHOOP's 2024 zones),
+  // Halo Age's moderate-activity floor, 40 % of the reserve: Zone 1's lower edge since version 15 (WHOOP's 2024 zones),
   // so the separate 40–50 % tally stage 1 kept before (`moderateSeconds`) is gone.
   const moderateFrom = restingHr + MODERATE_FROM_HRR * Math.max(1, maxHr - restingHr); // the reserve as zones.ts takes it
   const excluded = [...touching(data.sessions, start, end), ...touching(data.exercises, start, end)].map((x) => ({
@@ -314,7 +314,7 @@ function stage1Day(
     zoneLower: zoneSet.zones.map((z) => round(z.lower, 1)),
     zoneSeconds: dayTiz.seconds,
     zoneBelowSeconds: dayTiz.belowZone1,
-    // Mobile: Pulse Age counts zone time only inside workouts or in bouts of 10+ minutes (WHOOP counts it in activities).
+    // Mobile: Halo Age counts zone time only inside workouts or in bouts of 10+ minutes (WHOOP counts it in activities).
     boutZoneSeconds: zoneBoutSeconds(means, start, { moderate: moderateFrom, brisk: zoneSet.zones[1].lower, vigorous: zoneSet.zones[3].lower }, workouts),
     sleepStress: nightStress,
     dayAggregate: probe.dayAggregate,

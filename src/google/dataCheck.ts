@@ -1,6 +1,6 @@
 // Data check with the Google Health API as the source: for each of the last `days` local days, what Google returns for
 // each checked metric (a daily value per device and recording method, or Google's merged daily roll-up for totals) and
-// for sleep, next to what Pulse stored. Same DayCheck shape and report as the Health Connect check
+// for sleep, next to what Halo stored. Same DayCheck shape and report as the Health Connect check
 // (src/health/dataCheckSummary.ts), so the screen shows either. Read-only: nothing is written.
 import type { Store } from "@/data/store";
 import type { Metrics, Session } from "@/data/types";
@@ -30,7 +30,7 @@ type Check = {
   /** A dailyRollUp total (Google merges every device); else a daily list type, one value per device and day. */
   rollup?: boolean;
   value: (o: Obj) => number | null;
-  /** What Pulse stored for the day: a Metrics column, or a daily value. */
+  /** What Halo stored for the day: a Metrics column, or a daily value. */
   pulse: (m: Metrics | undefined, values: Map<string, number>) => number | null;
 };
 
@@ -127,7 +127,7 @@ export async function runGoogleDataCheck(
     hits.set(c.key, out);
   }
 
-  // Sleep: Google's sessions ending on each day, and the ones Pulse kept.
+  // Sleep: Google's sessions ending on each day, and the ones Halo kept.
   const sleep: { day: string; line: SourceLine }[] = [];
   try {
     const points = await client.list("sleep", from, t);

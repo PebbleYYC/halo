@@ -143,7 +143,7 @@ export function buildReport(period: string, rows: ReportDay[], impacts: TagImpac
   };
 }
 
-// ── Performance assessment ───────────────────────────────────────────────────
+// Performance assessment
 // A phone addition after WHOOP's Weekly / Monthly Performance Assessment: each metric's average for the period against
 // the period before, the biggest moves either way, and one or two plain-language focus points. The method follows
 // noop's analytics/WeeklyDigest.kt and RangeReport.kt (© 2026 NoopApp, PolyForm Noncommercial 1.0.0): moves are

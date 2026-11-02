@@ -1,4 +1,4 @@
-// More, Settings and Your data (spec §7.14), ported from Pulse's src/server/queries/settings.ts and src/server/export.ts.
+// More, Settings and Your data (spec §7.14), ported from Halo's src/server/queries/settings.ts and src/server/export.ts.
 // The phone has no server, account or Google grant: the data source's live state (Health Connect permissions, the sync
 // run) lives in the app state and the screens read it there; these queries read the Store.
 import { wholeYears } from "@/lib/time";
@@ -45,7 +45,7 @@ export async function getSettings(ctx: QueryCtx): Promise<{ profile: SettingsPro
   };
 }
 
-// ── Behaviours (journal tags) ────────────────────────────────────────────────
+// Behaviours (journal tags)
 
 export type Behaviour = { tag: string; label: string; custom: boolean; hidden: boolean };
 
@@ -54,7 +54,7 @@ export async function behaviours(ctx: QueryCtx): Promise<Behaviour[]> {
   return (await tagRows(ctx.store)).map((t) => ({ tag: t.tag, label: t.label, custom: !t.isDefault, hidden: t.hidden }));
 }
 
-// ── More ─────────────────────────────────────────────────────────────────────
+// More
 
 /** More `/more`: the latest complete week and month, the report count and the behaviours shown on the check-in. */
 export async function getMore(ctx: QueryCtx, mode: Mode = "google"): Promise<MoreVM> {
@@ -70,7 +70,7 @@ export async function getMore(ctx: QueryCtx, mode: Mode = "google"): Promise<Mor
   };
 }
 
-// ── Your data ────────────────────────────────────────────────────────────────
+// Your data
 
 /** Your data `/more/data`: what each export holds. */
 export async function getYourData(ctx: QueryCtx, mode: Mode = "google"): Promise<YourDataVM> {

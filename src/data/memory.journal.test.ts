@@ -72,7 +72,7 @@ describe("logged entries", () => {
     expect(await s.loggedEntries(0)).toEqual([]);
   });
 
-  it("replaces the Health Connect entries of a day range, leaving Pulse's own and other days' alone", async () => {
+  it("replaces the Health Connect entries of a day range, leaving Halo's own and other days' alone", async () => {
     const s = openMemoryStore();
     const hc = (id: string, ts: number, day: string) => entry(id, ts, ts, { day, source: "health_connect" });
     await s.addLoggedEntries([entry("mine", 100)]);

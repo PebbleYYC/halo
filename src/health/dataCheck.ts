@@ -1,5 +1,5 @@
 // Data check, device part: reads the last `days` days of every checked type from Health Connect (all apps, ignoring
-// the source policy) and compares them with Pulse's stored rows. See dataCheckSummary.ts.
+// the source policy) and compares them with Halo's stored rows. See dataCheckSummary.ts.
 import type { Store } from "@/data/store";
 import { addDays, localDay, localMidnight } from "@/lib/time";
 import { permissionState, readAll, type ReadType } from "./connect";

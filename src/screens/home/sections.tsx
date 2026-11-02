@@ -68,7 +68,7 @@ export function SectionTitle({ title, action, style }: { title: string; action?:
 /** The day's pinned metrics in order, keyed for the 7-day read. */
 const pinnedKeys = (vm: HomeVM) => vm.keyStats.map((s) => s.key).filter(isDashboardKey);
 
-// ── Today: the summary, every card leading to its tab ──────────────────────
+// Today: the summary, every card leading to its tab
 
 /**
  * Today (the summary of the day, nothing deep): the rings hero, then only when they apply the no-band line, the vitals
@@ -176,7 +176,7 @@ function MonitorAlert({ alert, onOpen }: { alert: NonNullable<HomeVM["monitorAle
   );
 }
 
-// ── The day's cards: activities (Today and Activity), the journal (Today), the Energy Bank (Activity) ──
+// The day's cards: activities (Today and Activity), the journal (Today), the Energy Bank (Activity)
 
 /**
  * The day's activities, sleeps and naps as rows in one card, with "See all ›" in its head; then (on the Activity tab)
@@ -507,7 +507,7 @@ export function EnergyCard({ vm, timeZone, go }: SlotProps) {
   );
 }
 
-// ── Health: My Dashboard ─────────────────────────────────────────────────────
+// Health: My Dashboard
 
 /** The Health tab's My Dashboard: the same Health cards as Today's Pinned, "Edit" on the right, then Strain & recovery. */
 export function MyDashboard({ vm, at, go }: SlotProps) {
@@ -546,7 +546,7 @@ export function MyDashboard({ vm, at, go }: SlotProps) {
   );
 }
 
-// ── Bottom: the weekly-report teaser ─────────────────────────────────────────
+// Bottom: the weekly-report teaser
 
 /** "Your week in review": a card with the indigo family's wash, the calendar and the week's dates, to the last complete week's report (spec §7.1 row 10). */
 export function WeekInReview({ vm, go }: SlotProps) {

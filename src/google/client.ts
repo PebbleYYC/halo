@@ -30,7 +30,7 @@ const MAX_PAGES = 1000; // a nextPageToken that never advances must not loop for
 const ROLLUP_MAX_DAYS = 14;
 export const FETCH_TIMEOUT_MS = 30_000;
 
-// --- Errors -------------------------------------------------------------------------------------
+// Errors
 
 /**
  * `code` is ours (`auth_revoked`, `network`, `http_503`, ...) or Google's own error code (`INVALID_ARGUMENT`,
@@ -66,7 +66,7 @@ export function errorCode(body: unknown): string | undefined {
   return typeof code === "string" && /^[A-Za-z_]{1,64}$/.test(code) ? code : undefined;
 }
 
-// --- Local days ---------------------------------------------------------------------------------
+// Local days
 
 /** The first local midnight at or after `s`. */
 function ceilMidnight(s: number, tz: string): number {
@@ -126,7 +126,7 @@ function timeout(ms: number): { signal: AbortSignal; done: () => void } {
   return { signal: c.signal, done: () => clearTimeout(timer) };
 }
 
-// --- Paired devices -----------------------------------------------------------------------------
+// Paired devices
 
 export type DeviceCheck = "some" | "none" | "unknown";
 
@@ -145,7 +145,7 @@ export function parsePairedDevices(body: string): DeviceCheck {
   return Object.keys(rest).length ? "unknown" : "none";
 }
 
-// --- Client -------------------------------------------------------------------------------------
+// Client
 
 /** The access token; `force` after a 401: drop the cached one and get a new one. May throw a GoogleSignInError. */
 export type TokenProvider = (force: boolean) => Promise<string>;

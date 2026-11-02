@@ -1,4 +1,4 @@
-// Fitness `/health/fitness` (spec §7.10), ported from Pulse's health/fitness/page.tsx and its loading.tsx, as an Apple
+// Fitness `/health/fitness` (spec §7.10), ported from Halo's health/fitness/page.tsx and its loading.tsx, as an Apple
 // Health detail page with the latest values and no date switcher: the hero (VO2 max large, rolling into place, its
 // category and source, the percentile as a ring that sweeps in), the percentile on its ruler with the category words,
 // the VO2 max trend, Fitness Age, the training load ratio on its ruler, then fitness, fatigue and form over 90 days.
@@ -37,7 +37,7 @@ const STATUS: Record<NonNullable<FitnessVM["trainingLoad"]["value"]>["status"], 
   high_risk: { word: "High risk", body: "High risk: load jumped well above your usual. Injury and illness risk rise." },
 };
 const CATEGORIES = ["Poor", "Fair", "Good", "Excellent", "Superior"];
-// Mobile: Fitness Age and Pulse's own VO2 max estimate (fitnessLevel.ts, ported from noop's FitnessAgeEngine).
+// Mobile: Fitness Age and Halo's own VO2 max estimate (fitnessLevel.ts, ported from noop's FitnessAgeEngine).
 const ESTIMATED = "Estimated from resting heart rate and activity";
 const NO_FITNESS_AGE = "Fitness Age needs 4 of the last 7 days with a resting heart rate and 12 hours of heart rate.";
 

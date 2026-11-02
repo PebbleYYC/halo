@@ -1,4 +1,4 @@
-// Health formatting helpers, ported from Pulse's src/app/(app)/health/format.ts (tones are theme token names), and the
+// Health formatting helpers, ported from Halo's src/app/(app)/health/format.ts (tones are theme token names), and the
 // Halo Age screen's small pure sums: the age scale's span and the week-on-week change.
 import { formatValue } from "@/lib/format";
 import { addDays } from "@/lib/time";

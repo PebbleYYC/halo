@@ -1,5 +1,5 @@
 // Daily nutrition targets: calories, protein, carbs and fat. Each is the person's own number when they set one
-// (Nutrition › Targets, kept on the phone by src/state/nutrition.ts), else Pulse's suggestion from their own data:
+// (Nutrition › Targets, kept on the phone by src/state/nutrition.ts), else Halo's suggestion from their own data:
 //  - protein: 1.6 g per kg of their latest weight (the point past which more protein stopped adding lean mass in
 //    resistance-trained adults, Morton et al. 2018, Br J Sports Med); with no weight reading, the same per kg of a
 //    healthy weight for their height (BMI 22); with neither, 100 g;
@@ -13,7 +13,7 @@ import { heightText, KG_PER_LB, kgToLb, METRIC, roundTo, type Units } from "@/li
 export const TARGET_KEYS = ["kcal", "protein", "carbs", "fat"] as const;
 export type TargetKey = (typeof TARGET_KEYS)[number];
 
-/** The person's own targets; null follows Pulse's suggestion. */
+/** The person's own targets; null follows Halo's suggestion. */
 export type CustomTargets = Record<TargetKey, number | null>;
 export const NO_CUSTOM: CustomTargets = { kcal: null, protein: null, carbs: null, fat: null };
 
@@ -93,7 +93,7 @@ export function resolveTargets(custom: CustomTargets, input: { weightKg: number 
 /** Progress toward a target, 0-1 (more than the target reads full); null without a value. */
 export const progressOf = (value: number | null, target: number) => (value === null || !(target > 0) ? null : Math.max(0, Math.min(1, value / target)));
 
-/** Null when `value` may be `key`'s target (null: Pulse's suggestion), else why not. */
+/** Null when `value` may be `key`'s target (null: Halo's suggestion), else why not. */
 export function validateTarget(key: TargetKey, value: number | null): string | null {
   if (value === null) return null;
   const l = TARGET_LIMITS[key];
@@ -103,7 +103,7 @@ export function validateTarget(key: TargetKey, value: number | null): string | n
   return null;
 }
 
-/** A field's text: blank is Pulse's suggestion (null); else the number and the error to show, if any. */
+/** A field's text: blank is Halo's suggestion (null); else the number and the error to show, if any. */
 export function parseTarget(key: TargetKey, text: string): { value: number | null; error: string | null } {
   const t = text.trim().replace(/[,\s](?=\d{3}\b)/g, "");
   if (t === "") return { value: null, error: null };

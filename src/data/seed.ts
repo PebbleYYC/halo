@@ -1,4 +1,4 @@
-// Demo seed (KTD2, KTD3): a deterministic demo person written straight into the Store. Ported from Pulse's
+// Demo seed (KTD2, KTD3): a deterministic demo person written straight into the Store. Ported from Halo's
 // src/server/sources/seed/{generate,scenario}.ts; the generator's maths is the web's, only the writes changed
 // (and the heart-rhythm records, which the Store has no slot for, are gone).
 //
@@ -15,7 +15,6 @@ import { resolveMaxHr } from "@/pipeline/index";
 import type { Store } from "./store";
 import type { DailyValue, Exercise, Metrics, Profile, Segment, Session } from "./types";
 
-// ---------------------------------------------------------------------------------------------
 // The demo person's story (scenario.ts). Day indices are 0-based from the first seeded day (the anchor), so the
 // first "today" is index SEED_DAYS - 1. Days past it are ordinary days on the same weekly rhythm.
 
@@ -123,7 +122,7 @@ export function blockWeek(i: number) {
   return i >= start && i <= end ? Math.floor((i - start) / 7) : 0;
 }
 
-/** The Journal's default behaviours (Pulse's src/server/journalTags.ts). */
+/** The Journal's default behaviours (Halo's src/server/journalTags.ts). */
 export const DEFAULT_JOURNAL_TAGS = [
   { tag: "alcohol", label: "Alcohol" },
   { tag: "late_caffeine", label: "Late caffeine" },
@@ -156,7 +155,6 @@ export const ALCOHOL_WEEKEND_ODDS = 0.55;
 /** Share of past days without a journal check-in. */
 export const MISSED_CHECK_IN_ODDS = 0.08;
 
-// ---------------------------------------------------------------------------------------------
 // Randomness and time
 
 /**
@@ -205,7 +203,6 @@ const memoized = <T>(map: Map<number, T> | undefined, i: number, f: () => T): T 
   return v;
 };
 
-// ---------------------------------------------------------------------------------------------
 // The person, day by day
 
 type Workout = { kind: WorkoutKind; start: number; minutes: number; intensity: number };
@@ -370,7 +367,7 @@ function googleDerived(ctx: Ctx, i: number, rhr: number) {
   const nights = Array.from({ length: Math.min(30, i + 1) }, (_, k) => night(ctx, i - k)?.metrics).filter((m) => m != null);
   const temps = nights.flatMap((m) => (m.nightlyTempC == null ? [] : [m.nightlyTempC]));
   // Like Fitbit after a long gap, no baseline until 4 of the last 14 nights have a reading, so the demo also
-  // shows Pulse's own fallback baseline (and its stale state after the skin-temperature gap).
+  // shows Halo's own fallback baseline (and its stale state after the skin-temperature gap).
   const recent = nights.slice(0, 14).filter((m) => m.nightlyTempC != null).length;
   const sorted = [...temps].sort((a, b) => a - b);
   const median = sorted.length ? (sorted[(sorted.length - 1) >> 1] + sorted[sorted.length >> 1]) / 2 : null;
@@ -630,7 +627,6 @@ export function generateDay(ctx: Ctx, i: number) {
 
 export type SeedDay = ReturnType<typeof generateDay>;
 
-// ---------------------------------------------------------------------------------------------
 // Writing
 
 /** The day's daily_metrics row as of `now`: today's steps and calories are running totals. */
@@ -674,7 +670,7 @@ function timeInZones(g: SeedDay, zones: number[] | null, now: number) {
   return { lightModerateMin: min(lm), vigorousPeakMin: min(vp) };
 }
 
-/** Fitbit's daily roll-ups (Pulse's src/lib/extraMetrics.ts keys) as of `now`; none on a day the band was off all day. */
+/** Fitbit's daily roll-ups (Halo's src/lib/extraMetrics.ts keys) as of `now`; none on a day the band was off all day. */
 export function extrasAt(g: SeedDay, now: number): [string, number][] {
   const done = Math.min(g.steps.length, Math.floor((now - g.start) / 60));
   if (!g.worn || done <= 0) return [];

@@ -23,7 +23,7 @@ import { Rows, SectionFooter, SectionLabel } from "@/screens/settings/calmKit";
 
 const PressableView = Animated.createAnimatedComponent(Pressable);
 
-// ── The glass segmented control ──────────────────────────────────────────────
+// The glass segmented control
 
 /** The capsule's height, and the thumb's inset from its edge. */
 const SEG_H = 36;
@@ -108,7 +108,7 @@ export function GlassSegmented<V extends string>({ value, onChange, items, acces
   );
 }
 
-// ── The inset grouped list ───────────────────────────────────────────────────
+// The inset grouped list
 
 /** The icon square in a row (iOS Settings' 29 px) and where the hairline under such a row starts: the row's text. */
 export const ROW_ICON = 29;
@@ -266,7 +266,7 @@ export function ListRow({ icon: Icon, iconColor, lead, label, detail, detailColo
   );
 }
 
-// ── The lit card ─────────────────────────────────────────────────────────────
+// The lit card
 
 /**
  * A hero card lit from its top by a soft pool of `color` (Apple Health's highlighted cards): the card colour with a

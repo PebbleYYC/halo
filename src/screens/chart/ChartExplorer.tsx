@@ -226,7 +226,7 @@ export default function ChartExplorer() {
   // Clearing the compare: a day view remembers "none" (its default would come back otherwise).
   const clearCompare = () => setParams({ compare: mode === "day" ? NO_COMPARE : null });
 
-  // --- Data ---
+  // Data
   const series = useQuery((ctx) => (mode === "daily" ? getChartSeries(def.key, ctx) : Promise.resolve(null)), [mode, def.key], mode === "daily" ? `chartseries:${def.key}` : undefined);
   const day = useQuery((ctx) => (view ? getChartDay(view, d, ctx) : Promise.resolve(null)), [view, d], view ? `chartday:${view}:${d}` : undefined);
   const cmpSeries = useQuery((ctx) => (mode === "daily" && cmp ? getChartSeries(cmp.key, ctx) : Promise.resolve(null)), [mode, cmp?.key], mode === "daily" && cmp ? `chartseries:${cmp.key}` : undefined);
@@ -243,7 +243,7 @@ export default function ChartExplorer() {
   const format = view ? DAY_VIEW[view].format : def.format;
   const workouts = view === "hr" && def.key === "workouts";
 
-  // --- The model: series, colours, the readout's text ---
+  // The model: series, colours, the readout's text
   const model = React.useMemo(() => {
     let primary: Series | null = null;
     let compare: Series | null = null;
@@ -345,7 +345,7 @@ export default function ChartExplorer() {
     };
   }, [mode, dailyVm, dayVm, cmp, cmpView, cmpDailyVm, cmpDayVm, def, d, view, title, unit, format, c, k, goals, units, today, workouts]);
 
-  // --- The viewport JS knows about: the range's window, then wherever a gesture settled ---
+  // The viewport JS knows about: the range's window, then wherever a gesture settled
   const home = React.useMemo(() => (!model ? null : (model.home ?? windowFor(range, model.primary, model.end))), [model, range]);
   const viewKey = model ? `${model.dataKey.split("|").slice(0, 4).join("|")}|${range}` : "";
   const [settled, setSettled] = React.useState<{ key: string; start: number; span: number } | null>(null);
@@ -353,7 +353,7 @@ export default function ChartExplorer() {
   const onViewport = React.useCallback((start: number, span: number) => setSettled({ key: viewKey, start, span }), [viewKey]);
   const win = React.useMemo(() => (v ? { start: v.start, span: v.span } : { start: 0, span: 1 }), [v?.start, v?.span]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --- Axes and summary for the visible window ---
+  // Axes and summary for the visible window
   const axes = React.useMemo(() => {
     if (!model || !v) return null;
     const from = v.start;
@@ -377,7 +377,7 @@ export default function ChartExplorer() {
     [model, axes],
   );
 
-  // --- Layout ---
+  // Layout
   const [box, setBox] = React.useState({ w: 0, h: 0 });
   const [sheet, setSheet] = React.useState<"metric" | "compare" | null>(null);
   const ranges: Range[] = def.day ? ["day", ...DAILY_RANGES] : [...DAILY_RANGES];

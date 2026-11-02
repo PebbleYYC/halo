@@ -2,7 +2,7 @@ import * as React from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import type { cubicBezier, CSSKeyframesRule } from "react-native-reanimated";
 
-// "Pulse 2: calm data": nothing animates on mount. Entrances and cascades ran while a screen slid in, and each one is
+// "Halo 2: calm data": nothing animates on mount. Entrances and cascades ran while a screen slid in, and each one is
 // a layer the GPU composites on frames the transition needs, so the helpers below keep their API and render their
 // children at once. Motion that answers a change (a value, a tab, a press) lives in the other motion helpers.
 

@@ -102,7 +102,7 @@ class HaloGlassView(context: Context, appContext: AppContext) : ExpoView(context
     invalidate()
   }
 
-  // ---- Layout and lifecycle ----
+  // Layout and lifecycle
 
   // The view has no React children; never let the LinearLayout under ExpoView lay anything out.
   override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) = Unit
@@ -128,7 +128,7 @@ class HaloGlassView(context: Context, appContext: AppContext) : ExpoView(context
     super.onDetachedFromWindow()
   }
 
-  // ---- The target ----
+  // The target
 
   /** The target view, if it exists, is attached, and doesn't contain this glass (which would draw itself forever). */
   private fun resolveTarget(): HaloGlassTargetView? {
@@ -181,7 +181,7 @@ class HaloGlassView(context: Context, appContext: AppContext) : ExpoView(context
     if (found != null && wanted != Tier.SOLID && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) live?.follow(found)
   }
 
-  // ---- Drawing ----
+  // Drawing
 
   override fun dispatchDraw(canvas: Canvas) {
     if (width > 0 && height > 0) {

@@ -1,5 +1,5 @@
 // Trends `/trends?metric=&r=` (More): one daily metric over up to a year, with each range's average against
-// the range before it. Ported from Pulse's src/server/queries/trends.ts.
+// the range before it. Ported from Halo's src/server/queries/trends.ts.
 import { addDays } from "@/lib/time";
 import { EXTRA_METRICS, type ExtraKey, type FormatKey, type GoodDirection, metricHref, RANGE_DAYS, RANGES, type TrendRange } from "./_lib";
 import { type DayRow, finite, loadDays, none, ok, type QueryCtx, todayOf, toStrain } from "./common";
@@ -83,7 +83,7 @@ const CORE: readonly TrendMetric[] = [
   { key: "body_fat", group: "Body", label: "Body fat", unit: "%", format: "decimal1", colorBy: "single", direction: "down", href: metricHref("body_fat"), column: "body_fat_pct", pick: (r) => r.metrics?.bodyFatPct },
 ];
 
-/** Every metric: Pulse's own first, then the source's extras from their catalogue, each in a picker section. */
+/** Every metric: Halo's own first, then the source's extras from their catalogue, each in a picker section. */
 export const TREND_METRICS: readonly TrendMetric[] = [
   ...CORE,
   ...EXTRA_METRICS.map((m): TrendMetric => ({

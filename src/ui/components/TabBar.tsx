@@ -66,7 +66,7 @@ export function CheckInAction({ onPress, label = "Check in" }: { onPress: () => 
   );
 }
 
-// --- The navigation bar ---
+// The navigation bar
 
 /** iOS system blue: the selected tab and the action's glyph. */
 const BLUE = { light: "#007AFF", dark: "#0A84FF" } as const;

@@ -2,13 +2,13 @@
 // tests, which can't load the native module) imports nothing native.
 
 export type GoogleSignInCode =
-  /** No Android OAuth client in Google Cloud matches Pulse's package and signing certificate (or no consent screen). */
+  /** No Android OAuth client in Google Cloud matches Halo's package and signing certificate (or no consent screen). */
   | "not_configured"
   /** The person backed out of Google's consent screen. */
   | "cancelled"
   /** Google Play services is missing, off, updating or too old. */
   | "no_play_services"
-  /** Google didn't grant the scopes Pulse needs (the person unticked them). */
+  /** Google didn't grant the scopes Halo needs (the person unticked them). */
   | "scope_not_granted"
   /** The silent sign-in before a sync needs the person: a grant that expired or was revoked, or a new scope. */
   | "needs_sign_in"

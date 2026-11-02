@@ -1,4 +1,4 @@
-// The coach's setup, ported from Pulse's coach/CoachSetup.tsx, as iOS forms: the coach's feature header, what it sends
+// The coach's setup, ported from Halo's coach/CoachSetup.tsx, as iOS forms: the coach's feature header, what it sends
 // where (one row per point, each with its coloured icon square) and the filled Allow (consent); then a provider (a
 // checkmark list), a key and a model in grouped fields, saved only after one tiny test request works. On the phone the
 // request goes straight from the device to the provider, and the key is kept in the Android Keystore-backed store.

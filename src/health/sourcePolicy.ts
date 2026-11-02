@@ -11,7 +11,7 @@
 //   • Entries typed in (recordingMethod MANUAL_ENTRY), and the log-like types (weight, body fat, water, food, glucose,
 //     temperature, cycle) are never dropped for their device: logging a weigh-in or a glass of water on the phone is
 //     still the Fitbit app's record.
-// Pulse's own logs (the Journal) never come from Health Connect and are unaffected.
+// Halo's own logs (the Journal) never come from Health Connect and are unaffected.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { DeviceType as LibDeviceType, RecordingMethod as LibRecordingMethod } from "react-native-health-connect";
 import type { ReadType } from "@/health/connect";

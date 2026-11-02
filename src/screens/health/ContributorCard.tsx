@@ -1,5 +1,5 @@
 // One Healthspan group ("Sleep", "Strain", "Fitness") as an iOS grouped list under its caps header, the design's "What
-// moves it" (ported from Pulse's health/healthspan/ContributorCard.tsx): each input a row with its coloured icon square,
+// moves it" (ported from Halo's health/healthspan/ContributorCard.tsx): each input a row with its coloured icon square,
 // its name, its value and the target for your age under it, the years it adds or takes off on the right (red when it
 // adds years, green when it takes them off) and a thin chevron. A row opens the input's sheet (journey 5; the web
 // deep-links it with `?contributor=`, here the list holds it and Back closes it): the value large, where it sits between

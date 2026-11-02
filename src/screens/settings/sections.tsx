@@ -11,6 +11,7 @@ import { useRouter, type Href } from "expo-router";
 import { Check, CircleAlert, HeartPulse, History, MessageCircle, Minus, Settings2, Sparkles, TriangleAlert } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { useChatCount, useCoachSetup } from "@/coach/session";
+import { googleSignInAvailable } from "@/google/auth";
 import { GOOGLE_SOURCE_ENABLED } from "@/google/flags";
 import { askPermissions, openHealthConnectSettings, permissionState, READ_TYPES, type PermissionState, type ReadType } from "@/health/connect";
 import { getSourcePolicy, setSourcePolicy, SOURCE_POLICIES, SOURCE_POLICY_LABELS, type SourcePolicy } from "@/health/sourcePolicy";
@@ -30,12 +31,12 @@ import { progressLabel } from "../home/status";
 import { Hairline, useCalm } from "./calmKit";
 import { ButtonRow, CheckRow, Disclosure, HeroCard, ICON_INSET, InfoRow, InsetGroup, NavRow, ProfileAvatar, RowBox } from "./list";
 import { ConfirmDialog, ProgressBar, toneOf } from "./parts";
-import { GoogleConnectGroup, GoogleSourceGroup } from "./google";
+import { GoogleConnectGroup, GoogleSourceGroup, GoogleSpo2Group } from "./google";
 import { SyncNowRow } from "./syncNow";
 import { toast } from "./toast";
 import { describeZone } from "./zone";
 
-// ── Profile ──────────────────────────────────────────────────────────────────
+// Profile
 
 const PROFILE_ROWS = ["Birth date", "Age", "Sex", "Height", "Waist", "Max heart rate", "Time zone"];
 
@@ -111,7 +112,7 @@ export function ProfileSection() {
   );
 }
 
-// ── Data source ──────────────────────────────────────────────────────────────
+// Data source
 
 /** Health Connect's record types as Settings lists them (the web's GROUPS labels). */
 const TYPE_LABEL: Record<ReadType, string> = {
@@ -217,6 +218,7 @@ export function DataSourceSection() {
   return (
     <>
       <HealthConnectSource />
+      {app.source === "health_connect" && googleSignInAvailable() && <GoogleSpo2Group />}
       {GOOGLE_SOURCE_ENABLED && <GoogleConnectGroup />}
     </>
   );
@@ -409,7 +411,7 @@ function NoFitbitRecords() {
   );
 }
 
-// ── Appearance ───────────────────────────────────────────────────────────────
+// Appearance
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "system", label: "System" },
@@ -486,7 +488,7 @@ export function AppSection() {
   );
 }
 
-// ── Coach ────────────────────────────────────────────────────────────────────
+// Coach
 
 /** Settings › Coach: the coach keeps its own setup (provider, key, chats); this shows the provider and opens it. */
 export function CoachSection() {

@@ -125,7 +125,7 @@ export function joinReasons(reasons: string[]): string {
   return `${reasons.slice(0, -1).join(", ")} and ${reasons[reasons.length - 1]}`;
 }
 
-// ── V5HealthSignals adapter ────────────────────────────────────────────────
+// V5HealthSignals adapter
 
 /** One nightly row. `skinTempDev` is °C from the personal baseline. */
 export interface IllnessDay {

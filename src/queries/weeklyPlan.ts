@@ -1,5 +1,5 @@
 // Weekly Plan (a phone addition, after WHOOP's Weekly Plan): the week holding `day` against the person's weekly
-// targets (src/state/weeklyPlan.ts), with pace, streaks of weeks met and what each habit is worth on Pulse Age today.
+// targets (src/state/weeklyPlan.ts), with pace, streaks of weeks met and what each habit is worth on Halo Age today.
 // The scoring is pure (src/core/algorithms/weeklyPlan.ts); this maps the Store's days into it. Pure over the Store.
 import { STRENGTH_TYPES, type HealthspanInput } from "@/core/algorithms/healthspan";
 import { HISTORY_WEEKS, PLAN_KEYS, weeklyPlan, type PlanDay, type PlanItem, type PlanKey, type PlanSettings, type WeekPlan } from "@/core/algorithms/weeklyPlan";
@@ -10,7 +10,7 @@ import { type DayRow, type ExerciseRow, exercisesBetween, finite, loadDays, nigh
 export { PLAN_KEYS, type PlanKey, type PlanSettings } from "@/core/algorithms/weeklyPlan";
 
 /**
- * Health Connect exercise types (src/health/import.ts's ExerciseType names) that count as a strength session: Pulse
+ * Health Connect exercise types (src/health/import.ts's ExerciseType names) that count as a strength session: Halo
  * Age's strength types, HIIT, and the single lifts a session can be recorded as.
  */
 export const RESISTANCE_TYPES = new RegExp(`${STRENGTH_TYPES.source}|HIGH_INTENSITY_INTERVAL|BARBELL|BENCH_PRESS|DEADLIFT|DUMBBELL|LAT_PULL_DOWN|SQUAT|LUNGE`);
@@ -26,7 +26,7 @@ export type PlanMeta = {
   unit: string;
   format: FormatKey;
   href: string;
-  /** The Pulse Age term this habit feeds. */
+  /** The Halo Age term this habit feeds. */
   ageInput: HealthspanInput;
 };
 
@@ -41,7 +41,7 @@ export const PLAN_META: Record<PlanKey, PlanMeta> = {
 
 export type PlanRow = PlanItem &
   PlanMeta & {
-    /** Years this habit adds to (+) or takes off (−) Pulse Age as of the day; null without a Pulse Age. */
+    /** Years this habit adds to (+) or takes off (−) Halo Age as of the day; null without a Halo Age. */
     ageYears: number | null;
   };
 
@@ -60,9 +60,9 @@ export function strengthByDay(exs: readonly ExerciseRow[]): Map<string, number> 
 }
 
 /**
- * One stored day as the plan's inputs. Zone minutes count from 40 % of heart-rate reserve, where Pulse Age's moderate
+ * One stored day as the plan's inputs. Zone minutes count from 40 % of heart-rate reserve, where Halo Age's moderate
  * band starts (stage 1's `moderateSeconds` under Zone 1), but every minute once and on any day with HR: the plan counts
- * what was done, not Pulse Age's dose (bouts of 10+ minutes, 60–80 % counted twice, 12-hour days only). Sleep is the
+ * what was done, not Halo Age's dose (bouts of 10+ minutes, 60–80 % counted twice, 12-hour days only). Sleep is the
  * night ending that morning, credited as the debt ledger does.
  */
 export function planDay(r: DayRow, strengthSessions: number): PlanDay {
@@ -99,7 +99,7 @@ export async function getWeeklyPlan(day: string, ctx: QueryCtx, plan: PlanSettin
   const keys = PLAN_KEYS.filter((k) => plan.enabled[k]);
   const wp = weeklyPlan(planDays(rows, exs), plan.targets, keys, day, day === today);
 
-  // Pulse Age as of the day, else the newest one before it in the window.
+  // Halo Age as of the day, else the newest one before it in the window.
   let contributions: { key: string; years: number }[] = [];
   for (let d = day; d >= from; d = addDays(d, -1)) {
     const hs = rows.get(d)?.healthspan;

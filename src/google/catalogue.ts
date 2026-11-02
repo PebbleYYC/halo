@@ -1,4 +1,4 @@
-// Google Health API v4 data types Pulse reads: the web app's src/server/sources/google/catalogue.ts (from Hælan's
+// Google Health API v4 data types Halo reads: the web app's src/server/sources/google/catalogue.ts (from Hælan's
 // catalogue and probe findings), unchanged but for the generic `vo2-max`, which only the web's probe lists.
 //
 // One type wears three casings: kebab in the URL path (the key here), snake in the filter
@@ -50,7 +50,7 @@ export const DATA_TYPES = {
   // dailyRollUp gives Google's merged, worn-only daily total; list gives per-minute counts for movement gating.
   steps: { member: "interval.start_time", maxDays: 14, pageSize: PAGE, dailyRollUp: true },
   "total-calories": { member: null, maxDays: 14, pageSize: PAGE, dailyRollUp: true },
-  // All-day time per zone (Pulse Age's activity terms).
+  // All-day time per zone (Halo Age's activity terms).
   "time-in-heart-rate-zone": rollup,
   // Shown as extra metrics (src/queries/_lib.ts EXTRA_METRICS): daily roll-ups only, value paths from the RollupValue docs.
   distance: rollup,

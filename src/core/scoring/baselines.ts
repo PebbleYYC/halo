@@ -162,7 +162,7 @@ export function rollingMeanSD(values: (number | null)[], cfg: MetricCfg, window 
   return state(mean, Math.max(cfg.floorSpread, sd) / 1.253, n, 0);
 }
 
-// ── Civil-day arithmetic (replaces java.time) ──────────────────────────────
+// Civil-day arithmetic (replaces java.time)
 
 const parseInt32 = (s: string): number | null => (/^[+-]?\d+$/.test(s) ? Number(s) : null);
 
