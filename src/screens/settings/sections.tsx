@@ -43,13 +43,32 @@ const PROFILE_ROWS = ["Birth date", "Age", "Sex", "Height", "Waist", "Max heart 
 
 type ProfileRow = { label: string; value: string; numeric?: boolean; unit?: string; detail?: string };
 
+/** The name, saved when typing ends; keyed on the saved name, so a change from elsewhere resets the draft. */
+function NameField({ saved }: { saved: string }) {
+  const [draft, setDraft] = React.useState(saved);
+  return (
+    <RowBox>
+      <CalmInput
+        value={draft}
+        onChangeText={setDraft}
+        onEndEditing={() => void setName(draft)}
+        onSubmitEditing={() => void setName(draft)}
+        placeholder="Your name"
+        autoCapitalize="words"
+        autoComplete="name"
+        returnKeyType="done"
+        maxLength={40}
+        accessibilityLabel="Your name"
+      />
+    </RowBox>
+  );
+}
+
 /** The profile: the monogram head, the details as rows (edited from the bar's Edit), and Remove all data last, in red. */
 export function ProfileSection() {
   const c = useCalm();
   const app = useApp();
   const me = useMe();
-  const [name, setNameDraft] = React.useState(me.name ?? "");
-  React.useEffect(() => setNameDraft(me.name ?? ""), [me.name]);
   const [photoBusy, setPhotoBusy] = React.useState(false);
   const photo = async (from: "camera" | "library") => {
     setPhotoBusy(true);
@@ -97,20 +116,7 @@ export function ProfileSection() {
           </Txt>
         </View>
         <InsetGroup title="You" footer="Your name and photo stay on this phone. Today greets you by your first name.">
-          <RowBox>
-            <CalmInput
-              value={name}
-              onChangeText={setNameDraft}
-              onEndEditing={() => void setName(name)}
-              onSubmitEditing={() => void setName(name)}
-              placeholder="Your name"
-              autoCapitalize="words"
-              autoComplete="name"
-              returnKeyType="done"
-              maxLength={40}
-              accessibilityLabel="Your name"
-            />
-          </RowBox>
+          <NameField key={me.name ?? ""} saved={me.name ?? ""} />
           <ButtonRow label="Take a photo" onPress={() => void photo("camera")} disabled={photoBusy} />
           <ButtonRow label={me.photo ? "Choose another photo" : "Choose a photo"} onPress={() => void photo("library")} disabled={photoBusy} />
           {me.photo ? <ButtonRow label="Remove photo" danger onPress={() => void removePhoto()} disabled={photoBusy} /> : null}

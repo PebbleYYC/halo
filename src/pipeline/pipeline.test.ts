@@ -127,7 +127,7 @@ describe("parity with the web app", () => {
     // "3b88f4ed65deb34e". 18: Garmin's training load, the 24-hour Energy Bank and Halo Age's WHOOP definitions. Version
     // 17's value was "a95ad63c44f235eb". 19: HRV Status and Garmin-style training (two new columns, below). Version 18's
     // value was "c4a73691987f16d1".
-    "daily_scores.scoring_version": "769c3cb7fe6c5606",
+    "daily_scores.scoring_version": "f0df0ca35661e535",
     // Version 15: Activity Strain is the session's Banister TRIMP plus its muscular load through 5.05 · ln(1 + 0.09 · T)
     // (a seeded 45-minute strength session goes from 8.2 to 9.9 on 0–21), each activity stores its `cardioTrimp` and
     // `muscularTrimp`, and its zone seconds count Zone 1 from 40 % of the reserve. Version 14's value was "cb2d75373aaf4d20".
@@ -213,7 +213,7 @@ describe("parity with the web app", () => {
     // shows Monday 2026-09-28's 1.70, its own daily value being 1.42 (version 17 showed a daily 1.61). Today's Halo Age
     // 33.41 → 33.78. Version
     // 17's value was "2fdf2c34ba15be9c".
-    "daily_scores.healthspan": "e0077d0297538a97",
+    "daily_scores.healthspan": "eb5380f3eb90f91d",
     // Version 19: the VO2 max categories use Garmin's percentile cut-offs, 40 / 60 / 80 / 95 (were 20 / 40 / 60 / 80), so
     // today's 45.3 at the 61st percentile reads Good, not Excellent; percentiles are unchanged. Version 18's value was
     // "cfad8d1954c878ed".

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FRIEND_TREADMILL,
   fitnessAge,
+  fitnessAgeFromVo2max,
   fitnessCategory,
   fitnessEstimate,
   fitnessLevel,
@@ -123,5 +124,22 @@ describe("fitnessEstimate (7 days of resting HR and zone minutes)", () => {
     // 4 covered days, 2 of them active: 2 × 7/4 = 3.5 → 4 a week.
     const half = week(65, 0).map((d, i) => (i < 3 ? { ...d, zone13Min: null, zone45Min: null } : i < 5 ? { ...d, zone13Min: 45 } : d));
     expect(fitnessEstimate(half, p)!.activityIndex).toBeCloseTo(physicalActivityIndex(4, 45, 0), 9);
+  });
+});
+
+describe("fitnessAgeFromVo2max", () => {
+  it("is the decade midpoint at that decade's FRIEND median", () => {
+    expect(fitnessAgeFromVo2max(42.4, "male")).toBeCloseTo(35, 5);
+    expect(fitnessAgeFromVo2max(26.7, "female")).toBeCloseTo(45, 5);
+  });
+  it("interpolates between medians and falls as VO2max rises", () => {
+    const a = fitnessAgeFromVo2max(40, "male");
+    expect(a).toBeGreaterThan(35);
+    expect(a).toBeLessThan(45);
+    expect(fitnessAgeFromVo2max(45, "male")).toBeLessThan(a);
+  });
+  it("stays within 20 to 80", () => {
+    expect(fitnessAgeFromVo2max(70, "male")).toBe(20);
+    expect(fitnessAgeFromVo2max(10, "female")).toBe(80);
   });
 });

@@ -78,6 +78,24 @@ export function fitnessCategory(percentile: number): FitnessCategory {
   return "poor";
 }
 
+/**
+ * Fitness Age from a measured VO2max: the age at which the FRIEND median (50th percentile) for your sex equals it, linear
+ * between decade midpoints (25 … 75) and extended along the end segments, clamped to [20, 80].
+ */
+export function fitnessAgeFromVo2max(vo2max: number, sex: Sex): number {
+  const medians = FRIEND_TREADMILL[sex].map((row, i) => [row[3], 25 + 10 * i] as const);
+  // Medians fall with age; as knots they must ascend, so read the table backwards.
+  const knots = [...medians].reverse();
+  const [lo, hi] = [knots[0], knots[knots.length - 1]];
+  let age: number;
+  if (vo2max < lo[0]) age = lo[1] + ((knots[1][1] - lo[1]) / (knots[1][0] - lo[0])) * (vo2max - lo[0]);
+  else if (vo2max > hi[0]) {
+    const prev = knots[knots.length - 2];
+    age = hi[1] + ((hi[1] - prev[1]) / (hi[0] - prev[0])) * (vo2max - hi[0]);
+  } else age = piecewiseLinear(knots, vo2max);
+  return Math.min(fitnessAgeConfig.maxAge, Math.max(fitnessAgeConfig.minAge, age));
+}
+
 export function fitnessLevel(vo2max: number, age: number, sex: Sex): { percentile: number; category: FitnessCategory } {
   const percentile = vo2maxPercentile(vo2max, age, sex);
   return { percentile, category: fitnessCategory(percentile) };
@@ -160,15 +178,15 @@ export interface FitnessEstimateDay {
 }
 
 export interface FitnessEstimate {
-  /** mL/kg/min: Nes 2011 with a waist, else Uth 2004. */
+  /** mL/kg/min: the measured VO2max ("measured"), else Nes 2011 with a waist, else Uth 2004. */
   vo2max: number;
-  method: "nes" | "uth";
+  method: "measured" | "nes" | "uth";
   /** Years, on [20, 80]. */
   fitnessAge: number;
   /** HUNT index on [0, 15]. */
   activityIndex: number;
-  /** Median of the window's resting HRs, bpm. */
-  restingHr: number;
+  /** Median of the window's resting HRs, bpm; null for a measured VO2max without enough resting HRs. */
+  restingHr: number | null;
 }
 
 const median = (xs: number[]) => {

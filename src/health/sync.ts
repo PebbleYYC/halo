@@ -75,6 +75,11 @@ function uniqueRecords<T extends { metadata?: { id?: string } }>(records: T[]): 
 export const DEFAULT_HISTORY_DAYS = 180;
 /** Without ReadHealthDataHistory, Health Connect serves only the 30 days before the grant. */
 export const HISTORY_DAYS_WITHOUT_PERMISSION = 30;
+/**
+ * The first import reads only this many days, so Halo is usable within a minute or two; the next sync backfills the rest
+ * of the history window. A first import that read all 180 days restarted from zero whenever it was cut short.
+ */
+export const FIRST_SYNC_DAYS = 30;
 /** Later syncs re-read this many days before the last sync so late-arriving Fitbit writes are picked up. */
 export const RESYNC_DAYS = 3;
 
@@ -119,7 +124,8 @@ export function windowPlan(a: {
   importVersion?: number;
 }): { full: boolean; reimport: boolean } {
   const reimport = !a.imported || a.imported.version < (a.importVersion ?? IMPORT_VERSION) || a.imported.policy !== a.policy;
-  const full = reimport || a.requested || a.lastSyncTs === null || !a.hasNights || !a.hasToken || a.newlyGranted > 0;
+  // No nights yet is no reason to re-read everything: the changes token reports nights that arrive later, old dates included.
+  const full = reimport || a.requested || a.lastSyncTs === null || !a.hasToken || a.newlyGranted > 0;
   return { full, reimport };
 }
 
@@ -174,6 +180,10 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       warnings.push("history_permission_missing");
     }
     const historyFrom = addDays(today, -(days - 1));
+    const firstSync = state.lastSyncTs === null && opts.historyDays === undefined;
+    const firstFrom = firstSync ? addDays(today, -(Math.min(days, FIRST_SYNC_DAYS) - 1)) : historyFrom;
+    // History the first import left out (or a window that grew): read once, then firstDay covers it.
+    const backfill = !firstSync && !!state.firstDay && state.firstDay > historyFrom;
     const hasNights = (await store.allSessions()).length > 0;
     const [token, typesJson] = await Promise.all([
       AsyncStorage.getItem(TOKEN_KEY).catch(() => null),
@@ -202,9 +212,10 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
 
     let fromDay: string;
     // (plan.full already covers a missing token or first sync; repeated so the else branch can rely on both.)
-    if (plan.full || !token || state.lastSyncTs === null) {
-      fromDay = historyFrom;
+    if (plan.full || !token || state.lastSyncTs === null || backfill) {
+      fromDay = firstFrom;
       counts.full = 1;
+      if (backfill) counts.backfill = 1;
     } else {
       const changed = await earliestChangeSince(token).catch(() => "expired" as const);
       fromDay = localDay(state.lastSyncTs - RESYNC_DAYS * 86_400, tz);
