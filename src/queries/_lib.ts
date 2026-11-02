@@ -241,7 +241,7 @@ export const PHONE_STATS: DashboardKey[] = ["steps", "distance", "calories", "ac
 
 // log.ts (types only: the metric screen's "entries" section shape)
 
-export const LOG_TYPES = ["hydration-log", "nutrition-log", "weight", "body-fat", "oxygen-saturation", "moods", "symptoms", "menstrual-period", "ovulation-test"] as const;
+export const LOG_TYPES = ["hydration-log", "nutrition-log", "weight", "body-fat", "oxygen-saturation", "moods", "symptoms", "menstrual-period", "ovulation-test", "medication"] as const;
 export type LogType = (typeof LOG_TYPES)[number];
 
 /**

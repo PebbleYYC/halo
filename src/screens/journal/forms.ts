@@ -48,6 +48,7 @@ export const EMPTY: Record<LogKind, Form> = {
   food: { name: "", meal: "", kcal: "", protein: "", carbs: "", fat: "" },
   weight: { kg: "", fat: "" },
   spo2: { pct: "" },
+  medicine: { name: "", dose: "" },
   mood: { valence: "", moods: [] },
   symptoms: { symptoms: [] },
   period: { start: "", end: "", flow: "" },
@@ -121,6 +122,8 @@ export function toInput(kind: LogKind, f: Form, time: string, units: Units = MET
       const pct = num(s("pct"));
       return pct == null || Number.isNaN(pct) ? "Enter blood oxygen as a percentage, e.g. 95." : { kind, pct, at };
     }
+    case "medicine":
+      return s("name").trim() ? { kind, name: s("name").trim(), dose: s("dose").trim() || undefined, at } : "Enter the medicine’s name.";
     case "mood":
       return a("moods").length ? { kind, moods: a("moods") as never, valence: (s("valence") || null) as never, at } : "Choose how you feel.";
     case "symptoms":

@@ -39,8 +39,8 @@ export type CheckInProps = {
   checkIn: JournalVM["checkIn"];
 };
 
-/** Each behaviour group's colour: evening habits indigo (sleep), recovery green, context yellow, your own blue. */
-export const GROUP_TINT: Record<JournalTag["group"], CalmTint> = { evening: "lavender", recovery: "mint", context: "sand", custom: "sky" };
+/** Each behaviour group's colour: evening habits indigo (sleep), recovery green, context yellow, medicines rose, your own blue. */
+export const GROUP_TINT: Record<JournalTag["group"], CalmTint> = { evening: "lavender", recovery: "mint", context: "sand", medicine: "rose", custom: "sky" };
 
 const PressableView = Animated.createAnimatedComponent(Pressable);
 

@@ -1,0 +1,35 @@
+// Medicines as journal behaviours: logging a dose stores it in the log and answers the medicine's behaviour "yes" for
+// that day, so Insights compares next-day Recovery, HRV and Sleep on days with and without it. From a medicine's first
+// logged day on, a day with no dose and no check-in answer counts as "no": nobody answers "no" for every pill skipped.
+import { addDays } from "./time";
+
+/** A medicine's behaviour key: "med_" and the name as snake_case ("Vitamin D" → "med_vitamin_d"); "" without a letter or digit. */
+export function medicineTag(name: string): string {
+  const key = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  return key ? `med_${key}` : "";
+}
+
+export const isMedicineTag = (tag: string) => tag.startsWith("med_");
+
+/**
+ * `entries` (one day's answers per item) with every medicine's unanswered days from its first "yes" through `lastDay`
+ * filled in as "no" (0). Days are added only where some medicine needs them; other tags are untouched.
+ */
+export function withMedicineNoDays<T extends { day: string; tags: Record<string, boolean | number> }>(entries: readonly T[], lastDay: string): { day: string; tags: Record<string, boolean | number> }[] {
+  const first = new Map<string, string>();
+  for (const e of entries)
+    for (const [tag, v] of Object.entries(e.tags)) if (isMedicineTag(tag) && Number(v) > 0 && (!first.has(tag) || e.day < first.get(tag)!)) first.set(tag, e.day);
+  if (!first.size) return entries.map((e) => ({ day: e.day, tags: e.tags }));
+  const byDay = new Map(entries.map((e) => [e.day, { day: e.day, tags: { ...e.tags } }]));
+  for (const [tag, from] of first) {
+    for (let d = from; d <= lastDay; d = addDays(d, 1)) {
+      const row = byDay.get(d) ?? { day: d, tags: {} };
+      if (!(tag in row.tags)) row.tags[tag] = 0;
+      byDay.set(d, row);
+    }
+  }
+  return [...byDay.values()].sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+}

@@ -8,6 +8,7 @@ import { hrvCfg, recoveryHRVLnCfg, respCfg, restingHRCfg, skinTempCfg, update } 
 import { lnHrv } from "@/core/scoring/recovery";
 import { activityCost } from "@/core/algorithms/activityCost";
 import { journalImpactSteps, type JournalDay, type TagImpact } from "@/core/algorithms/journalImpact";
+import { withMedicineNoDays } from "@/lib/medicine";
 import { buildReport, periodBounds, reportPeriods } from "@/core/algorithms/reports";
 import { activityKind } from "@/queries/common";
 import { BATCH_DAYS, byteOrder, type Data, groupBy, type Progress, type Segment, sha } from "./data";
@@ -126,7 +127,11 @@ export async function stage2(store: Store, data: Data, opts: PipelineOptions, on
 
   // Journal impact: as of each day, memoised on its inputs
   onProgress?.("journal", 0, days.length);
-  const entries: JournalDay[] = [...journal].map(([day, es]) => ({ day, tags: Object.fromEntries(es.map((e) => [e.tag, e.value])) }));
+  // A tracked medicine's days without a dose count as "no" (lib/medicine.ts).
+  const entries: JournalDay[] = withMedicineNoDays(
+    [...journal].map(([day, es]) => ({ day, tags: Object.fromEntries(es.map((e) => [e.tag, e.value])) })),
+    days.at(-1) ?? "",
+  );
   const rows = new Map<string, Stage2Row>();
   const impactsAsOf = new Map<string, TagImpact[]>();
   for (let i = 0; i < days.length; i++) {

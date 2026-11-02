@@ -6,6 +6,7 @@
 // logged entries, exactly as the web's demo mode keeps them: every type's access is "demo" (kept in Halo) and
 // `atGoogle` is always false.
 import type { LoggedEntryRow, Store } from "@/data/store";
+import { isMedicineTag } from "@/lib/medicine";
 import { addDays, localDay, localMidnight } from "@/lib/time";
 import { FORMATS, LOG_TYPES, type LoggedEntry, type LogType } from "./_lib";
 import { type QueryCtx, todayOf } from "./common";
@@ -24,7 +25,7 @@ export const READABLE: ReadonlySet<LogType> = new Set(["hydration-log", "nutriti
 export const CYCLE: ReadonlySet<LogType> = new Set(["menstrual-period", "ovulation-test"]);
 
 /** One sheet per kind; Weight writes weight and, when given, body fat. */
-export const LOG_KINDS = ["water", "food", "weight", "spo2", "mood", "symptoms", "period", "ovulation"] as const;
+export const LOG_KINDS = ["water", "food", "weight", "spo2", "medicine", "mood", "symptoms", "period", "ovulation"] as const;
 export type LogKind = (typeof LOG_KINDS)[number];
 export const KIND_TYPES: Record<LogKind, LogType[]> = {
   water: ["hydration-log"],
@@ -33,6 +34,7 @@ export const KIND_TYPES: Record<LogKind, LogType[]> = {
   // mobile: the Google Health app doesn't share blood oxygen with Health Connect, so the Fitbit app's morning reading
   // is typed in here and counts like a synced one (src/data/body.ts).
   spo2: ["oxygen-saturation"],
+  medicine: ["medication"],
   mood: ["moods"],
   symptoms: ["symptoms"],
   period: ["menstrual-period"],
@@ -43,6 +45,7 @@ export const KIND_LABEL: Record<LogKind, string> = {
   food: "Food",
   weight: "Weight",
   spo2: "Blood oxygen",
+  medicine: "Medicine",
   mood: "Mood",
   symptoms: "Symptoms",
   period: "Period",
@@ -150,6 +153,7 @@ export type LogData = {
   symptoms: { symptoms: Symptom[] };
   "menstrual-period": { start: string; end: string; flow: Flow | null; spotting?: true };
   "ovulation-test": { result: OvulationResult };
+  medication: { name: string; dose?: string };
 };
 
 /** One line for the recent-log list; water and weight in `units` (stored in ml and kg). */
@@ -186,6 +190,10 @@ export function describeEntry(type: LogType, data: unknown, units: Units = METRI
     }
     case "ovulation-test":
       return { title: "Ovulation test", detail: labelOf(OVULATION_RESULTS, (data as LogData[typeof type]).result) };
+    case "medication": {
+      const m = data as LogData[typeof type];
+      return { title: m.name, detail: m.dose ?? "Taken" };
+    }
   }
 }
 
@@ -269,6 +277,8 @@ export type LogVM = {
   timeZone: string;
   /** Demo mode: entries stay in Halo. */
   demo: boolean;
+  /** Medicines logged before (their behaviours, unless hidden), for the Medicine sheet's quick picks. */
+  medicines: string[];
 };
 
 const RANK: Record<LogAccess, number> = { ok: 0, demo: 0, reconnect: 1, not_connected: 2 };
@@ -276,10 +286,11 @@ const RANK: Record<LogAccess, number> = { ok: 0, demo: 0, reconnect: 1, not_conn
 /** `demo`: the app runs on the demo person's generated data (the QueryCtx doesn't carry the source). */
 export async function getLog(ctx: QueryCtx, opts: { demo?: boolean } = {}): Promise<LogVM> {
   const today = todayOf(ctx);
-  const [waterToday, food, recent] = await Promise.all([
+  const [waterToday, food, recent, tags] = await Promise.all([
     waterOn(ctx.store, today, ctx.timeZone),
     nutritionOn(ctx.store, today, ctx.timeZone),
     recentEntries(ctx.store, localMidnight(addDays(today, -13), ctx.timeZone), 50, unitsOf(ctx)),
+    ctx.store.journalTags(),
   ]);
   const byType = logAccess();
   const kinds = LOG_KINDS.filter((k) => ctx.profile.sex === "female" || !isCycleKind(k));
@@ -296,5 +307,6 @@ export async function getLog(ctx: QueryCtx, opts: { demo?: boolean } = {}): Prom
     today,
     timeZone: ctx.timeZone,
     demo: !!opts.demo,
+    medicines: tags.filter((t) => isMedicineTag(t.tag) && !t.hidden).map((t) => t.label),
   };
 }

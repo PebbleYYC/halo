@@ -1,5 +1,5 @@
 // The check-in's behaviour groups and icons, shared by the check-in sheet and More › Behaviours (the web's src/lib/journal.ts).
-import { Bath, Coffee, Flower2, Plane, Smartphone, StretchHorizontal, Tag, Thermometer, Utensils, Wine, type LucideIcon } from "lucide-react-native";
+import { Bath, Coffee, Flower2, Pill, Plane, Smartphone, StretchHorizontal, Tag, Thermometer, Utensils, Wine, type LucideIcon } from "lucide-react-native";
 import type { JournalTag } from "@/queries/types";
 
 const ICON: Record<string, LucideIcon> = {
@@ -13,12 +13,13 @@ const ICON: Record<string, LucideIcon> = {
   travel: Plane,
   illness: Thermometer,
 };
-export const tagIcon = (tag: string): LucideIcon => ICON[tag] ?? Tag;
+export const tagIcon = (tag: string): LucideIcon => ICON[tag] ?? (tag.startsWith("med_") ? Pill : Tag);
 
 export const TAG_GROUPS: { key: JournalTag["group"]; title: string }[] = [
   { key: "evening", title: "Evening" },
   { key: "recovery", title: "Recovery" },
   { key: "context", title: "Context" },
+  { key: "medicine", title: "Medicines" },
   { key: "custom", title: "Your behaviours" },
 ];
 
