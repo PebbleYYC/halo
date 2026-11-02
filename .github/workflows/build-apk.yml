@@ -78,8 +78,11 @@ jobs:
       - name: Check the signature
         run: |
           apk=android/app/build/outputs/apk/release/app-release.apk
-          sha1=$(keytool -printcert -jarfile "$apk" | awk '/SHA1:/ {print $2}')
-          [ "$sha1" = "$EXPECTED_SHA1" ] || { echo "::error::APK is signed with $sha1, expected $EXPECTED_SHA1"; exit 1; }
+          # keytool only reads v1 (JAR) signatures; a minSdk 26 APK has v2/v3 only, so ask apksigner.
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          sha1=$("$apksigner" verify --print-certs "$apk" | awk -F': ' '/Signer #1 certificate SHA-1 digest/ {print $2}')
+          want=$(echo "$EXPECTED_SHA1" | tr -d ':' | tr 'A-F' 'a-f')
+          [ "$sha1" = "$want" ] || { echo "::error::APK is signed with '$sha1', expected $want"; exit 1; }
           cp "$apk" Halo.apk
 
       - name: Publish the release
