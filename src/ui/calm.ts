@@ -102,11 +102,10 @@ const noEdges: Record<CalmTint, string> = { mint: NONE, peach: NONE, lavender: N
 const flat = (tint: Record<CalmTint, string>) =>
   Object.fromEntries(Object.entries(tint).map(([k, v]) => [k, [v, v] as const])) as unknown as Record<CalmTint, readonly [string, string]>;
 
-// Yellow is unreadable as text on white, so the light scheme's sand ink is a deeper amber; every other ink is the system
-// colour itself, as Apple's own apps colour their numbers. The dark scheme's indigo ink is iOS's brighter indigo, so a
-// Sleep number reads on the near-black card.
-const LIGHT_INK: Record<CalmTint, string> = { mint: "#34c759", peach: "#ff9500", lavender: "#5856d6", sky: "#007aff", sand: "#c48a00", rose: "#ff2d55" };
-const DARK_INK: Record<CalmTint, string> = { mint: "#30d158", peach: "#ff9f0a", lavender: "#7d7aff", sky: "#0a84ff", sand: "#ffd60a", rose: "#ff375f" };
+// Text inks are iOS's Increased Contrast system colours, tuned so each passes WCAG AA (4.5:1) on the card, the ground
+// and its own pill tint; rings and fills keep the vivid colours (DESIGN.md › Readability).
+const LIGHT_INK: Record<CalmTint, string> = { mint: "#1b7a33", peach: "#c93400", lavender: "#3634a3", sky: "#0040dd", sand: "#a05a00", rose: "#c20c3f" };
+const DARK_INK: Record<CalmTint, string> = { mint: "#30d158", peach: "#ff9f0a", lavender: "#a7aaff", sky: "#5cabff", sand: "#ffd60a", rose: "#ff7d96" };
 
 const LIGHT_TINT: Record<CalmTint, string> = { mint: "#e3f7e8", peach: "#fff0db", lavender: "#e8e7f9", sky: "#dbecff", sand: "#fff8db", rose: "#ffe2e7" };
 const DARK_TINT: Record<CalmTint, string> = { mint: "#214b2d", peach: "#573e19", lavender: "#2d2d52", sky: "#173758", sand: "#574c19", rose: "#57232f" };
@@ -116,14 +115,15 @@ const LIGHT: CalmPalette = {
   card: "#ffffff",
   chip: "#ffffff",
   ink: "#000000",
-  // rgba(60,60,67,0.6), rgba(60,60,67,0.18) and friends composited on white.
-  sub: "#8a8a8e",
+  // iOS's Increased Contrast secondary label on white: 5.2:1 (the standard grey was 3.4).
+  sub: "#6c6c70",
   faint: "#aeaeb2",
   line: "#dcdcdd",
-  teal: LIGHT_SYSTEM.blue,
+  // Links and controls: iOS blue deepened to pass 4.5:1 on white and on the grey ground.
+  teal: "#0066d6",
   orange: LIGHT_SYSTEM.orange,
   navy: LIGHT_SYSTEM.indigo,
-  label: "#8a8a8e",
+  label: "#6c6c70",
   hairline: "rgba(60,60,67,0.12)",
   tint: LIGHT_TINT,
   tintInk: LIGHT_INK,

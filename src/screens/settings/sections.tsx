@@ -8,7 +8,7 @@ import * as React from "react";
 import { AppState, Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
-import { Check, CircleAlert, HeartPulse, History, MessageCircle, Minus, Settings2, Sparkles, TriangleAlert } from "lucide-react-native";
+import { Check, CircleAlert, HeartPulse, History, MessageCircle, MessagesSquare, Minus, Settings2, TriangleAlert } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { useChatCount, useCoachSetup } from "@/coach/session";
 import { googleSignInAvailable } from "@/google/auth";
@@ -538,7 +538,7 @@ export function CoachSection() {
   const on = !!setup?.consent && !!setup.provider;
   return (
     <RiseEach>
-      <HeroCard icon={Sparkles} system="teal" title="Coach" body="Ask about your scores, your training and your sleep. The coach looks up your own Halo numbers before it answers." />
+      <HeroCard icon={MessagesSquare} system="teal" title="Coach" body="Ask about your scores, your training and your sleep. The coach looks up your own Halo numbers before it answers." />
       <InsetGroup footer="The coach’s provider, key and chats are set up in the coach itself.">
         <InfoRow label="Provider" value={setup === undefined ? "…" : on ? providerLabel(setup.provider) : "Not set up"} />
         <NavRow icon={MessageCircle} system="teal" label="Open coach" onPress={() => router.push("/coach" as Href)} />

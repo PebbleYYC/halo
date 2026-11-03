@@ -10,7 +10,7 @@
 // Health cards and the month as Apple Health's bars. The food and targets sheets are iOS sheets.
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Camera, ChartColumn, Pencil, Plus, Sparkles, Trash2, TriangleAlert, Utensils, type LucideIcon } from "lucide-react-native";
+import { Camera, ChartColumn, Pencil, PencilLine, Plus, Trash2, TriangleAlert, Utensils, type LucideIcon } from "lucide-react-native";
 import { FORMATS } from "@/lib/format";
 import type { Metric } from "@/lib/reasons";
 import { KG_PER_LB, roundTo } from "@/lib/units";
@@ -318,7 +318,7 @@ function HistoryChart({ vm }: { vm: NutritionVM }) {
 
 // Today's food
 
-const VIA_ICON: Record<NonNullable<FoodItem["via"]>, LucideIcon> = { photo: Camera, text: Sparkles, manual: Utensils };
+const VIA_ICON: Record<NonNullable<FoodItem["via"]>, LucideIcon> = { photo: Camera, text: PencilLine, manual: Utensils };
 
 /** "320 kcal · 11 g protein · 40 g carbs · 9 g fat" for one food. */
 const numbersOf = (f: FoodItem) =>

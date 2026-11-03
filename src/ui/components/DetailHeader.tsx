@@ -88,9 +88,10 @@ export function BarEdge({ y, ground }: { y: SharedValue<number> | null; ground?:
   const edge = useAnimatedStyle(() => ({ opacity: y ? interpolate(y.value, [0, 12], [0, 1], Extrapolation.CLAMP) : 0 }));
   return (
     <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, right: 0, height: edgeH }, edge]}>
+      {/* Near solid through the buttons' row, so no text reads through under the title or the back button (DESIGN.md). */}
       <LinearGradient
-        colors={[fill, alpha(fill, 0.94), alpha(fill, 0.6), alpha(fill, 0)]}
-        locations={[0, insets.top / edgeH, (insets.top + BAR_ROW * 0.7) / edgeH, 1]}
+        colors={[fill, alpha(fill, 0.97), alpha(fill, 0.92), alpha(fill, 0)]}
+        locations={[0, insets.top / edgeH, (insets.top + BAR_ROW) / edgeH, 1]}
         style={StyleSheet.absoluteFill}
       />
     </Animated.View>

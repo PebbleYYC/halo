@@ -11,6 +11,7 @@ import { useHasCoachKey } from "@/coach/session";
 import { CheckInSheetHost, useCheckInAction } from "@/screens/journal/CheckInSheet";
 import { useSyncProgress } from "@/state/app";
 import { GlassTarget } from "@/ui/glass";
+import { TabBarFade } from "@/ui/components/TabBar";
 import { FloatingTabBar, TabBarBridge } from "@/ui/components/TabBarHost";
 
 /**
@@ -78,6 +79,8 @@ export default function TabsLayout() {
           <Tabs.Screen name="journal" options={{ title: "Journal", href: null }} />
           <Tabs.Screen name="more" options={{ title: "More", href: null }} />
         </Tabs>
+        {/* Inside the target, so the glass bends the faded page and not the raw text under it. */}
+        <TabBarFade />
       </GlassTarget>
       <CheckInSheetHost />
       <TabPreloader />

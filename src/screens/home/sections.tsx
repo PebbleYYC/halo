@@ -7,7 +7,7 @@
 import * as React from "react";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { Activity, BatteryCharging, CalendarRange, Check, ChartNoAxesCombined, CircleAlert, Droplet, Dumbbell, Footprints, HeartPulse, Info, NotebookPen, Plus, Scale, Smile, Sparkles, Thermometer, TriangleAlert, Utensils, Waves, type LucideIcon } from "lucide-react-native";
+import { Activity, BatteryCharging, CalendarRange, ChartNoAxesCombined, Check, CircleAlert, Droplet, Dumbbell, Footprints, HeartPulse, Info, Lightbulb, NotebookPen, Plus, Scale, Smile, Thermometer, TriangleAlert, Utensils, Waves, type LucideIcon } from "lucide-react-native";
 import { clock, DAY, formatDay, formatValue } from "@/lib/format";
 import { dayHref } from "@/lib/day";
 import { alpha } from "@/lib/utils";
@@ -364,7 +364,7 @@ export function JournalWeek({ vm, at, go }: SlotProps) {
       footer={
         <>
           {vm.isToday && <NutritionLine go={go} />}
-          <FootRow icon={Sparkles} tint="lavender" title="Behaviour insights" onPress={() => go("/journal/insights")} />
+          <FootRow icon={Lightbulb} tint="lavender" title="Behaviour insights" onPress={() => go("/journal/insights")} />
           <FootRow icon={NotebookPen} tint="sky" title="Open journal" onPress={() => go(at("/journal"))} />
         </>
       }

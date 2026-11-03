@@ -9,7 +9,7 @@ import * as React from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
-import { ChevronRight, CircleAlert, Sparkles } from "lucide-react-native";
+import { ChevronRight, CircleAlert, Lightbulb } from "lucide-react-native";
 import { DAY, dayLabel, formatDay } from "@/lib/format";
 import { useDay } from "@/lib/day";
 import { getJournal } from "@/queries/journal";
@@ -92,7 +92,7 @@ export default function JournalScreen() {
         <Rise index={3}>
           <Section title="Insights" action={{ label: "See all", onPress: goInsights }}>
             {vm ? (
-              <HomeCard tint="lavender" icon={Sparkles} title="Behaviour insights" subtitle={vm.teaser.text} gap={10}>
+              <HomeCard tint="lavender" icon={Lightbulb} title="Behaviour insights" subtitle={vm.teaser.text} gap={10}>
                 {vm.teaser.ready && (
                   <View style={{ alignSelf: "flex-start" }}>
                     <PillAction label="See all insights" onPress={goInsights} />

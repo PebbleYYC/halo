@@ -9,31 +9,7 @@
 import * as React from "react";
 import { useRouter, type Href } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import {
-  Archive,
-  Bell,
-  Bluetooth,
-  BookOpen,
-  Cable,
-  CalendarDays,
-  CalendarRange,
-  ChartLine,
-  ClipboardCheck,
-  Database,
-  Download,
-  HeartPulse,
-  History,
-  ListChecks,
-  Palette,
-  Plug,
-  RefreshCw,
-  Ruler,
-  Sparkles,
-  SwatchBook,
-  Target,
-  Trash2,
-  UserRound,
-} from "lucide-react-native";
+import { Archive, Bell, Bluetooth, BookOpen, Cable, CalendarDays, CalendarRange, ChartLine, ClipboardCheck, Database, Download, FlaskConical, HeartPulse, History, ListChecks, MessagesSquare, Palette, Plug, RefreshCw, Ruler, SwatchBook, Target, Trash2, UserRound } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { useCoachSetup } from "@/coach/session";
 import { describeHealthConnect } from "@/health/sync";
@@ -169,7 +145,7 @@ export default function MoreScreen() {
     {
       key: "ai",
       rows: [
-        { icon: Sparkles, system: "teal", label: "Coach", aside: coach === undefined ? undefined : coach.consent && coach.provider ? providerLabel(coach.provider) : "Off", href: "/settings?s=coach", keywords: "ai chat assistant gemini openai anthropic key provider" },
+        { icon: MessagesSquare, system: "teal", label: "Coach", aside: coach === undefined ? undefined : coach.consent && coach.provider ? providerLabel(coach.provider) : "Off", href: "/settings?s=coach", keywords: "ai chat assistant gemini openai anthropic key provider" },
         { icon: Cable, system: "purple", label: "Connect to Claude", aside: claudeOn === null ? undefined : claudeOn ? "On" : "Off", href: "/settings?s=claude", keywords: "mcp connector cloudflare anthropic" },
       ],
     },
@@ -210,7 +186,7 @@ export default function MoreScreen() {
           : []),
         demo
           ? { label: "Connect Health Connect", icon: HeartPulse, system: "pink" as const, description: "Switch from demo data to your Fitbit", onPress: () => setConfirm("health"), disabled: syncing, action: true }
-          : { label: "Use demo data", icon: Sparkles, system: "purple" as const, description: "Generated data for a demo person", onPress: () => setConfirm("demo"), disabled: syncing, action: true },
+          : { label: "Use demo data", icon: FlaskConical, system: "purple" as const, description: "Generated data for a demo person", onPress: () => setConfirm("demo"), disabled: syncing, action: true },
       ],
     },
     {

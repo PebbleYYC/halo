@@ -4,7 +4,7 @@
 // in grey, and the way on), the recommended one's arrow filled blue. A card settles and dims under the finger and shows
 // a spinner in its square while it connects; the first import's progress shows above them. The blocks fade and rise
 // into place one after another as the screen opens.
-import { ArrowRight, CircleAlert, Cloud, HeartPulse, Sparkles, type LucideIcon } from "lucide-react-native";
+import { ArrowRight, CircleAlert, Cloud, FlaskConical, HeartPulse, type LucideIcon } from "lucide-react-native";
 import * as React from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -115,7 +115,7 @@ export default function SourceScreen() {
       )}
       <Appear index={step++}>
         <Option
-          icon={Sparkles}
+          icon={FlaskConical}
           system="purple"
           title="Try with demo data"
           body={`180 days of generated data for a demo person, so every screen has something to show. Switch to ${GOOGLE_SOURCE_ENABLED ? "your own data" : "Health Connect"} later in Settings.`}

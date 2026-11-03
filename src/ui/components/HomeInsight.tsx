@@ -1,5 +1,5 @@
 // Today's coach card, the mockup's: a flat card washed with the insight's family colour from its top left (Recovery
-// green, Sleep indigo, Strain orange), a solid icon square in that colour with the sparkle in white, the title (16/21
+// green, Sleep indigo, Strain orange), a solid icon square in that colour with its subject's glyph in white, the title (16/21
 // semibold) over the body (a 14/19 grey sentence). With several insights a second card peeks out underneath, and a
 // footer counts them (a dot per card and "2 of 3") beside a round next button; the next one cross-fades in, rising a
 // few dp, on the UI thread. Every card sits in the same cell, so nothing below moves on a cycle.
@@ -7,7 +7,7 @@ import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { ChevronRight, Sparkles } from "lucide-react-native";
+import { ChevronRight, Flame, HeartPulse, Lightbulb, Moon, type LucideIcon } from "lucide-react-native";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { font } from "@/ui/fonts";
 import { REASE } from "@/ui/motion/easing";
@@ -22,6 +22,8 @@ export type HomeInsightItem = { key: string; title: string; body: string };
 /** An insight's family colour by what it is about. */
 const TINT: Record<string, CalmTint> = { recovery: "mint", sleep: "lavender", strain: "peach" };
 const tintOf = (key: string): CalmTint => TINT[key] ?? "lavender";
+/** The subject's own glyph (anti-slop R-04: no generic sparkle). */
+const ICON: Record<string, LucideIcon> = { recovery: HeartPulse, sleep: Moon, strain: Flame };
 
 /** The cross-fade between two insights. */
 const SWAP_MS = 280;
@@ -49,12 +51,12 @@ function Wash({ k, tint, swap }: { k: number; tint: CalmTint; swap: Swap }) {
 }
 
 /** The icon square for one insight, faded by the swap. */
-function Square({ k, tint, swap }: { k: number; tint: CalmTint; swap: Swap }) {
+function Square({ k, tint, icon: Icon, swap }: { k: number; tint: CalmTint; icon: LucideIcon; swap: Swap }) {
   const c = useCalm();
   const share = useShare(k, swap);
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: iconRadius(36), backgroundColor: c.tintInk[tint], alignItems: "center", justifyContent: "center" }, share]}>
-      <Sparkles size={20} color="#ffffff" strokeWidth={2} />
+      <Icon size={20} color="#ffffff" strokeWidth={2} />
     </Animated.View>
   );
 }
@@ -108,7 +110,7 @@ export function HomeInsight({ items }: { items: HomeInsightItem[] }) {
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <View style={{ width: 36, height: 36 }}>
             {items.map((it, k) => (
-              <Square key={it.key} k={k} tint={tintOf(it.key)} swap={swap} />
+              <Square key={it.key} k={k} tint={tintOf(it.key)} icon={ICON[it.key] ?? Lightbulb} swap={swap} />
             ))}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>

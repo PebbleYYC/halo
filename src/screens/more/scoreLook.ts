@@ -1,5 +1,5 @@
 // Each explained score's icon and Calm family, for the How Halo works list and the explainer's head.
-import { Activity, BatteryCharging, BedDouble, BookOpen, CalendarClock, Dumbbell, Flame, Gauge, HeartPulse, Hourglass, ListChecks, Moon, Scale, ShieldCheck, Sparkles, Target, TrendingUp, Waves, type LucideIcon } from "lucide-react-native";
+import { Activity, BatteryCharging, BedDouble, BookOpen, CalendarClock, Dumbbell, Flame, Gauge, HeartPulse, Hourglass, ListChecks, Moon, Scale, ShieldCheck, Target, TrendingUp, Waves, type LucideIcon } from "lucide-react-native";
 import type { CalmTint } from "@/ui/calm";
 
 const LOOK: Record<string, { icon: LucideIcon; tint: CalmTint }> = {
@@ -21,7 +21,7 @@ const LOOK: Record<string, { icon: LucideIcon; tint: CalmTint }> = {
   "hr-recovery": { icon: HeartPulse, tint: "rose" },
   "hrv-status": { icon: HeartPulse, tint: "mint" },
   "training-readiness": { icon: Gauge, tint: "peach" },
-  "training-effect": { icon: Sparkles, tint: "peach" },
+  "training-effect": { icon: TrendingUp, tint: "peach" },
   "training-status": { icon: TrendingUp, tint: "sky" },
 };
 
