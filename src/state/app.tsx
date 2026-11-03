@@ -1,6 +1,7 @@
 // App-wide state: the store, the profile, where data comes from (Health Connect, a Google account through the Google
 // Health API, or the demo generator), the sync + scoring run, and the query context screens read with. One provider at
 // the root; screens use the hooks.
+import { clearWeather } from "@/weather/sync";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { perf } from "@/lib/perf";
 import * as React from "react";
@@ -456,6 +457,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await forgetGoogleSync();
       await clearConnection();
       forgetGoogleToken();
+      await clearWeather();
       set((s) => ({ ...s, status: "needs_profile", profile: null, source: null, sync: EMPTY_SYNC, error: null, dataVersion: s.dataVersion + 1, liveHr: EMPTY_LIVE, google: null }));
     },
     refreshLiveHr,
