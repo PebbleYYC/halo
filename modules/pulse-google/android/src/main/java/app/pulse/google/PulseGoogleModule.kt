@@ -184,8 +184,8 @@ class PulseGoogleModule : Module() {
     val text = e.message ?: ""
     return when {
       // No OAuth client for this package and certificate. Google says DEVELOPER_ERROR (10), sometimes with its
-      // "[28444] Developer console is not set up correctly" text under another code.
-      code == DEVELOPER_ERROR || text.contains("28444") || text.contains("Developer console", ignoreCase = true) ->
+      // "[28444] Developer console is not set up correctly" text under another code, and often INTERNAL_ERROR (8).
+      code == DEVELOPER_ERROR || code == INTERNAL_ERROR || text.contains("28444") || text.contains("Developer console", ignoreCase = true) ->
         err("ERR_NOT_CONFIGURED", "Google sign-in isn't set up for this app (status $code).", e)
       code == CANCELED || code == SIGN_IN_CANCELLED -> err("ERR_CANCELLED", "Google sign-in was cancelled.", e)
       code in PLAY_SERVICES_CODES -> err("ERR_NO_PLAY_SERVICES", "Google Play services isn't usable on this phone (status $code).", e)
@@ -205,6 +205,7 @@ class PulseGoogleModule : Module() {
     private const val SIGN_IN_REQUIRED = 4
     private const val RESOLUTION_REQUIRED = 6
     private const val NETWORK_ERROR = 7
+    private const val INTERNAL_ERROR = 8
     private const val DEVELOPER_ERROR = 10
     private const val TIMEOUT = 15
     private const val CANCELED = 16
