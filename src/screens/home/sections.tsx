@@ -32,6 +32,7 @@ import { GoalsGlance } from "./GoalsCard";
 import { HeartRateCard } from "./HeartRateCard";
 import { ADD_ACTIVITY_INFO, ENERGY_INFO, NO_ACTIVITIES, NO_ACTIVITIES_TODAY, NO_BAND_INFO, STRAIN_RECOVERY_INFO } from "./info";
 import { StatCard } from "./pinned";
+import { StateCard } from "./StateCard";
 import { pinnedData, pinnedKey } from "./pinnedData";
 import { RiseEach } from "./rise";
 import { SLEEP_TAB } from "./tabs";
@@ -96,6 +97,7 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
           <HomeInsight key={vm.insights.map((it) => it.key).join()} items={vm.insights} />
         )}
         {vm.outlook && <DayBanner key="outlook" outlook={vm.outlook} />}
+        {vm.state && <StateCard key="state" state={vm.state} timeZone={timeZone} onOpen={() => go(at("/health/stress"))} onBreathe={() => go("/breathe")} />}
         {vm.phone && <PhoneActivity key="phone" stats={vm.phone} day={vm.day} today={vm.today} open={open} />}
         <SectionTitle
           key="pinned"

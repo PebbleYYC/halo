@@ -117,6 +117,14 @@ export type EnergyBankVM = {
 /** The stats Home's own cards read (HomeVM.cardStats). */
 export type CardStatKey = "hrv" | "rhr" | "resp" | "steps" | "calories";
 
+export type StateKey = "calm" | "focused" | "stressed" | "active";
+export type DayState = {
+  /** Steps in the last 10 minutes make it active; otherwise a stress reading from the last 20 minutes. */
+  now: { key: StateKey; at: number } | null;
+  /** Minutes today: still minutes by stress level, and minutes on the move (light and active). */
+  mix: Record<StateKey, number>;
+};
+
 export type HomeVM = {
   day: string;
   today: string;
@@ -136,6 +144,8 @@ export type HomeVM = {
   monitorAlert: { kind: "flagged" | "illness"; count: number; names: string[] } | null;
   monitor: Metric<{ inRange: number; total: number; flagged: number }>;
   stress: Metric<{ value: number; level: StressLevel; at: number | null; dayAverage: boolean }>;
+  /** How the day feels: the state now (today only) and the day's minutes in each. Null without heart rate. */
+  state: DayState | null;
   activities: { title: "Today’s activities" | "Activities"; items: TimelineItem[] };
   energyBank: Metric<EnergyBankVM>;
   tonight: Metric<SleepPlanVM>;
