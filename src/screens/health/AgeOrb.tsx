@@ -64,6 +64,9 @@ const wave = (t: number, period: number, lo: number, hi: number) => {
   "worklet";
   return lo + (hi - lo) * (0.5 - 0.5 * Math.cos(2 * Math.PI * phase(t, period)));
 };
+/** How long the orb moves after it appears or is let go, before it rests (anti-slop R-39: motion over 5 s needs a pause). */
+const AMBIENT_MS = 5000;
+
 /** `k` whole turns per loop, as a rotation. */
 const turns = (t: number, k: number) => {
   "worklet";
@@ -79,8 +82,8 @@ const turns = (t: number, k: number) => {
  * - the inner particles (those that can turn without crossing the lobed outline) drift in two layers turning opposite
  *   ways at different speeds, the smaller one twinkling, and spiral in on mount;
  * - press and hold spins the inner field up and gathers it in, with a light haptic; release coasts it down.
- * The loops stop when the screen loses focus, the app goes to the background or after 30 s untouched; reduce motion
- * shows the settled frame alone.
+ * The ambient motion runs for AMBIENT_MS after the orb appears or is let go, then rests where it is (DESIGN.md: nothing
+ * loops); reduce motion shows the settled frame alone.
  */
 export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reason, bare = false }: AgeOrbProps) {
   const { c } = useTheme();
@@ -118,8 +121,7 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
   const reduce = useReduceMotion();
   const live = focused && appActive && !reduce && opened;
 
-  // The ambient clock runs the whole time the orb is in view with the app open (the person asked for it always moving;
-  // reduced motion still holds it still). Driven imperatively, so a touch never re-renders the orb.
+  // The ambient clock, driven imperatively so a touch never re-renders the orb; it stops on its own after AMBIENT_MS.
   const ambient = React.useRef<{ running: boolean; idle: ReturnType<typeof setTimeout> | null }>({ running: false, idle: null });
   const settle = React.useCallback(() => {
     const s = ambient.current;
@@ -141,7 +143,8 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
         clock.set(withRepeat(withTiming(from + M.loop, { duration: M.loop * 1000, easing: REASE.linear }), -1, false));
       });
     }
-  }, [clock]);
+    s.idle = setTimeout(settle, AMBIENT_MS);
+  }, [clock, settle]);
   React.useEffect(() => {
     if (!live) return;
     wake();

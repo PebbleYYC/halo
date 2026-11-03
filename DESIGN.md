@@ -52,6 +52,12 @@ Reading this as: a personal health app for one person checking in a few times a 
 - Motion explains a change: rings draw on, numbers roll, sheets slide. Nothing loops or floats.
 - Under 400 ms for most transitions. Reduce Motion shows the end state at once.
 
+## Halo Age
+
+- The orb is Halo Age's focal point: the age and its gap inside a glowing, particle-filled blob whose rim takes the gap's colour. Anti-slop flags glowing orbs (R-01, R-04, R-13); the owner chose to keep it (2026-11-03) because Halo is named for it and it gives Halo Age its own identity.
+- It swirls in, moves for 5 seconds, then rests; press and hold spins it. Reduce Motion shows it still.
+- The card stays solid like every other card: no glowing border, and nothing drawn behind the Pace of Aging scale.
+
 ## Identity motif
 
 - The ring: Halo's mark, the score rings and the progress rings all share the same round-capped, colour-graded arc.
