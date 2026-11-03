@@ -56,7 +56,7 @@ function useCelebrate(data: GoalsDayVM | undefined) {
         const id = `${data.day}:${g.key}`;
         if (g.done && p.done[g.key] === false && !celebrated.has(id)) {
           celebrated.add(id);
-          toast(`${g.goalName} reached 🎉`);
+          toast(`${g.goalName} reached`);
         }
       }
     prev.current = { day: data.day, done };

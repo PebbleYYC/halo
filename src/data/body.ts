@@ -1,6 +1,5 @@
-// Every reader of daily metrics goes through here, so weight, body fat and blood oxygen logged in the Journal count
-// like imported readings. Blood oxygen comes last from the Google Health API (google/spo2.ts), since Health Connect
-// never gets it from the Google Health app. Order: the latest journal entry, then Health Connect, then Google.
+// Every reader of daily metrics goes through here, so weight, body fat and SpO2 logged in the Journal count as readings.
+// Order: the latest journal entry, then Health Connect, then Google's SpO2 (google/spo2.ts).
 import type { Store } from "./store";
 import { emptyMetrics, type Metrics } from "./types";
 
