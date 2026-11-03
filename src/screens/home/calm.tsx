@@ -1,7 +1,7 @@
 // Today's top in the iOS look (the mockups' Today): the floating bar (a Liquid Glass streak capsule on the left, the
 // sync status and the profile button on the right, the inline title fading in once the large title has folded under
 // it), the date eyebrow over the large title with the day's steppers, and the hero: the day's three scores as Apple's
-// triple Activity rings (Recovery outermost, Sleep, Strain of 21) with the three values beside them, each rolling into
+// triple Activity rings (Recovery outermost, Sleep, Strain full at the middle of its target) with the three values beside them, each rolling into
 // place as its ring sweeps in. Also the two week cards the Sleep and Health tabs show (Sleep's week of nights against
 // the goal, Recovery with its vitals and its week), drawn as Apple Health cards with rounded bars.
 //
@@ -251,7 +251,7 @@ function ScoreLine({ label, value, unit, word, color, order, spoken, onPress }: 
 
 /**
  * Today's hero, the mockup's: a card with the triple Activity rings on the left (Recovery outermost in its band's
- * colour, Sleep indigo, Strain orange as a share of 21), sweeping in on the ring spring 80 ms apart, and the three
+ * colour, Sleep indigo, Strain orange full at the middle of today's target), sweeping in on the ring spring 80 ms apart, and the three
  * values on the right, each opening its tab. Why a score is missing follows under them, then "See data" to Trends.
  */
 export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: number | null } & Go) {
@@ -266,11 +266,12 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
   // The rings take a little under half the card, never so small the three read as one.
   const size = Math.round(Math.max(116, Math.min(168, (width - 64) * 0.48)));
   const hours = hmText(asleepMin);
+  const target = dials.strainTarget ? `${formatValue("decimal1", dials.strainTarget[0])}–${formatValue("decimal1", dials.strainTarget[1])}` : null;
   return (
     <CalmSurface padding={16} gap={14}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
         <Pressable onPress={() => go("/trends")} accessibilityRole="button" accessibilityLabel="Open your data in Trends" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-          <ScoreRings recovery={recovery} sleep={sleep} strain={strain} size={size} delay={RINGS_DELAY} />
+          <ScoreRings recovery={recovery} sleep={sleep} strain={strain} strainTarget={dials.strainTarget} size={size} delay={RINGS_DELAY} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0, gap: 10 }}>
           <ScoreLine
@@ -296,10 +297,11 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
           <ScoreLine
             label="Strain"
             value={strain}
-            word={strain === null ? null : dials.soFar ? "of 21 so far" : "of 21"}
+            // The ring is measured against today's target, so the word names the target rather than the scale's 21.
+            word={strain === null ? null : target ? `target ${target}` : dials.soFar ? "of 21 so far" : "of 21"}
             color={c.tintInk.peach}
             order={2}
-            spoken={strain === null ? "Strain, no score. Opens Activity" : `Strain ${formatValue("decimal1", strain)} of 21${dials.soFar ? " so far" : ""}. Opens Activity`}
+            spoken={strain === null ? "Strain, no score. Opens Activity" : `Strain ${formatValue("decimal1", strain)}${target ? `, target ${target}` : ` of 21${dials.soFar ? " so far" : ""}`}. Opens Activity`}
             onPress={() => go(at(ACTIVITY_TAB))}
           />
         </View>

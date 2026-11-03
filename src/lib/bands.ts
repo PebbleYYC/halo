@@ -124,3 +124,14 @@ const ACWR_TONE: Record<AcwrBand, ChipTone> = { LOAD_RAMPING_DOWN: "neutral", LO
 
 /** Training load (ACWR) chip tone from the shared `acwrBand`: below 0.8 neutral, [0.8, 1.3) optimal, [1.3, 1.5) warning, then alert. */
 export const acwrTone = (acwr: number): ChipTone => ACWR_TONE[acwrBand(acwr)];
+
+/**
+ * The Strain ring's fill: full at the middle of today's target, rising to it and falling away past it at the same rate
+ * (going 2 over reads like being 2 short). Without a target, a share of 21.
+ */
+export function strainRingFill(strain: number, target: readonly [number, number] | null): number {
+  if (!target) return Math.max(0, Math.min(1, strain / 21));
+  const mid = (target[0] + target[1]) / 2;
+  if (mid <= 0) return 0;
+  return Math.max(0, Math.min(1, strain <= mid ? strain / mid : 1 - (strain - mid) / mid));
+}
