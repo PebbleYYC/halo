@@ -1,4 +1,5 @@
 // Home `/` (spec §7.1). Ported from Halo's src/server/queries/home.ts.
+import { clock } from "@/lib/format";
 import { addDays, localMinutes } from "@/lib/time";
 import { energyBand } from "@/core/algorithms/energyBank";
 import {
@@ -10,11 +11,11 @@ import {
   EXTRA_METRICS,
   type ExtraKey,
   type ExtraMetric,
-  hmm,
   isDashboardKey,
   metricHref,
   PHONE_DEFAULT,
   PHONE_STATS,
+  stressLevel,
 } from "./_lib";
 import { insightOf as recoveryInsight } from "./recovery";
 import { insightOf as sleepInsight } from "./sleep";
@@ -47,7 +48,8 @@ import {
   recoveryBand,
   toStrain,
 } from "./common";
-import type { CardStatKey, EnergyBankVM, HomeVM, KeyStat, Metric, VitalKey } from "./types";
+import type { CardStatKey, DayState, EnergyBankVM, HomeVM, KeyStat, Metric, SleepPlanVM, StateKey, TimelineItem, VitalKey } from "./types";
+import { outlookText } from "./outlook";
 import { conversionFor, mapFinite, METRIC, shown, type Units } from "@/lib/units";
 import { shownPick, unitsOf } from "./units";
 
@@ -93,6 +95,8 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
   const target = row?.strainTarget?.reason === null ? ([row.strainTarget.low, row.strainTarget.high] as [number, number]) : null;
   const firstReason = [recovery, sleep, strain].find((m) => m.value == null);
 
+  const timeline = timelineOf(row, day, exs);
+  const tonight = planVM(ctx, row, isToday);
   const strip: HomeVM["strip"] = [];
   for (let d = stripStart; d <= today; d = addDays(d, 1)) strip.push({ day: d, recovery: rows.get(d)?.recovery?.value ?? null });
 
@@ -112,15 +116,16 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
     monitorAlert: monitorAlert(row),
     monitor: monitorSummary(row, isToday),
     stress: stressNow(row, isToday),
-    activities: { title: isToday ? "Today’s activities" : "Activities", items: timelineOf(row, day, exs) },
+    state: await stateOf(ctx, row, day, isToday),
+    activities: { title: isToday ? "Today’s activities" : "Activities", items: timeline },
     energyBank: energyBankVM(ctx, row, day, isToday, ebSeries),
-    tonight: planVM(ctx, row, isToday),
+    tonight,
     keyStats: keyStats(rows, day, isToday, keys, units),
     cardStats: Object.fromEntries(keyStats(rows, day, isToday, CARD_STATS, units).map((s) => [s.key, s])) as HomeVM["cardStats"],
     dashboard: { defaults, empty: emptyKeys(rows, day, isToday) },
     phone: phoneDay(rows, day, isToday, units),
     weeklyTeaser,
-    outlook: outlookOf(ctx, row, { recovery, strain, target }, isToday),
+    outlook: outlookOf(ctx, row, { recovery, strain, target }, isToday, { timeline, tonight }),
     insights: isToday ? insightsOf(ctx, rows, row, day, { strain, target }) : [],
     journalWeek: journal,
     strainRecovery: Array.from({ length: 7 }, (_, k) => {
@@ -135,34 +140,53 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
   };
 }
 
+/** A stress level as the state it reads as; "focused" is a raised heart rate while still (concentration, caffeine or mild stress). */
+const STATE_OF: Record<"low" | "medium" | "high", StateKey> = { low: "calm", medium: "focused", high: "stressed" };
+
+/** Today's state and mix (HomeVM.state). */
+export async function stateOf(ctx: QueryCtx, row: DayRow | undefined, day: string, isToday: boolean): Promise<DayState | null> {
+  const st = row?.stress;
+  if (!row?.s1 || row.s1.hrCount === 0 || !st) return null;
+  const values = await ctx.store.dailyValues({ from: day, to: day });
+  const val = (k: string) => Number(values.find((v) => v.key === k)?.value ?? 0);
+  const mix = { calm: st.lowMin, focused: st.mediumMin, stressed: st.highMin, active: val("active_minutes") + val("light_minutes") };
+  let now: DayState["now"] = null;
+  if (isToday) {
+    const moving = (await ctx.store.readSteps(ctx.now - 600, ctx.now + 1)).some((m) => m.v > 0);
+    if (moving) now = { key: "active", at: ctx.now * 1000 };
+    else if (st.latest && ctx.now - st.latest.ts <= 20 * 60) now = { key: STATE_OF[stressLevel(st.latest.value)], at: st.latest.ts * 1000 };
+  }
+  return { now, mix };
+}
+
 /** The reference app's banners switch from outlook to review at 17:00 (inferred, spec §12 I15). */
 export const REVIEW_FROM_MIN = 17 * 60;
-const f1 = (x: number) => x.toFixed(1);
 
 type DayScores = { recovery: Metric<number>; strain: Metric<number>; target: [number, number] | null };
 
-/** "Your daily outlook" / "Your day in review": a templated summary of the day's stored scores (spec §7.1 7a). */
-export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, isToday: boolean): HomeVM["outlook"] {
+/** "Your daily outlook" / "Your day in review" (outlook.ts writes the words). */
+export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, isToday: boolean, extra: { timeline: TimelineItem[]; tonight: Metric<SleepPlanVM> }): HomeVM["outlook"] {
   const review = !isToday || localMinutes(ctx.now, ctx.timeZone) >= REVIEW_FROM_MIN;
-  const rec = s.recovery.value;
-  const target = s.target ? `${f1(s.target[0])} - ${f1(s.target[1])}` : null;
-  const parts: string[] = [];
-  if (!review) {
-    if (rec != null) parts.push(`Your Recovery is ${Math.round(rec)}%, ${recoveryBand(rec)}.`);
-    if (target) parts.push(`Today’s Strain Target is ${target}.`);
-    const main = row?.sleep?.main;
-    const need = nightNeedMin(row?.sleep);
-    if (main && need) parts.push(`You slept ${hmm(main.asleepMin)} of the ${hmm(need)} you needed.`);
-  } else {
-    const n = row?.activities.length ?? 0;
-    const acts = n ? `, with ${n} ${n === 1 ? "activity" : "activities"}` : "";
-    if (s.strain.value != null) parts.push(`Day Strain ${isToday ? "is" : "was"} ${f1(s.strain.value)}${target ? ` against a target of ${target}` : ""}${acts}.`);
-    if (rec != null) parts.push(`Recovery ${isToday ? "is" : "was"} ${Math.round(rec)}%.`);
-    const st = row?.stress;
-    if (st && st.average != null) parts.push(`You spent ${hmm(st.highMin)} in high stress.`);
-  }
-  if (!parts.length) return null;
-  return { kind: review ? "review" : "outlook", title: review ? "Your day in review" : "Your daily outlook", body: parts.join(" ") };
+  const st = row?.stress;
+  const perform = extra.tonight.value?.plans.find((p) => p.key === "perform");
+  return outlookText({
+    review,
+    isToday,
+    recovery: s.recovery.value ?? null,
+    drivers: row?.recovery?.value != null ? row.recovery.drivers : [],
+    asleepMin: row?.sleep?.main?.asleepMin ?? null,
+    needMin: nightNeedMin(row?.sleep) ?? null,
+    strain: s.strain.value ?? null,
+    target: s.target,
+    activities: extra.timeline
+      .flatMap((t) => (t.kind === "activity" ? [{ name: t.name, minutes: (t.end - t.start) / 60_000 }] : []))
+      .sort((a, b) => b.minutes - a.minutes),
+    stress:
+      st && st.average != null
+        ? { lowMin: st.lowMin, mediumMin: st.mediumMin, highMin: st.highMin, longestHigh: st.longestHigh ? { at: clock(st.longestHigh.start * 1000, ctx.timeZone), minutes: st.longestHigh.minutes } : null }
+        : null,
+    bedtime: perform ? clock(perform.bedtimeAt, ctx.timeZone) : null,
+  });
 }
 
 const RECOVERY_TITLE = { green: "Ready for strain", yellow: "A steady day", red: "Time to recover" } as const;
