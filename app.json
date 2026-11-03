@@ -43,9 +43,14 @@
         "android.permission.health.READ_INTERMENSTRUAL_BLEEDING",
         "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.REQUEST_INSTALL_PACKAGES"
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "versionCode": 94
+      "versionCode": 94,
+      "blockedPermissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -89,6 +94,14 @@
           "cameraPermission": "Halo uses the camera to photograph a meal, so your own AI provider can estimate its nutrition. The photo isn't saved.",
           "photosPermission": "Halo lets you choose a meal photo, so your own AI provider can estimate its nutrition. The photo isn't saved.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false,
+          "isAndroidMotionActivityEnabled": false
         }
       ]
     ],

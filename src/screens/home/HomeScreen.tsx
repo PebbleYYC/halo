@@ -7,6 +7,7 @@
 // the bar is its overlay, so the glass bends what is under it. The scroll offset lives on the UI thread (Reanimated):
 // the large title's fold, the inline title, the scroll edge and the cards that rise as they scroll into view all read
 // it there, and no JS runs while the page scrolls. Pull to refresh reads the live heart rate first, then syncs.
+import { askLocationOnce } from "@/weather/place";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { useRouter, useScrollToTop, type Href } from "expo-router";
@@ -64,6 +65,15 @@ export default function HomeScreen() {
   const top = insets.top + BAR_ROW;
 
   const vm = home.data;
+
+  // Headache risk starts on, set to Location: the first Today with numbers asks for approximate location once, then
+  // syncs so the weather comes in.
+  const ready = !!vm;
+  React.useEffect(() => {
+    if (!ready || app.source === "demo") return;
+    void askLocationOnce().then((granted) => (granted ? app.refresh() : undefined));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   // Once Today has its numbers, the other tabs' models are worked out in the background, one at a time with a breath
   // between, so Sleep, Activity, Health and Recovery open with their numbers ready (the cache's, src/state/app.tsx).

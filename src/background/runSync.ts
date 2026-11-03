@@ -10,6 +10,9 @@ import { googleToken } from "@/google/auth";
 import { hasGoogleSpo2, syncGoogleSpo2 } from "@/google/spo2";
 import { syncGoogle } from "@/google/sync";
 import { syncHealthConnect } from "@/health/sync";
+import { notifyHeadache } from "@/weather/notify";
+import { resolvePlace } from "@/weather/place";
+import { syncWeather } from "@/weather/sync";
 import { localDay } from "@/lib/time";
 import { sendAfterSync } from "@/mcp/connector";
 import { runPipeline } from "@/pipeline";
@@ -98,6 +101,11 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
       warnings.push(...r.warnings);
     }
     await timed(`pipeline (${opts.owner})`, () => runPipeline(store, profile, { today: localDay(Date.now() / 1000, opts.timeZone), onProgress: opts.onProgress }));
+    // Headache risk's weather: only the app may read a fresh location; the background task reuses the last one.
+    if (source !== "demo") {
+      await syncWeather({ place: () => resolvePlace(opts.owner === "app") });
+      await notifyHeadache(opts.timeZone);
+    }
     scored = true;
     return { ran: true, warnings };
   } finally {

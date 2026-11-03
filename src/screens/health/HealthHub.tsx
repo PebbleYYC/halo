@@ -5,8 +5,10 @@
 // Heart Rate, Nutrition and Trends, each opening its own screen, then My Dashboard. The cards rise into place in turn
 // as the tab opens; values roll, rings sweep and the small charts grow in once, all on the UI thread.
 import * as React from "react";
+import { getHeadache } from "@/queries/headache";
+import { LEVEL as HEADACHE_LEVEL } from "./Headache";
 import { View } from "react-native";
-import { ChartLine, Dumbbell, HeartPulse, ShieldCheck, Utensils, Waves } from "lucide-react-native";
+import { ChartLine, CloudRain, Dumbbell, HeartPulse, ShieldCheck, Utensils, Waves } from "lucide-react-native";
 import type { ChipTone } from "@/lib/bands";
 import { formatValue, hmm, MISSING } from "@/lib/format";
 import { alpha } from "@/lib/utils";
@@ -187,6 +189,28 @@ function StressVsTypical({ today, typical, weekday }: { today: number; typical: 
 }
 
 /** Stress: today's time at high stress, the day's line beside it, then the same weekday's typical time. */
+/** Headache risk today: the level and its main reason; reads the stored weather on its own. */
+function HeadacheRiskCard({ onPress }: { onPress: () => void }) {
+  const { data: vm } = useQuery((ctx) => getHeadache(ctx), [], "headache");
+  if (vm && !vm.enabled) return null;
+  const r = vm?.today ?? null;
+  const l = r ? HEADACHE_LEVEL[r.level] : null;
+  const context = !vm ? undefined : !r ? (vm.missing === "place" ? "Needs your location or a city" : "Getting the weather") : (r.reasons[0] ?? "Steady weather");
+  return (
+    <HealthCard
+      tint={l?.tint ?? "sky"}
+      icon={CloudRain}
+      title="Headache risk"
+      when="Today"
+      loading={!vm}
+      value={vm ? (l ? l.word : null) : undefined}
+      context={context}
+      onPress={onPress}
+      accessibilityLabel={`Headache risk: ${l ? l.word : "no forecast yet"}${context ? `. ${context}` : ""}`}
+    />
+  );
+}
+
 function StressCard({ m, timeZone, onPress }: { m: HealthHubVM["stress"] | undefined; timeZone: string; onPress: () => void }) {
   const c = useCalm();
   const v = m?.value ?? null;
@@ -407,6 +431,7 @@ export default function HealthHub() {
       {!failed && (slot ? <RecoveryCard {...slot} /> : homeQ.error ? null : <RecoveryCardSkeleton />)}
       {!failed && <MonitorCard m={vm?.monitor} onPress={() => push("/health/monitor")} />}
       {!failed && <StressCard m={vm?.stress} timeZone={timeZone} onPress={() => push("/health/stress")} />}
+      {!failed && <HeadacheRiskCard onPress={() => push("/health/headache")} />}
       {/* HRV Status holds its place while it loads; a failed read leaves it out, as before. */}
       {!failed && !hrvQ.error && <HrvStatusCard m={hrvQ.data} onOpen={() => push(chartHref({ metric: "hrv", r: "m" }))} />}
       {!failed && <FitnessCard m={vm?.fitness} onPress={() => push("/health/fitness")} />}
