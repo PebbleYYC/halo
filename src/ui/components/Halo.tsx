@@ -19,7 +19,7 @@ import Animated, {
 import Svg, { Circle, Defs, G, Line, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useIsFocused } from "expo-router";
-import { DATA_COLORS, recoveryColor } from "@/lib/bands";
+import { DATA_COLORS, recoveryColor, strainRingFill } from "@/lib/bands";
 import { clockArcPath, clockPoint, colorAt, ringHalves, ringShades } from "@/lib/charts";
 import { formatValue } from "@/lib/format";
 import { alpha } from "@/lib/utils";
@@ -370,10 +370,13 @@ export function ScoreRings({
   still,
   style,
   children,
+  strainTarget = null,
 }: {
   recovery: number | null;
   sleep: number | null;
   strain: number | null;
+  /** Today's Strain target: the ring is full at its middle and falls away past it (strainRingFill). */
+  strainTarget?: readonly [number, number] | null;
   size?: number;
   delay?: number;
   still?: boolean;
@@ -385,12 +388,12 @@ export function ScoreRings({
     () => [
       { progress: recovery === null ? null : recovery / 100, color: recovery === null ? c.recoveryGreen : c[DATA_COLORS[recoveryColor(recovery)].fill] },
       { progress: sleep === null ? null : sleep / 100, color: c.sleep },
-      { progress: strain === null ? null : strain / 21, color: c.strain },
+      { progress: strain === null ? null : strainRingFill(strain, strainTarget), color: c.strain },
     ],
-    [recovery, sleep, strain, c],
+    [recovery, sleep, strain, strainTarget, c],
   );
   const said = (v: number | null, text: string) => (v === null ? "no score" : text);
-  const label = `Recovery ${said(recovery, `${formatValue("int", recovery)} percent`)}, Sleep ${said(sleep, `${formatValue("int", sleep)} percent`)}, Strain ${said(strain, `${formatValue("decimal1", strain)} of 21`)}`;
+  const label = `Recovery ${said(recovery, `${formatValue("int", recovery)} percent`)}, Sleep ${said(sleep, `${formatValue("int", sleep)} percent`)}, Strain ${said(strain, strainTarget ? `${formatValue("decimal1", strain)}, target ${formatValue("decimal1", strainTarget[0])} to ${formatValue("decimal1", strainTarget[1])}` : `${formatValue("decimal1", strain)} of 21`)}`;
   return (
     <ActivityRings size={size} rings={rings} delay={delay} still={still} accessibilityLabel={label} style={style}>
       {children}

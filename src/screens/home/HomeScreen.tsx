@@ -16,6 +16,8 @@ import Animated from "react-native-reanimated";
 import { RevealScroll, useRevealScroll } from "@/ui/motion/Rise";
 import { dayLabel } from "@/lib/format";
 import { greeting } from "@/lib/greeting";
+import { localMinutes } from "@/lib/time";
+import { REVIEW_FROM_MIN } from "@/queries/home";
 import { firstName, useMe } from "@/state/me";
 import { useNow } from "../health/shells";
 import { dayHref, useDay } from "@/lib/day";
@@ -48,7 +50,9 @@ export default function HomeScreen() {
   const now = useNow(5 * 60_000);
   // My Dashboard's saved metrics (null: the default list); the editor's save refetches Home.
   const dashboard = useDashboardKeys();
-  const home = useQuery((ctx) => getHome(d, ctx, { dashboardKeys: dashboard ?? undefined }), [d, dashboard], homeKey(d, dashboard));
+  // The outlook turns into the day in review at 17:00, so that moment re-reads the day even with no new data.
+  const evening = localMinutes(now / 1000, app.timeZone) >= REVIEW_FROM_MIN;
+  const home = useQuery((ctx) => getHome(d, ctx, { dashboardKeys: dashboard ?? undefined }), [d, dashboard, evening], `${homeKey(d, dashboard)}:${evening ? "review" : "outlook"}`);
   const streak = useQuery(wearStreak);
   const shell = useSyncShell();
   const [refreshing, setRefreshing] = React.useState(false);
