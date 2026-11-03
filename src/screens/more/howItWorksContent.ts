@@ -255,8 +255,8 @@ export const SCORE_DOCS: ScoreDoc[] = [
         title: "What goes in",
         paragraphs: ["Nine habits and vitals, averaged over the days with data in the last 6\u00a0months, each against WHOOP’s recommendation for your age and sex."],
         rows: [
-          { term: "VO2 max", detail: "A measured value (a lab or field test) from the last 90\u00a0days counts in full; Fitbit’s estimate counts half, and with neither, so does Halo’s own estimate from resting heart rate and activity. 13% lower mortality per 3.5\u00a0ml/kg/min (Kodama 2009). Reference: WHOOP’s minimum for your age, 46 for men and 40 for women at 25, falling with age." },
-          { term: "Resting heart rate", detail: "Fitbit’s daily value from Health Connect. 9% higher mortality per 10\u00a0bpm above 45 (Zhang 2016). Reference 60\u00a0bpm for men, 64 for women." },
+          { term: "VO2 max", detail: "A GPS run’s VO2 max from the last 90\u00a0days counts in full. Otherwise Halo’s own estimate from your sleeping resting heart rate counts half; Fitbit’s daily estimate isn’t used, because it comes from Fitbit’s higher, awake-blended resting heart rate. 13% lower mortality per 3.5\u00a0ml/kg/min (Kodama 2009). Reference: WHOOP’s minimum for your age, 46 for men and 40 for women at 25, falling with age." },
+          { term: "Resting heart rate", detail: "Last night’s sleeping resting heart rate (the lowest 5-minute average in your main sleep), else Fitbit’s daily value. 9% higher mortality per 10\u00a0bpm above 45 (Zhang 2016). Reference 60\u00a0bpm for men, 64 for women." },
           { term: "Steps", detail: "Only days with 12\u00a0hours of heart rate. Lower mortality up to about 10,900 a day (Paluch 2022). Reference 8,000 a day under 60, 5,600 from 60." },
           { term: "Sleep hours", detail: "Main sleep. 29% higher mortality at 5\u00a0hours than at 7 (Saint-Maurice 2024); 7\u00a0hours or more all score the same. Reference 7\u00a0hours." },
           { term: "Sleep consistency", detail: "Your 7-night Sleep Regularity Index (Windred 2024). Reference 75.6." },
@@ -429,7 +429,7 @@ export const SCORE_DOCS: ScoreDoc[] = [
         rows: [
           { term: "VO2 max", detail: "Your latest measured value (a lab or field test) from the last 90\u00a0days; otherwise Fitbit’s latest daily estimate; otherwise Halo’s own estimate from your resting heart rate and activity. Estimates are marked Provisional." },
           { term: "Age and sex", detail: "From your profile." },
-          { term: "Fitness Age", detail: "The age whose typical fitness matches yours. With a VO2 max from your Fitbit, it is the age at which that VO2 max is the FRIEND registry\u2019s median for your sex. Without one it is estimated from your median resting heart rate and a HUNT activity index built from your last 7\u00a0days of zone time (Nes 2011, the HUNT study, ported from noop). The VO2 max it estimates uses your waist when you add it in Profile, otherwise the ratio of your max to resting heart rate (Uth 2004). Good to about 5\u00a0years." },
+          { term: "Fitness Age", detail: "The age whose typical fitness matches yours. With a GPS run’s VO2 max, it is the age at which that VO2 max is the FRIEND registry\u2019s median for your sex. Without one it is estimated from your median sleeping resting heart rate and a HUNT activity index built from your last 7\u00a0days of zone time (Nes 2011, the HUNT study, ported from noop). The VO2 max it estimates uses your waist when you add it in Profile, otherwise the ratio of your max to resting heart rate (Uth 2004). Good to about 5\u00a0years." },
         ],
       },
       {

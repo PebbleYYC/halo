@@ -166,7 +166,7 @@ function FitnessAge({ m }: { m: FitnessVM["fitnessAge"] }) {
         </>
       ) : (
         <>
-          <Sentence>{`Your age ${formatValue("decimal1", v.age)}. Estimated VO2 max ${formatValue("decimal1", v.vo2max)} ml/kg/min, from a resting heart rate of ${formatValue("int", v.restingHr ?? 0)} bpm.`}</Sentence>
+          <Sentence>{`Your age ${formatValue("decimal1", v.age)}. Estimated VO2 max ${formatValue("decimal1", v.vo2max)} ml/kg/min, from a sleeping resting heart rate of ${formatValue("int", v.restingHr ?? 0)} bpm.`}</Sentence>
           <Sentence size={13}>
             {`${ESTIMATED} (Nes 2011, the HUNT study${v.method === "uth" ? "; VO2 max from the ratio of your max to resting heart rate, Uth 2004, until you add your waist in Profile" : ""}). Good to about 5 years: a fitness comparison, not a medical test.`}
           </Sentence>
