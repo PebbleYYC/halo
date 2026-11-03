@@ -1,6 +1,5 @@
-// The person's name and photo, for the greeting on Today and the avatar on every tab. Kept on this phone like the units
-// (AsyncStorage), never in the Store, an export or anything sent to an AI provider. The photo is a square JPEG in the
-// app's documents folder; the gallery's own photo is never touched.
+// The person's name and photo, kept on this phone only (AsyncStorage), never exported or sent to an AI provider.
+// The photo is a square JPEG copied into the app's documents folder; the gallery's own photo is never touched.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as React from "react";
 import { File, Paths } from "expo-file-system";

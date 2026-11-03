@@ -1,6 +1,5 @@
-// The score cards' motion pieces: rings that draw on, rolling digits, a hero's sheen, a lit progress fill and the halo line.
-// SVG has no sweep gradient, so a ring is two half-arcs with linear gradients (lib/charts.ts ringHalves) plus two end discs.
-// Everything animates on the UI thread, nothing animates layout, and reduce motion shows the end state at once.
+// The score cards' motion pieces. SVG has no sweep gradient, so a ring is two half-arcs (lib/charts.ts ringHalves).
+// Everything animates on the UI thread, never layout; reduce motion shows the end state at once.
 import * as React from "react";
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import Animated, {

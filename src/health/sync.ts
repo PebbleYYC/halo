@@ -75,10 +75,7 @@ function uniqueRecords<T extends { metadata?: { id?: string } }>(records: T[]): 
 export const DEFAULT_HISTORY_DAYS = 180;
 /** Without ReadHealthDataHistory, Health Connect serves only the 30 days before the grant. */
 export const HISTORY_DAYS_WITHOUT_PERMISSION = 30;
-/**
- * The first import reads only this many days, so Halo is usable within a minute or two; the next sync backfills the rest
- * of the history window. A first import that read all 180 days restarted from zero whenever it was cut short.
- */
+/** Days the first import reads, so Halo is usable quickly; the next sync backfills the rest of the window. */
 export const FIRST_SYNC_DAYS = 30;
 /** Later syncs re-read this many days before the last sync so late-arriving Fitbit writes are picked up. */
 export const RESYNC_DAYS = 3;

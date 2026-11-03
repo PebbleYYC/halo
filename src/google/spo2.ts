@@ -1,6 +1,5 @@
-// Blood oxygen from the Google Health API while Health Connect stays the source: the Google Health app doesn't share
-// SpO2 with Health Connect, so this fills only that gap. Values land as daily values under SPO2_KEY; data/body.ts
-// uses one only on a night Health Connect and the journal both left empty.
+// SpO2 from the Google Health API, which the Google Health app never shares with Health Connect.
+// Stored as daily values under SPO2_KEY; data/body.ts uses one only where Health Connect and the journal have none.
 import { isSignInError } from "../../modules/pulse-google/errors";
 import { SPO2_KEY } from "@/data/body";
 import type { Store } from "@/data/store";
@@ -29,11 +28,8 @@ export type Spo2SyncOptions = {
   log?: Pick<Console, "warn">;
 };
 
-/**
- * Reads recent nights' SpO2. Never throws: a Google failure must not fail the Health Connect run it rides on, so it
- * comes back as a warning ("spo2_sign_in", "spo2_failed"). With nothing stored yet (first run, or Health Connect's
- * re-import cleared the rows) it reads the whole 180 days again.
- */
+/** Never throws, so a Google failure can't fail the Health Connect run; it returns a warning instead. */
+// With nothing stored (first run, or a Health Connect re-import cleared it), reads all 180 days again.
 export async function syncGoogleSpo2(store: Store, opts: Spo2SyncOptions): Promise<{ written: number; warnings: string[] }> {
   const tz = opts.timeZone;
   const nowMs = opts.now ?? Date.now;

@@ -1,7 +1,5 @@
-// The Google Health API import. Each data type is a job: the first sync backfills BACKFILL_DAYS oldest first, saving
-// the cursor after every window so an interrupted backfill resumes; later syncs re-read a short overlap before it.
-// One type failing doesn't stop the others; only sign-in, account or API-off errors stop the run.
-// Within a listed window Halo holds exactly what Google returned, so a session missing there was deleted in Fitbit.
+// The Google Health API import, one job per data type, saving its cursor after every window so a backfill resumes.
+// Within a listed window Halo keeps exactly what Google returned, so a missing session was deleted in Fitbit.
 import type { Store } from "@/data/store";
 import { emptyMetrics, type HrSample, type Metrics, type Segment, type StepsMinute } from "@/data/types";
 import { addDays, localDay, localMidnight } from "@/lib/time";

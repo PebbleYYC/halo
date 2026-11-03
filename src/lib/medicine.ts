@@ -1,6 +1,5 @@
-// Medicines as journal behaviours: logging a dose stores it in the log and answers the medicine's behaviour "yes" for
-// that day, so Insights compares next-day Recovery, HRV and Sleep on days with and without it. From a medicine's first
-// logged day on, a day with no dose and no check-in answer counts as "no": nobody answers "no" for every pill skipped.
+// Each medicine is a journal behaviour: a logged dose answers it "yes" for the day.
+// From its first dose, an unanswered day counts as "no", since nobody answers "no" for every pill skipped.
 import { addDays } from "./time";
 
 /** A medicine's behaviour key: "med_" and the name as snake_case ("Vitamin D" → "med_vitamin_d"); "" without a letter or digit. */
@@ -14,10 +13,7 @@ export function medicineTag(name: string): string {
 
 export const isMedicineTag = (tag: string) => tag.startsWith("med_");
 
-/**
- * `entries` (one day's answers per item) with every medicine's unanswered days from its first "yes" through `lastDay`
- * filled in as "no" (0). Days are added only where some medicine needs them; other tags are untouched.
- */
+/** `entries` with each medicine's unanswered days, from its first "yes" through `lastDay`, filled in as "no" (0). */
 export function withMedicineNoDays<T extends { day: string; tags: Record<string, boolean | number> }>(entries: readonly T[], lastDay: string): { day: string; tags: Record<string, boolean | number> }[] {
   const first = new Map<string, string>();
   for (const e of entries)
