@@ -40,7 +40,7 @@ Reading this as: a personal health app for one person checking in a few times a 
 
 ## Materials
 
-- Liquid Glass is used on navigation chrome only: the tab bar, its round action button and the top bar's buttons. Cards, sheets and lists are solid. This matches Apple's iOS 26 design and overrides anti-slop R-10 (glass on more than two elements at once); pending the owner's keep-or-drop answer.
+- Liquid Glass is used on navigation chrome only: the tab bar, its round action button and the top bar's buttons. Cards, sheets and lists are solid. This matches Apple's iOS 26 design and overrides anti-slop R-10 (glass on more than two elements at once); the owner chose to keep it (2026-11-03).
 
 ## Icons
 

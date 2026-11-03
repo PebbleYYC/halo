@@ -174,7 +174,7 @@ const HS_META: Record<string, Omit<HealthspanContributor, "metric" | "target" | 
     domain: [15, 70],
     higherIsBetter: true,
     explanation:
-      "Higher cardiorespiratory fitness is one of the strongest predictors of a longer life. Each extra 1 MET (3.5 ml/kg/min) is linked to about 13% lower all-cause mortality. A measured value counts in full; Fitbit's estimate, or Halo's own from resting heart rate and activity when there is neither, counts half.",
+      "Higher cardiorespiratory fitness is one of the strongest predictors of a longer life. Each extra 1 MET (3.5 ml/kg/min) is linked to about 13% lower all-cause mortality. A GPS run's value counts in full; otherwise Halo's own estimate from your sleeping resting heart rate counts half.",
     source: "Kodama 2009",
   },
   restingHr: {
@@ -598,7 +598,7 @@ export async function getFitness(ctx: QueryCtx): Promise<FitnessVM> {
     return { day: d, ctl: t?.ctl ?? null, atl: t?.atl ?? null, tsb: t?.tsb ?? null };
   });
   // Measured and Fitbit values; with none in the window, Halo's own estimate.
-  const measured = trendPoints(rows, last, (r) => r.metrics?.vo2maxRun ?? r.metrics?.vo2maxDaily);
+  const measured = trendPoints(rows, last, (r) => r.metrics?.vo2maxRun);
   return {
     vo2,
     fitnessAge,

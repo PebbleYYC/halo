@@ -19,7 +19,7 @@ import type { StrainTarget } from "@/core/algorithms/strainTarget";
 import type { RestingHrSource } from "./restingHr";
 
 /** Bump on any scoring change; a mismatch at startup rescores every day. What each bump changed is in git log. */
-export const SCORING_VERSION = 21;
+export const SCORING_VERSION = 22;
 
 export type PipelineOptions = {
   timeZone: string;
