@@ -16,7 +16,7 @@ import * as React from "react";
 import { ActivityIndicator, Image, Keyboard, Linking, Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { router, type Href } from "expo-router";
-import { Camera, ChevronRight, ImagePlus, KeyRound, PencilLine, ShieldCheck, Sparkles, Trash2, TriangleAlert, type LucideIcon } from "lucide-react-native";
+import { Calculator, Camera, ChevronRight, ImagePlus, Info, KeyRound, PencilLine, ShieldCheck, Trash2, TriangleAlert, type LucideIcon } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { deviceModel, useCoachSetup } from "@/coach/session";
 import { FORMATS } from "@/lib/format";
@@ -614,7 +614,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     body = (
       <View>
         {note ? (
-          <Notice tint="sand" icon={Sparkles}>
+          <Notice tint="sand" icon={Info}>
             {note}
           </Notice>
         ) : null}
@@ -740,7 +740,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
               accessibilityLabel="Describe what you ate"
             />
           </Field>
-          <CalmButton variant="secondary" on="card" icon={Sparkles} onPress={fromText} disabled={text.trim().length < 2 || !hasKey} style={{ alignSelf: "stretch" }}>
+          <CalmButton variant="secondary" on="card" icon={Calculator} onPress={fromText} disabled={text.trim().length < 2 || !hasKey} style={{ alignSelf: "stretch" }}>
             Estimate from description
           </CalmButton>
           {hasKey && <PrivacyNote provider={provider} />}

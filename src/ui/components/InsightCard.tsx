@@ -1,10 +1,10 @@
 // The coach card (spec §5.15) in the iOS look, as Today's coach card draws it: a flat card washed with the family's
-// colour from its top left, a solid icon square in that colour with the sparkle in white, the title (16/21 semibold),
+// colour from its top left, a solid icon square in that colour with its subject's glyph in white, the title (16/21 semibold),
 // the body (15/21 in ink) and the action as a blue link. Not rendered when empty.
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { ChevronRight, Sparkles } from "lucide-react-native";
+import { Activity, Brain, ChevronRight, Flame, Footprints, HeartPulse, Lightbulb, Moon, Scale, type LucideIcon } from "lucide-react-native";
 import { useScreenAccent, type AccentFamily } from "@/ui/accents";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { CARD_RADIUS } from "./Card";
@@ -35,16 +35,20 @@ function Frame({ tint, children }: { tint?: CalmTint; children: React.ReactNode 
   );
 }
 
+/** The subject's own glyph (anti-slop R-04: no generic sparkle). */
+const ICON: Record<AccentFamily, LucideIcon> = { recovery: HeartPulse, sleep: Moon, strain: Flame, heart: Activity, activity: Footprints, body: Scale, stress: Brain };
+
 export function InsightCard({ title, body, action, accent }: InsightCardProps) {
   const c = useCalm();
   const screen = useScreenAccent();
   const family = accent !== undefined ? accent : screen;
   const tint = familyTint(family) ?? "lavender";
+  const icon = (family && ICON[family]) || Lightbulb;
   return (
     <Frame tint={tint}>
       <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
         <View style={{ width: 36, height: 36, borderRadius: iconRadius(36), backgroundColor: c.tintInk[tint], alignItems: "center", justifyContent: "center" }}>
-          <Sparkles size={20} color="#ffffff" strokeWidth={2} />
+          {React.createElement(icon, { size: 20, color: "#ffffff", strokeWidth: 2 })}
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 4, minHeight: 36, justifyContent: "center" }}>
           {title && (

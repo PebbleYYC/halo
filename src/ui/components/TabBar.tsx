@@ -9,12 +9,13 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withS
 import * as Haptics from "expo-haptics";
 import { perf } from "@/lib/perf";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { createLucideIcon, HeartPlus, LayoutGrid, Menu, Moon, Plus, Sparkles, type LucideIcon } from "lucide-react-native";
+import { createLucideIcon, HeartPlus, LayoutGrid, Menu, MessagesSquare, Moon, Plus, type LucideIcon } from "lucide-react-native";
 import { alpha } from "@/lib/utils";
 import { useCalm } from "@/ui/calm";
 import { BAR_FROST, LiquidGlass } from "@/ui/glass";
 import { reduceMotionNow } from "@/ui/motion/system";
 import { Mark } from "./Mark";
+import { ScrollEdgeFade } from "./ScrollEdgeFade";
 import { useTheme } from "@/ui/ThemeProvider";
 import { TAB_BAR_HEIGHT } from "./PageShell";
 import { Txt } from "./Text";
@@ -229,13 +230,19 @@ const HOST_TAB: Record<string, string> = { journal: "index" };
 
 /** The action's accessible name (when none is given) and glyph: the sparkle for the coach, else the plus. */
 function actionItem(label: string | undefined): { label: string; icon: LucideIcon } {
-  if (label && /coach/i.test(label)) return { label: "Coach", icon: Sparkles };
+  if (label && /coach/i.test(label)) return { label: "Coach", icon: MessagesSquare };
   return { label: "Check in", icon: Plus };
 }
 
 const haptic = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 };
+
+/** Solid page ground from the screen's foot to the bar's top, softening 28 px above it: nothing scrolls under the bar. */
+export function TabBarFade() {
+  const insets = useSafeAreaInsets();
+  return <ScrollEdgeFade height={insets.bottom + LIFT + BAR_H + 28} fade={28} />;
+}
 
 /**
  * Phone navigation bar: a glass capsule of four tabs and a round glass action button, floating 16 dp from the sides

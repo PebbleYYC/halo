@@ -5,16 +5,17 @@
 import * as React from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { alpha } from "@/lib/utils";
-import { useTheme } from "@/ui/ThemeProvider";
+import { useCalm } from "@/ui/calm";
 
-/** `height`: from the screen's bottom edge to a little above the controls' top. */
-export function ScrollEdgeFade({ height }: { height: number }) {
-  const { c } = useTheme();
+/** `height`: from the screen's bottom edge to `fade` px above the controls' top; solid ground below that. */
+export function ScrollEdgeFade({ height, fade }: { height: number; fade?: number }) {
+  const c = useCalm();
+  const soft = fade ? Math.min(1, fade / height) : 0.45;
   return (
     <LinearGradient
       pointerEvents="none"
-      colors={[alpha(c.background, 0), alpha(c.background, 0.82), c.background]}
-      locations={[0, 0.45, 1]}
+      colors={[alpha(c.ground, 0), alpha(c.ground, 0.92), c.ground]}
+      locations={[0, soft, 1]}
       style={{ position: "absolute", left: 0, right: 0, bottom: 0, height }}
     />
   );
