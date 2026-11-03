@@ -1,8 +1,8 @@
 // Halo Age against your real age on one scale of years, as the design draws it: a thin capsule that runs green (younger)
 // through yellow to red (older), every fifth year labelled under it, your age a small ringed dot and the Halo Age a
-// larger white knob ringed in its colour, a dotted line over the track between the two, and a legend naming both. When
+// larger white knob ringed in its colour, and a dotted line over the track between the two. When
 // the value arrives the knob springs from your age to the Halo Age (the gap it measures, drawn as motion) and the dotted
-// line fades in behind it. All on the UI thread; Reduce motion places everything at once.
+// line fades in behind it. Above it, both ages as a compact HALO / YOU comparison. Reduce motion places everything at once.
 import * as React from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import Animated, { cancelAnimation, interpolate, Extrapolation, useAnimatedStyle, useSharedValue, withDelay, withSpring } from "react-native-reanimated";
@@ -28,7 +28,7 @@ const KNOB_SPRING = iosSpring(0.65, 0.8);
  * The scale: `age` (your real age) and `pulseAge` (the Halo Age) in years; `color` rings the Halo Age's knob. `spoken`
  * false when a button around it already says both ages.
  */
-export function AgeRuler({ age, pulseAge, color, spoken = true }: { age: number; pulseAge: number; color: string; spoken?: boolean }) {
+export function AgeRuler({ age, pulseAge, color, ink, spoken = true }: { age: number; pulseAge: number; color: string; ink: string; spoken?: boolean }) {
   const c = useCalm();
   const [w, setW] = React.useState(0);
   const [lo, hi] = ageSpan(age, pulseAge);
@@ -63,6 +63,10 @@ export function AgeRuler({ age, pulseAge, color, spoken = true }: { age: number;
       accessibilityLabel={`Halo Age ${formatValue("decimal1", pulseAge)} on a scale of ${lo} to ${hi} years, your age ${formatValue("decimal1", age)}`}
       style={{ gap: 8 }}
     >
+      <View importantForAccessibility="no-hide-descendants" style={{ flexDirection: "row", justifyContent: "center", gap: 28 }}>
+        <Compare label="Halo" value={pulseAge} mark={<View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: color }} />} ink={ink} />
+        <Compare label="You" value={age} mark={<View style={{ width: 9, height: 9, borderRadius: 4.5, borderWidth: 1.5, borderColor: c.sub }} />} ink={c.ink} />
+      </View>
       <View onLayout={(e: LayoutChangeEvent) => setW(Math.round(e.nativeEvent.layout.width))} style={{ height: LANE + ROW + 20 }}>
         {laid && (
           <>
@@ -96,20 +100,24 @@ export function AgeRuler({ age, pulseAge, color, spoken = true }: { age: number;
           </>
         )}
       </View>
-      <View importantForAccessibility="no-hide-descendants" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 4 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: color }} />
-          <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
-            Halo Age
-          </Txt>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <View style={{ width: 9, height: 9, borderRadius: 4.5, borderWidth: 1.5, borderColor: c.sub }} />
-          <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
-            {`Your age, ${formatValue("decimal1", age)}`}
-          </Txt>
-        </View>
+    </View>
+  );
+}
+
+/** One side of the comparison: its marker and caps label over the age. */
+function Compare({ label, value, mark, ink }: { label: string; value: number; mark: React.ReactNode; ink: string }) {
+  const c = useCalm();
+  return (
+    <View style={{ alignItems: "center", gap: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        {mark}
+        <Txt size={12} lineHeight={16} weight={600} style={{ color: c.sub, letterSpacing: 0.6 }}>
+          {label.toUpperCase()}
+        </Txt>
       </View>
+      <Txt size={22} lineHeight={28} weight={700} style={{ color: ink, fontVariant: ["tabular-nums"] }}>
+        {formatValue("decimal1", value)}
+      </Txt>
     </View>
   );
 }

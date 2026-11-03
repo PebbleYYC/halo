@@ -4,19 +4,19 @@
 // scale (your real age and the Halo Age on one capsule of years), then the pace pills (Pace of Aging and the change
 // since last week) and any notes. The Pace of Aging ruler is shared too.
 import * as React from "react";
-import { View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Hourglass, Rabbit, Turtle } from "lucide-react-native";
 import { AGE_LABEL, formatValue, MISSING } from "@/lib/format";
 import type { Metric, ReasonCode } from "@/lib/reasons";
-import { ReasonPlaceholder, Skeleton, SkeletonText, TickScale, Txt } from "@/ui";
+import { ReasonPlaceholder, Skeleton, TickScale, Txt } from "@/ui";
 import { useCalm, type CalmPalette, type CalmTint } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { softFill } from "@/ui/components/calmKit";
 import { font } from "@/ui/fonts";
+import { AgeOrb } from "./AgeOrb";
 import { AgeRuler } from "./AgeRuler";
 import { ageDelta } from "./format";
-import { GradientNumber } from "./GradientNumber";
 import { CardHead } from "./kit";
 
 /** Older than your age (after rounding to a tenth) reads in orange; younger or level in green. */
@@ -87,38 +87,32 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
   const c = useCalm();
   const has = age !== null && deltaYears !== null;
   const tint = pulseAgeTint(has ? deltaYears : null);
-  const { ink, gradient } = heroInk(c, tint);
+  const { ink } = heroInk(c, tint);
   const d = has ? ageDelta(deltaYears) : null;
   // Your real age is the Halo Age less its gap when the caller doesn't pass it (the Health tab).
   const realAge = has ? (yourAge ?? age - deltaYears) : null;
   const same = !!d && d.text === "Same as your age";
   const sentence = d ? (same ? d.text : `${d.text} than your age`) : emptyCopy;
+  const { width } = useWindowDimensions();
+  // As large as the card allows (16 px page margins and card padding each side), at most 260 px.
+  const orbSize = Math.min(260, width - 64);
   const spokenAge = has ? `${AGE_LABEL} ${formatValue("decimal1", age)} years, ${same ? "same as your age" : `${d!.text} than your age`}${provisional ? ", provisional" : ""}` : `${AGE_LABEL} unavailable. ${emptyCopy}`;
   return (
     <Card onPress={onPress} padding={0} accessibilityLabel={onPress ? `${spokenAge}.${spokenExtra ? ` ${spokenExtra}.` : ""} Open Healthspan` : undefined}>
       <Wash tint={tint} />
       <View style={{ paddingHorizontal: 16, paddingTop: onPress ? 14 : 20, paddingBottom: 18, gap: 14 }}>
         {onPress ? <CardHead tint={tint} icon={Hourglass} title={AGE_LABEL} when="Weekly" chevron /> : null}
-        <View accessible={!onPress} accessibilityLabel={spokenAge} style={{ gap: 2 }}>
-          {has ? (
-            <View style={{ flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap", columnGap: 8 }}>
-              <GradientNumber text={formatValue("decimal1", age)} size={64} colors={gradient} />
-              {/* On the number's baseline: Inter's sits about 12 px above the foot of the number's 70 px line. */}
-              <Txt size={17} lineHeight={22} weight={600} style={{ color: c.sub, marginBottom: 7 }}>
-                years
-              </Txt>
-            </View>
-          ) : (
-            <Txt size={64} lineHeight={70} style={[font.numberAt(64), { color: c.faint }]}>
-              {MISSING}
+        {/* The orb is Halo Age's focal point and identity (DESIGN.md › Halo Age): the age and its gap inside it. */}
+        <View accessible={!onPress} accessibilityLabel={spokenAge} style={{ alignItems: "center", gap: 6 }}>
+          <AgeOrb age={has ? age : null} deltaYears={has ? deltaYears : null} provisional={provisional} size={orbSize} reason={reason ?? null} />
+          {!has && (
+            <Txt size={15} lineHeight={20} align="center" style={{ color: c.sub }}>
+              {sentence}
             </Txt>
           )}
-          <Txt size={17} lineHeight={22} weight={600} style={{ color: d && !same ? ink : c.sub }}>
-            {sentence}
-          </Txt>
         </View>
         {/* On the Health tab the card is one button whose label says all of this; elsewhere each part speaks for itself. */}
-        {has && <AgeRuler age={realAge!} pulseAge={age!} color={c.system[tint === "peach" ? "orange" : "green"]} spoken={!onPress} />}
+        {has && <AgeRuler age={realAge!} pulseAge={age!} color={c.system[tint === "peach" ? "orange" : "green"]} ink={ink} spoken={!onPress} />}
         {!has && reason && <ReasonPlaceholder reason={reason} size="sm" />}
         {has && <Pills pills={pills} spoken={!onPress} />}
         {children}
@@ -130,14 +124,14 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
 /** The hero's loading shape: the same card with bars where the age, the sentence, the scale and the pills go. */
 export function HaloAgeHeroSkeleton({ head = false, children }: { head?: boolean; children?: React.ReactNode }) {
   const c = useCalm();
+  const orbSize = Math.min(260, useWindowDimensions().width - 64);
   return (
     <Card padding={0}>
       <Wash tint="mint" />
       <View importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: 16, paddingTop: head ? 14 : 20, paddingBottom: 18, gap: 14 }}>
         {head ? <CardHead tint="mint" icon={Hourglass} title={AGE_LABEL} when="Weekly" chevron /> : null}
-        <View style={{ gap: 2 }}>
-          <SkeletonText role="valueHero" size={64} lineHeight={70} chars={4} />
-          <SkeletonText role="headline" width={220} />
+        <View style={{ alignItems: "center" }}>
+          <Skeleton radius={orbSize / 2} style={{ width: orbSize, height: orbSize }} />
         </View>
         {/* The scale's box (its marker row, year labels and legend), the track where the real one runs. */}
         <View style={{ height: 76 }}>
