@@ -13,7 +13,7 @@ describe("dayRisk", () => {
 
   it("counts a pressure fall of 5 hPa as 2 points and 8 hPa as 3", () => {
     expect(dayRisk([w("2026-11-02", 1015), w("2026-11-03", 1009.5)], "2026-11-03", null)?.factors[0]).toMatchObject({ key: "pressure_drop", points: 2 });
-    expect(dayRisk([w("2026-11-02", 1015), w("2026-11-03", 1006)], "2026-11-03", null)).toMatchObject({ level: "moderate", points: 3 });
+    expect(dayRisk([w("2026-11-02", 1015), w("2026-11-03", 1006)], "2026-11-03", null)).toMatchObject({ level: "medium", points: 3 });
   });
 
   it("adds humidity, a temperature jump and the body's signals, reaching high", () => {

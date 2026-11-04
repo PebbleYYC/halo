@@ -1,4 +1,4 @@
-// Today's headache-risk card: only on a Moderate or High day (today's, else tomorrow's), with the main reason. Opens
+// Today's headache-risk card: only on a Medium or High day (today's, else tomorrow's), with the main reason. Opens
 // the Headache risk page.
 import * as React from "react";
 import { CloudRain } from "lucide-react-native";

@@ -1,10 +1,10 @@
 // Headache risk for a day: weather changes the studies link to new headaches (a day-to-day pressure change, high
 // humidity, a temperature or wind jump) plus the body's own lowered threshold (short sleep, low Recovery, stress,
-// alcohol). Points add up to Low, Moderate or High, and every point keeps its reason.
+// alcohol). Points add up to Low, Medium or High, and every point keeps its reason.
 import { addDays } from "@/lib/time";
 import type { WeatherDay } from "./openMeteo";
 
-export type RiskLevel = "low" | "moderate" | "high";
+export type RiskLevel = "low" | "medium" | "high";
 export type RiskFactor =
   | { key: "pressure_drop" | "pressure_rise"; hPa: number; points: number }
   | { key: "humidity"; pct: number; points: number }
@@ -18,7 +18,7 @@ export type DayRisk = { day: string; level: RiskLevel; points: number; factors: 
 export type Body = { sleepShortMin: number | null; recoveryRed: boolean; highStressMin: number | null; alcoholYesterday: boolean };
 
 /** Thresholds (Kimoto 2011: a 5 hPa day-to-day pressure fall; Martin 2018: humidity of 79 % or more, a 7 mph wind rise). */
-export const RISK = { dropHPa: 5, bigDropHPa: 8, riseHPa: 5, humidityPct: 79, tempJumpC: 5.5, windJumpKmh: 11, sleepShortMin: 60, stressMin: 60, moderateFrom: 2, highFrom: 4 };
+export const RISK = { dropHPa: 5, bigDropHPa: 8, riseHPa: 5, humidityPct: 79, tempJumpC: 5.5, windJumpKmh: 11, sleepShortMin: 60, stressMin: 60, mediumFrom: 2, highFrom: 4 };
 
 export function weatherFactors(days: readonly WeatherDay[], day: string): RiskFactor[] {
   const by = new Map(days.map((d) => [d.day, d]));
@@ -52,7 +52,7 @@ export function dayRisk(days: readonly WeatherDay[], day: string, body: Body | n
   if (!days.some((d) => d.day === day)) return null;
   const factors = [...weatherFactors(days, day), ...(body ? bodyFactors(body) : [])].sort((a, b) => b.points - a.points);
   const points = factors.reduce((n, f) => n + f.points, 0);
-  return { day, points, factors, level: points >= RISK.highFrom ? "high" : points >= RISK.moderateFrom ? "moderate" : "low" };
+  return { day, points, factors, level: points >= RISK.highFrom ? "high" : points >= RISK.mediumFrom ? "medium" : "low" };
 }
 
 export type Pattern =

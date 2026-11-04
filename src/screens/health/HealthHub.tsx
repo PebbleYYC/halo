@@ -14,7 +14,7 @@ import { formatValue, hmm, MISSING } from "@/lib/format";
 import { alpha } from "@/lib/utils";
 import { getHealthHub, getHome, getHrvStatus, TREND_GROUPS, TREND_METRICS, type HealthHubVM } from "@/queries";
 import { useApp, useQuery } from "@/state/app";
-import { Txt } from "@/ui";
+import { Txt, useTheme } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { ActivityRings } from "@/ui/components/Halo";
 import { Grow, HealthCard } from "./kit";
@@ -192,6 +192,7 @@ function StressVsTypical({ today, typical, weekday }: { today: number; typical: 
 /** Headache risk today: the level and its main reason; reads the stored weather on its own. */
 function HeadacheRiskCard({ onPress }: { onPress: () => void }) {
   const { data: vm } = useQuery((ctx) => getHeadache(ctx), [], "headache");
+  const { c: theme } = useTheme();
   if (vm && !vm.enabled) return null;
   const r = vm?.today ?? null;
   const l = r ? HEADACHE_LEVEL[r.level] : null;
@@ -204,6 +205,7 @@ function HeadacheRiskCard({ onPress }: { onPress: () => void }) {
       when="Today"
       loading={!vm}
       value={vm ? (l ? l.word : null) : undefined}
+      valueColor={l ? theme[l.color] : undefined}
       context={context}
       onPress={onPress}
       accessibilityLabel={`Headache risk: ${l ? l.word : "no forecast yet"}${context ? `. ${context}` : ""}`}
