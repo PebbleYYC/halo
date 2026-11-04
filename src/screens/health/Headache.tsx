@@ -4,7 +4,6 @@ import * as React from "react";
 import { Linking, View, type LayoutChangeEvent } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import Svg, { Line, Polyline } from "react-native-svg";
-import { CloudRain } from "lucide-react-native";
 import { getHeadache, type HeadacheRisk, type HeadacheVM } from "@/queries/headache";
 import { useApp, useQuery } from "@/state/app";
 import { useWeatherSettings } from "@/state/weather";
@@ -18,7 +17,6 @@ import { useBack, useRefresh } from "@/screens/detail/nav";
 import { CalmButton } from "@/screens/settings/calmKit";
 import { askLocation } from "@/weather/place";
 import type { RiskLevel } from "@/weather/risk";
-import { CardHead } from "./kit";
 
 export const LEVEL: Record<RiskLevel, { word: string; tint: CalmTint }> = {
   low: { word: "Low", tint: "mint" },
@@ -155,11 +153,11 @@ export default function HeadacheScreen() {
   return (
     <DetailScreen
       {...common}
-      hero={
-        <Card padding={16} style={{ gap: 12 }}>
-          <CardHead tint={LEVEL[vm.today.level].tint} icon={CloudRain} title="Headache risk" when={vm.place ?? undefined} />
-          <RiskBlock risk={vm.today} label="Today" />
-        </Card>
+      subtitle={vm.place ?? undefined}
+      primary={
+        <SectionShell variant="card" title="Today">
+          <RiskBlock risk={vm.today} label="From the weather and your day" />
+        </SectionShell>
       }
       secondary={[
         vm.tomorrow ? (
