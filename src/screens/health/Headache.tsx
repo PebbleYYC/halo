@@ -7,7 +7,7 @@ import Svg, { Line, Polyline } from "react-native-svg";
 import { getHeadache, type HeadacheRisk, type HeadacheVM } from "@/queries/headache";
 import { useApp, useQuery } from "@/state/app";
 import { useWeatherSettings } from "@/state/weather";
-import { SectionShell, Txt } from "@/ui";
+import { SectionShell, Txt, useTheme } from "@/ui";
 import type { InfoContent } from "@/ui/components/InfoButton";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
@@ -17,11 +17,15 @@ import { useBack, useRefresh } from "@/screens/detail/nav";
 import { CalmButton } from "@/screens/settings/calmKit";
 import { askLocation } from "@/weather/place";
 import type { RiskLevel } from "@/weather/risk";
+import { DATA_COLORS, STRESS_COLOR, STRESS_WORD } from "@/lib/bands";
+import type { ColorToken } from "@/ui/theme";
 
-export const LEVEL: Record<RiskLevel, { word: string; tint: CalmTint }> = {
-  low: { word: "Low", tint: "mint" },
-  moderate: { word: "Moderate", tint: "sand" },
-  high: { word: "High", tint: "peach" },
+/** The same Low, Medium and High as Stress, in Stress's colours (blue, purple, orange); `tint` is the nearest card
+ *  tint for icons. */
+export const LEVEL: Record<RiskLevel, { word: string; color: ColorToken; tint: CalmTint }> = {
+  low: { word: STRESS_WORD.low, color: DATA_COLORS[STRESS_COLOR.low].text, tint: "sky" },
+  medium: { word: STRESS_WORD.medium, color: DATA_COLORS[STRESS_COLOR.medium].text, tint: "lavender" },
+  high: { word: STRESS_WORD.high, color: DATA_COLORS[STRESS_COLOR.high].text, tint: "peach" },
 };
 
 const INFO: InfoContent = {
@@ -32,13 +36,14 @@ const INFO: InfoContent = {
 
 function RiskBlock({ risk, label }: { risk: HeadacheRisk; label: string }) {
   const c = useCalm();
+  const { c: theme } = useTheme();
   const l = LEVEL[risk.level];
   return (
     <View accessible accessibilityLabel={`${label}: ${l.word}. ${risk.reasons.join(". ")}`} style={{ gap: 8 }}>
       <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub }}>
         {label.toUpperCase()}
       </Txt>
-      <Txt size={34} lineHeight={41} weight={700} style={{ color: c.tintInk[l.tint] }}>
+      <Txt size={34} lineHeight={41} weight={700} style={{ color: theme[l.color] }}>
         {l.word}
       </Txt>
       {risk.reasons.length ? (
