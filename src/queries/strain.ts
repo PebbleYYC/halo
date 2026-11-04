@@ -99,6 +99,7 @@ export async function getStrain(day: string, ctx: QueryCtx): Promise<StrainVM> {
     // Distance in km or miles (Settings › Units).
     summary: summary.map((s) => localizeStat(s, unitsOf(ctx))),
     coach: coach(strain, target.value, row),
+    coachTitle: coachTitle(strain, target.value, row),
     hr: hrChartOf(ctx, row, day, isToday, hrSeries, exs.filter((e) => e.day === day)),
     zones: zoneRows(row),
     maxHr: row?.s1?.maxHr ?? maxHrOf(ctx),
@@ -128,6 +129,14 @@ export function calorieSplit(rows: Map<string, DayRow>, day: string, provisional
 }
 
 const fmt1 = (x: number) => x.toFixed(1);
+
+/** The Strain Coach card's title, the same on Today and Activity. */
+export function coachTitle(strain: Metric<number>, target: { low: number; high: number } | null, row: DayRow | undefined): string | null {
+  if (strain.value == null || !target) return null;
+  const red = row?.recovery?.value != null && row.recovery.value < 34;
+  const v = strain.value;
+  return red ? "Keep strain light" : v < target.low ? "Room for more strain" : v <= target.high ? "Reaching optimal strain" : "Past your target";
+}
 
 /** Strain Coach copy (spec §7.3), by position against today's target. */
 export function coach(strain: Metric<number>, target: { low: number; high: number } | null, row: DayRow | undefined): string | null {

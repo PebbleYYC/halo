@@ -4,13 +4,15 @@
 // and a chevron, the value large with a line of context and a small chart): Health Monitor, Stress, HRV Status, Fitness,
 // Heart Rate, Nutrition and Trends, each opening its own screen, then My Dashboard. The cards rise into place in turn
 // as the tab opens; values roll, rings sweep and the small charts grow in once, all on the UI thread.
+import { InfoButton } from "@/ui/components/InfoButton";
+import { HEALTH_INFO } from "./info";
 import * as React from "react";
 import { getHeadache } from "@/queries/headache";
 import { LEVEL as HEADACHE_LEVEL } from "./Headache";
 import { View } from "react-native";
 import { ChartLine, CloudRain, Dumbbell, HeartPulse, ShieldCheck, Utensils, Waves } from "lucide-react-native";
 import type { ChipTone } from "@/lib/bands";
-import { formatValue, hmm, MISSING } from "@/lib/format";
+import { DAY, formatDay, formatValue, hmm, MISSING } from "@/lib/format";
 import { alpha } from "@/lib/utils";
 import { getHealthHub, getHome, getHrvStatus, TREND_GROUPS, TREND_METRICS, type HealthHubVM } from "@/queries";
 import { useApp, useQuery } from "@/state/app";
@@ -425,7 +427,7 @@ export default function HealthHub() {
   const failed = !!error && !vm;
 
   return (
-    <TabShell title="Health" gap={12}>
+    <TabShell title="Health" lead={<InfoButton info={HEALTH_INFO} label="Health" variant="header" />} eyebrow={formatDay(today, DAY.long)} gap={12}>
       {failed && <ErrorState error={error} />}
       {/* Halo Age first, then Recovery: the body's readiness today, with HRV, resting HR, breathing and the week. */}
       {!failed && <HaloAge m={vm?.healthspan} onPress={() => push("/health/healthspan")} />}

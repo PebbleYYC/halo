@@ -255,6 +255,8 @@ export type StrainVM = {
   target: Metric<{ low: number; high: number; estimate: boolean; acwrRule: "capped" | "lifted" | null }>;
   summary: KeyStat[];
   coach: string | null;
+  /** The coach card's title ("Room for more strain"), as Today shows it. */
+  coachTitle: string | null;
   hr: Metric<HrChart>;
   zones: Metric<ZoneRow[]>;
   maxHr: number;

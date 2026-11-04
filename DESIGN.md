@@ -14,7 +14,8 @@ Reading this as: a personal health app for one person checking in a few times a 
 
 - Apple's grouped style: a grey ground, white cards (black and near-black in dark mode), inset lists with hairline separators.
 - 16 px side margins, 12 px between cards. One corner scale: cards 20, inset lists 16, panels nested inside a card 14, text fields 12, buttons and chips a full pill. Pop-up menus keep iOS's own radius.
-- Every tab opens the same way: the day as a caps eyebrow over the large title, with round blue steps for the previous and next day beside it (a tap on the title opens the calendar). The bar puts the band's sync status and your avatar at the top right of every tab; Sleep and Activity keep their info button at the top left.
+- Every tab opens the same way: a round button top left (Today's streak, else the tab's info), sync status and avatar top right, the day as a caps eyebrow over the large title, and round blue steps for the previous and next day where the tab is day by day (a tap on the title opens the calendar).
+- Every tab's hero is a card lit in its area's colour (Sleep indigo, Activity orange, Health green); Today's rings card holds all three. Coach cards carry a title, worded the same on Today and on the tab.
 - One focal point per screen: the score's ring or number at the top. Everything else is supporting detail beneath it.
 - Rhythm varies with the content: a hero, then lists, tiles or charts as the data needs. No screen is a grid of identical cards.
 

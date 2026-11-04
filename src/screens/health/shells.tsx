@@ -121,7 +121,7 @@ export function TabCorner() {
  * A tab root's page (the kit's large-title layout) with the sync status and pull-to-refresh: its title, the avatar on the
  * left (to More) or, for a page off the bar, the way back. Each child rises into place in turn, `gap` px apart.
  */
-export function TabShell({ title, lead, onBack, gap = 32, children }: { title: string; lead?: React.ReactNode; onBack?: () => void; gap?: number; children: React.ReactNode }) {
+export function TabShell({ title, lead, onBack, gap = 32, eyebrow, children }: { title: string; lead?: React.ReactNode; onBack?: () => void; gap?: number; eyebrow?: string; children: React.ReactNode }) {
   const { c } = useTheme();
   const pull = usePullRefresh();
   const clearance = useBottomClearance("tabs");
@@ -139,7 +139,7 @@ export function TabShell({ title, lead, onBack, gap = 32, children }: { title: s
       <GlassTarget style={{ flex: 1 }} overlay={<TitleHeader title={title} lead={lead} onBack={onBack} right={onBack ? <HeaderSync /> : <TabCorner />} scrollY={revealY} />}>
         <PullToRefresh {...pull} y={revealY} top={top}>
           <Animated.ScrollView ref={setRef} overScrollMode="never" scrollEventThrottle={16} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: clearance }} contentInsetAdjustmentBehavior="never">
-            <LargeTitle title={title} y={revealY} />
+            <LargeTitle title={title} eyebrow={eyebrow} y={revealY} />
             <RevealScroll.Provider value={revealY}>
               <View style={{ gap }}>
                 <RiseEach>{children}</RiseEach>
