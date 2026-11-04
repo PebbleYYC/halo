@@ -115,7 +115,7 @@ function Tile({ kind, today, unit, onPress }: { kind: LogKind; today: number | n
       onPressOut={press.onPressOut}
       accessibilityRole="button"
       accessibilityLabel={total ? `${KIND_LABEL[kind]}, ${today ? `${grouped(today)} ${total.unit}` : "none"} today` : KIND_LABEL[kind]}
-      style={[{ flex: 1, minWidth: 0, minHeight: TILE_HEIGHT, borderRadius: 18, backgroundColor: c.card, padding: 14, gap: 10 }, pressed]}
+      style={[{ flex: 1, minWidth: 0, minHeight: TILE_HEIGHT, borderRadius: 20, backgroundColor: c.card, padding: 14, gap: 10 }, pressed]}
     >
       <View style={{ minHeight: 34, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <IconTile icon={ICON[kind]} tint={TINT[kind]} size={34} />

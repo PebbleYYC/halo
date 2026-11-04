@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { alpha } from "@/lib/utils";
 import { useCalm } from "@/ui/calm";
 import { useTheme } from "@/ui/ThemeProvider";
-import { DateSwitcher, type DateSwitcherProps } from "./DateSwitcher";
+import { DateSwitcher, DateTitle, type DateSwitcherProps } from "./DateSwitcher";
 import { BackButton } from "./GlassButton";
 import { InfoButton, type InfoContent } from "./InfoButton";
 import { Txt } from "./Text";
@@ -136,7 +136,7 @@ export function NavBar({ y, title, left, right, ground }: { y: SharedValue<numbe
  * then an optional subtitle line and anything under it (a day switcher). An `icon` stands before the title. As the
  * page scrolls the title shrinks toward its left edge and fades, as it slides under the bar (UI thread).
  */
-export function LargeTitle({ title, eyebrow, subtitle, icon, y, children, style }: { title: string; eyebrow?: string; subtitle?: string; icon?: React.ReactNode; y: SharedValue<number> | null; children?: React.ReactNode; style?: StyleProp<ViewStyle> }) {
+export function LargeTitle({ title, eyebrow, subtitle, icon, y, children, style, head }: { title: string; eyebrow?: string; subtitle?: string; icon?: React.ReactNode; y: SharedValue<number> | null; children?: React.ReactNode; style?: StyleProp<ViewStyle>; head?: React.ReactNode }) {
   const c = useCalm();
   const fade = useAnimatedStyle(() => {
     const v = y ? y.value : 0;
@@ -148,17 +148,21 @@ export function LargeTitle({ title, eyebrow, subtitle, icon, y, children, style 
   return (
     <View style={[{ marginBottom: 14 }, style]}>
       <Animated.View style={[{ transformOrigin: "left bottom" }, fade]}>
-        {eyebrow ? (
-          <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, letterSpacing: 0.2 }}>
-            {eyebrow.toUpperCase()}
-          </Txt>
-        ) : null}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          {icon ? <View style={{ height: 41, justifyContent: "center" }}>{icon}</View> : null}
-          <Txt size={34} lineHeight={41} weight={700} accessibilityRole="header" style={{ color: c.ink, flexShrink: 1 }}>
-            {title}
-          </Txt>
-        </View>
+        {head ?? (
+          <>
+            {eyebrow ? (
+              <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, letterSpacing: 0.2 }}>
+                {eyebrow.toUpperCase()}
+              </Txt>
+            ) : null}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              {icon ? <View style={{ height: 41, justifyContent: "center" }}>{icon}</View> : null}
+              <Txt size={34} lineHeight={41} weight={700} accessibilityRole="header" style={{ color: c.ink, flexShrink: 1 }}>
+                {title}
+              </Txt>
+            </View>
+          </>
+        )}
       </Animated.View>
       {subtitle ? (
         <Txt size={15} lineHeight={20} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
@@ -247,7 +251,9 @@ export function DetailHeader(props: DetailHeaderProps) {
 }
 
 /** A detail page's large title, from the header's props: the title (with its icon), the subtitle, and the day under them. */
-export function DetailLargeTitle({ title, subtitle, titleIcon, dateTitle, eyebrow, y }: Pick<DetailHeaderProps, "title" | "subtitle" | "titleIcon" | "dateTitle"> & { eyebrow?: string; y: SharedValue<number> | null }) {
+export function DetailLargeTitle({ title, subtitle, titleIcon, dateTitle, eyebrow, y, dayRow }: Pick<DetailHeaderProps, "title" | "subtitle" | "titleIcon" | "dateTitle"> & { eyebrow?: string; y: SharedValue<number> | null; dayRow?: DateSwitcherProps }) {
+  // A tab's day (Sleep, Activity) sits as Today's does: the date over the title, the round steps beside it.
+  if (dayRow) return <LargeTitle title={title} subtitle={subtitle} y={y} head={<DateTitle {...dayRow} title={title} />} />;
   return (
     <LargeTitle title={title} eyebrow={eyebrow} subtitle={subtitle} icon={titleIcon} y={y}>
       {dateTitle ? <DateSwitcher {...dateTitle} /> : null}

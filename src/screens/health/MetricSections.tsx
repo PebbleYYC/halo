@@ -86,7 +86,7 @@ export function MetricSection({ s, vm, timeZone }: Ctx & { s: Section }) {
                     key={w.id}
                     variant="row"
                     label={w.name}
-                    caption={`${clock(w.start, timeZone)} - ${clock(w.end, timeZone)}`}
+                    caption={`${clock(w.start, timeZone)} – ${clock(w.end, timeZone)}`}
                     metric={w.calories === null ? { value: null, reason: "no_data", provisional: false } : ok(w.calories)}
                     unit="kcal"
                     format="grouped"
@@ -162,7 +162,7 @@ export function MetricSection({ s, vm, timeZone }: Ctx & { s: Section }) {
         </SectionShell>
       );
     case "outliers": {
-      const range = `${formatValue(vm.format, s.mean - s.sd)} - ${formatValue(vm.format, s.mean + s.sd)}${vm.unit ? ` ${vm.unit}` : ""}`;
+      const range = `${formatValue(vm.format, s.mean - s.sd)}–${formatValue(vm.format, s.mean + s.sd)}${vm.unit ? ` ${vm.unit}` : ""}`;
       return (
         <SectionShell variant="card" title="Unusual days">
           <View style={{ marginBottom: 8 }}>
@@ -204,13 +204,13 @@ function Hourly({ s, vm, timeZone }: Ctx & { s: Extract<Section, { kind: "hourly
             <>
               <ColumnChart
                 summary={`Steps by hour${peak?.value ? `, most at ${peak.label} with ${formatValue("grouped", peak.value)}` : ""}.`}
-                data={hours.map((h, i) => ({ label: h.label, title: `${h.label} - ${hours[i + 1]?.label ?? "24:00"}`, value: h.value }))}
+                data={hours.map((h, i) => ({ label: h.label, title: `${h.label} – ${hours[i + 1]?.label ?? "24:00"}`, value: h.value }))}
                 format="grouped"
                 unit="steps"
                 tickEvery={6}
               />
               {sedentary && s.still && (
-                <Legend>{`Longest daytime stretch without steps: ${durationWords(s.still.minutes)}, ${clock(s.still.from, timeZone)} - ${clock(s.still.to, timeZone)}`}</Legend>
+                <Legend>{`Longest daytime stretch without steps: ${durationWords(s.still.minutes)}, ${clock(s.still.from, timeZone)} – ${clock(s.still.to, timeZone)}`}</Legend>
               )}
             </>
           );
@@ -240,7 +240,7 @@ function Weekly({ s, vm }: { s: Extract<Section, { kind: "weekly" }>; vm: Metric
         </Grow>
       </View>
       <View style={{ marginBottom: 16 }}>
-        <Sentence size={13}>{`${formatDay(s.week.from, DAY.monthDay)} - ${formatDay(s.week.to, DAY.monthDay)}, toward the ${s.target} minutes a week the WHO recommends`}</Sentence>
+        <Sentence size={13}>{`${formatDay(s.week.from, DAY.monthDay)} – ${formatDay(s.week.to, DAY.monthDay)}, toward the ${s.target} minutes a week the WHO recommends`}</Sentence>
       </View>
       <ColumnChart
         summary={`${vm.label} per week, last ${s.weeks.length} weeks. Target met in ${s.met}.`}

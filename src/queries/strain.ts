@@ -133,8 +133,9 @@ const fmt1 = (x: number) => x.toFixed(1);
 export function coach(strain: Metric<number>, target: { low: number; high: number } | null, row: DayRow | undefined): string | null {
   if (strain.value == null || !target) return null;
   const { low, high } = target;
-  const range = `${fmt1(low)} - ${fmt1(high)}`;
-  if (row?.recovery?.value != null && row.recovery.value < 34) return `Your body needs rest today. Keep strain between ${range.replace(" - ", " and ")}.`;
+  // In a sentence a range reads "8.4 to 10.5" (the outlook's wording); "8.4–10.5" is for values beside a label.
+  const range = `${fmt1(low)} to ${fmt1(high)}`;
+  if (row?.recovery?.value != null && row.recovery.value < 34) return `Your body needs rest today. Keep strain between ${fmt1(low)} and ${fmt1(high)}.`;
   if (strain.value < low) {
     // ponytail: about 8 minutes of moderate activity per strain point near the target; a rough guide, not a model.
     const minutes = Math.max(10, Math.round(((low - strain.value) * 8) / 5) * 5);

@@ -23,7 +23,6 @@ import { categoryInk, categoryWord, ordinal } from "./format";
 import { LastReading } from "./LastReading";
 import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, type AgePill } from "./HaloAge";
 import { ErrorState, TabShell, usePush } from "./shells";
-import { AvatarButton } from "@/ui/components/AvatarButton";
 import { homeKey, useDashboardKeys } from "@/screens/home/dashboard";
 import { RecoveryCard } from "@/screens/home/calm";
 import { MyDashboard } from "@/screens/home/sections";
@@ -426,7 +425,7 @@ export default function HealthHub() {
   const failed = !!error && !vm;
 
   return (
-    <TabShell title="Health" lead={<AvatarButton />} gap={12}>
+    <TabShell title="Health" gap={12}>
       {failed && <ErrorState error={error} />}
       {/* Halo Age first, then Recovery: the body's readiness today, with HRV, resting HR, breathing and the week. */}
       {!failed && <HaloAge m={vm?.healthspan} onPress={() => push("/health/healthspan")} />}

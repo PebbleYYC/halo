@@ -13,7 +13,8 @@ Reading this as: a personal health app for one person checking in a few times a 
 ## Layout
 
 - Apple's grouped style: a grey ground, white cards (black and near-black in dark mode), inset lists with hairline separators.
-- 16 px side margins, 12 px between cards, 20 px card corners. Lists and controls use iOS's own radii, so not everything is a pill.
+- 16 px side margins, 12 px between cards. One corner scale: cards 20, inset lists 16, panels nested inside a card 14, text fields 12, buttons and chips a full pill. Pop-up menus keep iOS's own radius.
+- Every tab opens the same way: the day as a caps eyebrow over the large title, with round blue steps for the previous and next day beside it (a tap on the title opens the calendar). The bar puts the band's sync status and your avatar at the top right of every tab; Sleep and Activity keep their info button at the top left.
 - One focal point per screen: the score's ring or number at the top. Everything else is supporting detail beneath it.
 - Rhythm varies with the content: a hero, then lists, tiles or charts as the data needs. No screen is a grid of identical cards.
 
@@ -29,6 +30,12 @@ Reading this as: a personal health app for one person checking in a few times a 
 - Inter, set to iOS text styles: Large Title 34/41 bold, Title 22/28, Headline 17/22 semibold, Body 17/22, Subhead 15/20, Footnote 13/18, Caption 12/16. Reason: SF Pro is licensed for Apple platforms only, and Inter is the closest open match.
 - Numbers use tabular figures, so values don't jump as they change.
 - Big numbers carry the hierarchy; labels sit quietly beside or under them.
+
+## Writing numbers
+
+- Durations in words are "6 h 28 min" or "45 min", everywhere: sentences, subtitles and the big Sleep number. Tables and rows that line durations up use "4:54"; Sleep's stage totals keep Apple Health's own form.
+- A range beside a label is "8.4–10.5"; in a sentence it is "8.4 to 10.5". Spans of time or dates are "23:01 – 06:20" and "Nov 3 – Nov 9". Never a hyphen.
+- Stress, and anything measured against it (Today's state card, headache risk), uses Stress's Low, Medium and High in its blue, purple and orange.
 
 ## Colour
 
