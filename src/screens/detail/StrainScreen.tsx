@@ -116,7 +116,7 @@ function StrainView({ tab = false }: { tab?: boolean }) {
           })}
         </ListGroup>
       }
-      insight={vm.coach ? <InsightCard body={vm.coach} action={{ label: "Plan tonight’s sleep", onPress: () => push(dayHref(tab ? `${SLEEP_TAB}#planner` : "/sleep#planner", d, today)) }} /> : null}
+      insight={vm.coach ? <InsightCard title={vm.coachTitle ?? undefined} body={vm.coach} action={{ label: "Plan tonight’s sleep", onPress: () => push(dayHref(tab ? `${SLEEP_TAB}#planner` : "/sleep#planner", d, today)) }} /> : null}
       primary={
         tab ? (
           // The day's goals in full, with the day's activity and the weekly plan at its foot.

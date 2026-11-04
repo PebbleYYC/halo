@@ -56,3 +56,9 @@ export const COMING_SOON: Record<"healthspan" | "fitness", InfoContent> = {
     body: <Body>Fitness’s own screen, with your VO2 max history and training load, is coming to the app soon.</Body>,
   },
 };
+
+/** The Health tab's own info sheet, at its top left like Sleep's and Activity's. */
+export const HEALTH_INFO: InfoContent = {
+  title: "About Health",
+  body: "Health gathers the slower signals: Halo Age (updated weekly), today's Recovery, your heart, stress, headache risk, body and vitals. Each card opens its own page with the details and history.",
+};

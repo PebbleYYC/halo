@@ -21,7 +21,7 @@ import { SkeletonText } from "@/ui/components/Skeleton";
 import { SleepHrChart } from "@/ui/components/SleepHrChart";
 import { font, TABULAR } from "@/ui/fonts";
 import { haptic } from "@/ui/motion/haptics";
-import { ListGroup, ListRow, useGrowIn } from "./ios";
+import { GlowCard, ListGroup, ListRow, useGrowIn } from "./ios";
 import { nightDates } from "./lines";
 
 type Stage = "awake" | "rem" | "light" | "deep";
@@ -69,12 +69,14 @@ function HoursMinutes({ minutes }: { minutes: number }) {
  */
 export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"]; stages: SleepVM["stages"]; timeZone: string }) {
   const c = useCalm();
+  const { c: theme } = useTheme();
   const h = hours.value;
   const night = stages?.value ?? null;
   const t = h && h.average !== null ? deltaTone(GOOD_DIRECTION.hours, h.asleepMin, h.average, h.sd) : null;
   const sentence = h ? statSentence({ label: "Hours of sleep", valueText: durationWords(h.asleepMin), averageText: h.average === null ? undefined : durationWords(h.average), dir: t?.dir, tone: t?.tone }) : undefined;
   return (
-    <View accessibilityLabel={sentence} style={{ alignSelf: "stretch", paddingHorizontal: 4, gap: 2 }}>
+    <GlowCard color={theme.sleep} padding={18} style={{ alignSelf: "stretch" }}>
+    <View accessibilityLabel={sentence} style={{ gap: 2 }}>
       <Caption>Time asleep</Caption>
       {h ? (
         <>
@@ -102,17 +104,18 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
         </View>
       )}
     </View>
+    </GlowCard>
   );
 }
 
 /** The time asleep's loading shape: the caption, then bars for the number and the times. */
 export function TimeAsleepSkeleton() {
   return (
-    <View style={{ alignSelf: "stretch", paddingHorizontal: 4, gap: 4 }}>
+    <GlowCard color={null} padding={18} gap={4} style={{ alignSelf: "stretch" }}>
       <Caption>Time asleep</Caption>
       <SkeletonText role="valueHero" size={BIG} lineHeight={BIG_LINE} chars={6} />
       <SkeletonText role="caption" size={15} lineHeight={20} chars={13} />
-    </View>
+    </GlowCard>
   );
 }
 

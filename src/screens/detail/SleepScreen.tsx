@@ -107,7 +107,7 @@ function nightSlots({ vm, day, today, timeZone, anchors, push, open, expandNight
   return {
     hero: <TimeAsleep hours={vm.hours} stages={vm.stages} timeZone={timeZone} />,
     summary: <StagesCards stages={vm.stages} timeZone={timeZone} onExpand={expandNight} />,
-    insight: vm.insight ? <InsightCard body={vm.insight} /> : null,
+    insight: vm.insight ? <InsightCard title="Last night’s sleep" body={vm.insight} /> : null,
     primary: <Performance vm={vm} link={link} />,
     secondary: [
       <NightHeart key="hr" hr={vm.nightHr} stages={vm.stages} timeZone={timeZone} onExpand={expandNight} />,

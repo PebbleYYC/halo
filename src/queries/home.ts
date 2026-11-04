@@ -19,7 +19,7 @@ import {
 } from "./_lib";
 import { insightOf as recoveryInsight } from "./recovery";
 import { insightOf as sleepInsight } from "./sleep";
-import { coach } from "./strain";
+import { coach, coachTitle } from "./strain";
 import {
   type DayRow,
   hrReason,
@@ -197,10 +197,7 @@ function insightsOf(ctx: QueryCtx, rows: Map<string, DayRow>, row: DayRow | unde
   const target = s.target ? { low: s.target[0], high: s.target[1] } : null;
   const c = coach(s.strain, target, row);
   if (c && target && s.strain.value != null) {
-    const v = s.strain.value;
-    const red = row?.recovery?.value != null && row.recovery.value < 34;
-    const title = red ? "Keep strain light" : v < target.low ? "Room for more strain" : v <= target.high ? "Reaching optimal strain" : "Past your target";
-    out.push({ key: "strain", title, body: c, href: "/strain" });
+    out.push({ key: "strain", title: coachTitle(s.strain, target, row) ?? "Strain", body: c, href: "/strain" });
   }
   const r = row?.recovery;
   if (r?.value != null) out.push({ key: "recovery", title: RECOVERY_TITLE[recoveryBand(r.value)], body: recoveryInsight(r.drivers), href: "/recovery" });
