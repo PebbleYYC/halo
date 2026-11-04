@@ -4,9 +4,11 @@
 import * as React from "react";
 import { ActivityIndicator, Pressable, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { dayLabel, rangeLabel } from "@/lib/format";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { DAY, dayLabel, formatDay, rangeLabel } from "@/lib/format";
+import { alpha } from "@/lib/utils";
 import { useCalm } from "@/ui/calm";
+import { useTheme } from "@/ui/ThemeProvider";
 import { haptic } from "@/ui/motion/haptics";
 import { CalendarSheet, type CalendarContext } from "./CalendarSheet";
 import { usePress, usePressStyle } from "./press";
@@ -126,6 +128,92 @@ export function DateSwitcher({ mode, date, today, firstDay, onChange, onOpenCale
         )}
       </PressableView>
       <Step dir={1} disabled={atEnd} unit={unit} box={stepBox} onPress={() => by(step)} />
+      {ownCalendar && (
+        <CalendarSheet
+          open={calendarOpen}
+          onClose={() => setCalendarOpen(false)}
+          selected={date}
+          today={today}
+          firstDay={firstDay}
+          context={calendar || undefined}
+          onSelect={(day) => {
+            setCalendarOpen(false);
+            if (day !== date) onChange(stepDay(day, 0, today, firstDay));
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+/**
+ * The round step beside a large title (Today, Sleep, Activity): iOS's tinted button, a light blue fill under a bold blue
+ * chevron; where the days stop it turns the quiet grey. One control, so every tab steps its day the same way.
+ */
+export function RoundStep({ dir, disabled, unit = "day", onPress }: { dir: -1 | 1; disabled: boolean; unit?: string; onPress: () => void }) {
+  const c = useCalm();
+  const dark = useTheme().scheme === "dark";
+  const press = usePress(0.9);
+  const pressed = usePressStyle(press, { rest: disabled ? 0.6 : 1, dim: 0.6 });
+  const Icon = dir < 0 ? ChevronLeft : ChevronRight;
+  return (
+    <PressableView
+      onPress={() => {
+        haptic.select();
+        onPress();
+      }}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={`${dir < 0 ? "Previous" : "Next"} ${unit}`}
+      accessibilityState={{ disabled }}
+      hitSlop={4}
+      style={[{ width: 40, height: 40, borderRadius: 20, backgroundColor: disabled ? c.fill : alpha(c.teal, dark ? 0.26 : 0.15), alignItems: "center", justifyContent: "center" }, pressed]}
+    >
+      <Icon size={23} color={disabled ? c.tertiary : c.teal} strokeWidth={2.8} style={dir < 0 ? { marginLeft: -2 } : { marginRight: -2 }} />
+    </PressableView>
+  );
+}
+
+/**
+ * A tab's large title with its day, Today's layout: the day (or week) as a caps eyebrow, the title with a down chevron
+ * (a tap opens the calendar), and the two round steps at the right. `title` is the page's name ("Sleep").
+ */
+export function DateTitle({ title, mode, date, today, firstDay, onChange, onOpenCalendar, calendar, loading }: DateSwitcherProps & { title: string }) {
+  const c = useCalm();
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
+  const ownCalendar = !onOpenCalendar && calendar !== false;
+  const openCalendar = onOpenCalendar ?? (ownCalendar ? () => setCalendarOpen(true) : undefined);
+  const week = mode === "week";
+  const [weekStart, weekEnd] = weekOf(date);
+  const atEnd = week ? weekStart >= weekOf(today)[0] : date >= today;
+  const atStart = !!firstDay && (week ? weekStart <= firstDay : date <= firstDay);
+  const step = week ? 7 : 1;
+  const eyebrow = week ? rangeLabel(weekStart, weekEnd) : formatDay(date, DAY.long);
+  return (
+    <View>
+      <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, letterSpacing: 0.2 }}>
+        {eyebrow.toUpperCase()}
+      </Txt>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Pressable
+          onPress={openCalendar}
+          disabled={!openCalendar}
+          accessibilityRole="button"
+          accessibilityLabel={`${title}, ${week ? eyebrow : dayLabel(date, today)}. Open calendar`}
+          accessibilityState={{ busy: !!loading }}
+          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1, opacity: pressed ? 0.6 : 1 })}
+        >
+          <Txt size={34} lineHeight={41} weight={700} accessibilityRole="header" numberOfLines={1} style={{ color: c.ink, flexShrink: 1 }}>
+            {title}
+          </Txt>
+          {loading ? <ActivityIndicator size="small" color={c.sub} /> : openCalendar ? <ChevronDown size={20} color={c.tertiary} strokeWidth={2.6} style={{ marginTop: 6 }} /> : null}
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <RoundStep dir={-1} unit={week ? "week" : "day"} disabled={atStart} onPress={() => onChange(stepDay(date, -step, today, firstDay))} />
+        <RoundStep dir={1} unit={week ? "week" : "day"} disabled={atEnd} onPress={() => onChange(stepDay(date, step, today, firstDay))} />
+      </View>
       {ownCalendar && (
         <CalendarSheet
           open={calendarOpen}

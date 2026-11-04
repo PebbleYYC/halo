@@ -16,7 +16,8 @@ import { InsightCard, SectionShell, TrendChart, Txt, useTheme, type TrendRange, 
 import { ExpandButton } from "@/ui/components/ChartFrame";
 import { useOpenChart, type ChartRange } from "@/screens/chart/href";
 import { useCalm } from "@/ui/calm";
-import { AvatarButton } from "@/ui/components/AvatarButton";
+import { InfoButton } from "@/ui/components/InfoButton";
+import { TabCorner } from "@/screens/health/shells";
 import { useBottomClearance } from "@/ui/components/PageShell";
 import { SleepWeekCard } from "@/screens/home/calm";
 import { Anchor, DetailScreen, LoadError, useAnchors, type Anchors } from "./DetailScreen";
@@ -81,7 +82,9 @@ function SleepView({ tab = false }: { tab?: boolean }) {
     title: "Sleep",
     info: SLEEP_INFO,
     onBack: tab ? undefined : onBack,
-    lead: tab ? <AvatarButton /> : undefined,
+    // A tab: info at the top left, the sync status and avatar at the top right (every tab's corner).
+    lead: tab ? <InfoButton info={SLEEP_INFO} label={"Sleep"} variant="header" /> : undefined,
+    action: tab ? <TabCorner /> : undefined,
     bottomInset: tab ? tabClearance : undefined,
     dateSwitcher: switcher(!!q.data && !vm),
     banner: <GlassSegmented value={mode} onChange={setMode} items={MODES} accessibilityLabel="Range" />,

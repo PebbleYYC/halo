@@ -1,6 +1,7 @@
 // Screen chrome for the Health screens: the kit's PageShell and DetailShell layouts with pull-to-refresh, the back
 // and day-switch behaviour, the header's sync status, and the error state. The kit shells own their ScrollView and
 // take no RefreshControl, so these compose the same kit pieces (Ground, TitleHeader, DetailHeader, the large title).
+import { AvatarButton } from "@/ui/components/AvatarButton";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { useRouter, type Href, useScrollToTop } from "expo-router";
@@ -74,7 +75,7 @@ export function useDaySwitcher(d: string, today: string): DateSwitcherProps {
 }
 
 /** The header's sync status (the web's ShellStatus): it opens a sheet with the last sync and Sync now. */
-function HeaderSync() {
+export function HeaderSync({ hideText = false }: { hideText?: boolean }) {
   const app = useApp();
   const now = useNow();
   const [open, setOpen] = React.useState(false);
@@ -86,7 +87,7 @@ function HeaderSync() {
   const view = syncView(status, now);
   return (
     <>
-      <SyncStatus status={status} now={now} onPress={() => setOpen(true)} />
+      <SyncStatus status={status} now={now} onPress={() => setOpen(true)} hideText={hideText} />
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
@@ -103,6 +104,16 @@ function HeaderSync() {
         </View>
       </BottomSheet>
     </>
+  );
+}
+
+/** Every tab's top right, as on Today: the band's sync status, then the avatar (to More). */
+export function TabCorner() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <HeaderSync hideText />
+      <AvatarButton />
+    </View>
   );
 }
 
@@ -125,7 +136,7 @@ export function TabShell({ title, lead, onBack, gap = 32, children }: { title: s
       <Ground />
       {/* Every frame's offset reaches the UI thread: the floating bar's inline title and scroll edge follow it. The page
           is the glass's backdrop: the bar's round buttons (its overlay) bend what scrolls under them. */}
-      <GlassTarget style={{ flex: 1 }} overlay={<TitleHeader title={title} lead={lead} onBack={onBack} right={<HeaderSync />} scrollY={revealY} />}>
+      <GlassTarget style={{ flex: 1 }} overlay={<TitleHeader title={title} lead={lead} onBack={onBack} right={onBack ? <HeaderSync /> : <TabCorner />} scrollY={revealY} />}>
         <PullToRefresh {...pull} y={revealY} top={top}>
           <Animated.ScrollView ref={setRef} overScrollMode="never" scrollEventThrottle={16} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: clearance }} contentInsetAdjustmentBehavior="never">
             <LargeTitle title={title} y={revealY} />

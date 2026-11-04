@@ -160,7 +160,7 @@ function Ready({ state, link }: { state: ConnectorState; link: string | null }) 
               On claude.ai (a browser on this phone works) or in the Claude desktop app: Customize › Connectors › Add custom connector. Paste this link; if it asks how people sign in, choose No sign-in. Then Add. It also
               shows up in the Claude phone app. The free plan allows one custom connector.
             </Txt>
-            <View style={{ borderRadius: 12, backgroundColor: c.fill, padding: 12 }}>
+            <View style={{ borderRadius: 14, backgroundColor: c.fill, padding: 12 }}>
               <Txt size={13} lineHeight={18} selectable style={{ color: c.ink, fontFamily: "monospace" }}>
                 {link ?? "…"}
               </Txt>

@@ -13,11 +13,11 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle, type SharedValu
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Line } from "react-native-svg";
 import { useRouter, type Href } from "expo-router";
-import { ChevronDown, ChevronLeft, ChevronRight, HeartPulse, Moon } from "lucide-react-native";
+import { ChevronDown, HeartPulse, Moon } from "lucide-react-native";
 import { BAND_WORD, recoveryBand } from "@/lib/bands";
 import { DAY, dayLabel, formatDay, formatValue, MISSING } from "@/lib/format";
 import { reasonCopy } from "@/lib/reasons";
-import { alpha, mix } from "@/lib/utils";
+import { mix } from "@/lib/utils";
 import { getTrends, type HomeVM, type KeyStat } from "@/queries";
 import { useApp, useQuery } from "@/state/app";
 import { useMe } from "@/state/me";
@@ -25,14 +25,13 @@ import { SyncStatus, Txt, type SyncShellStatus } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { CalendarSheet } from "@/ui/components/CalendarSheet";
 import { CalmSurface, PillAction } from "@/ui/components/CalmSurface";
-import { stepDay } from "@/ui/components/DateSwitcher";
+import { RoundStep, stepDay } from "@/ui/components/DateSwitcher";
 import { BAR_ROW, BarEdge } from "@/ui/components/DetailHeader";
 import { BAR_BUTTON, GlassButton, GlassCapsule } from "@/ui/components/GlassButton";
 import { RING_LAND_MS, RING_STAGGER, RollingNumber, ScoreRings } from "@/ui/components/Halo";
 import { StreakFlame, UserAvatar } from "@/ui/components/HomeHeader";
 import { usePress, usePressStyle } from "@/ui/components/press";
 import { font } from "@/ui/fonts";
-import { haptic } from "@/ui/motion/haptics";
 import { useTheme } from "@/ui/ThemeProvider";
 import { chartHref } from "@/screens/chart/href";
 import { HomeCard, RowRule } from "./controls";
@@ -54,7 +53,8 @@ const hm = (min: number | null | undefined) => {
 };
 const hmText = (min: number | null | undefined) => {
   const t = hm(min);
-  return t ? `${t.h}h ${String(t.m).padStart(2, "0")}m` : null;
+  // The app's one written duration ("6 h 28 min", as the outlook and the Sleep tab write it).
+  return t ? (t.h ? `${t.h} h ${t.m} min` : `${t.m} min`) : null;
 };
 
 /** "6 hours 11 minutes", for a screen reader. */
@@ -119,37 +119,6 @@ export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<
 // The large title
 
 /**
- * A round step button beside the large title, iOS's tinted button: a light blue fill under a bold blue chevron, so it
- * reads as a control on the pastel wash (the old system-grey fill all but vanished there). Where the days stop it turns
- * the quiet grey with a grey chevron.
- */
-function StepButton({ dir, disabled, onPress }: { dir: -1 | 1; disabled: boolean; onPress: () => void }) {
-  const c = useCalm();
-  const dark = useTheme().scheme === "dark";
-  const press = usePress(0.9);
-  const pressed = usePressStyle(press, { rest: disabled ? 0.6 : 1, dim: 0.6 });
-  const Icon = dir < 0 ? ChevronLeft : ChevronRight;
-  return (
-    <PressableView
-      onPress={() => {
-        haptic.select();
-        onPress();
-      }}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={dir < 0 ? "Previous day" : "Next day"}
-      accessibilityState={{ disabled }}
-      hitSlop={4}
-      style={[{ width: 40, height: 40, borderRadius: 20, backgroundColor: disabled ? c.fill : alpha(c.teal, dark ? 0.26 : 0.15), alignItems: "center", justifyContent: "center" }, pressed]}
-    >
-      <Icon size={23} color={disabled ? c.tertiary : c.teal} strokeWidth={2.8} style={dir < 0 ? { marginLeft: -2 } : { marginRight: -2 }} />
-    </PressableView>
-  );
-}
-
-/**
  * The page's opening, iOS's large title: the day as a caps eyebrow ("FRIDAY, OCTOBER 17") over "Today" (or
  * "Yesterday", or the day) in 34 px bold, with the previous and next day beside it. A tap on the title opens the month
  * calendar. As the page scrolls the block shrinks toward its left edge and fades as it slides under the bar, where the
@@ -186,8 +155,8 @@ export function TodayTitle({ y, day, today, firstDay, loading, onChange, greetin
           {loading ? <ActivityIndicator size="small" color={c.sub} /> : <ChevronDown size={20} color={c.tertiary} strokeWidth={2.6} style={{ marginTop: 6 }} />}
         </Pressable>
         <View style={{ flex: 1 }} />
-        <StepButton dir={-1} disabled={!!firstDay && day <= firstDay} onPress={() => onChange(stepDay(day, -1, today, firstDay))} />
-        <StepButton dir={1} disabled={day >= today} onPress={() => onChange(stepDay(day, 1, today, firstDay))} />
+        <RoundStep dir={-1} disabled={!!firstDay && day <= firstDay} onPress={() => onChange(stepDay(day, -1, today, firstDay))} />
+        <RoundStep dir={1} disabled={day >= today} onPress={() => onChange(stepDay(day, 1, today, firstDay))} />
       </View>
       <CalendarSheet
         open={calendar}

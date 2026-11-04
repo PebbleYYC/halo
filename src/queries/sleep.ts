@@ -19,6 +19,7 @@ import {
   vitalReason,
   trendPoints,
 } from "./common";
+import { minutesText } from "./outlook";
 import type { KeyStat, Metric, SleepStatus, SleepVM, TimePoint } from "./types";
 
 type Stage = "awake" | "rem" | "light" | "deep";
@@ -207,10 +208,11 @@ export function insightOf(rows: Map<string, DayRow>, day: string, tz: string): s
   const shift = usual == null ? 0 : bedMin(main.start, tz) - usual;
   const consistency = row?.sleep?.consistency;
   if (Math.abs(shift) >= 45) {
-    return `Your sleep was ${word}. Consistency is the easiest win: you went to bed ${Math.abs(Math.round(shift))} minutes ${shift > 0 ? "later" : "earlier"} than usual.`;
+    return `Your sleep was ${word}. Consistency is the easiest win: you went to bed ${minutesText(Math.abs(shift))} ${shift > 0 ? "later" : "earlier"} than usual.`;
   }
   if (finite(consistency) && consistency < 70) return `Your sleep was ${word}. Keeping a steadier bedtime and wake time would lift your consistency.`;
   const need = nightNeedMin(row?.sleep);
-  if (need && main.asleepMin < need * 0.85) return `Your sleep was ${word}. You slept ${Math.round(need - main.asleepMin)} minutes less than you needed; an earlier night helps.`;
+  // "Sufficient" and a 2-hour shortfall read as a contradiction side by side: the shortfall leads, the word follows with "but".
+  if (need && main.asleepMin < need * 0.85) return `Your sleep was ${word}${word === "poor" ? "" : ", but"}${word === "poor" ? ":" : ""} you slept ${minutesText(need - main.asleepMin)} less than you needed. An earlier night helps.`;
   return `Your sleep was ${word}. You kept to your usual schedule and slept close to your need.`;
 }

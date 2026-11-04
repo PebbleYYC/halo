@@ -138,9 +138,9 @@ export function DetailScreen({
     >
       <RevealScroll.Provider value={keyboardAware ? null : scrollY}>
         <View ref={anchors?.content} collapsable={false}>
-          <DetailLargeTitle title={title} subtitle={subtitle} titleIcon={titleIcon} dateTitle={inHeader ? dateSwitcher : undefined} y={scrollY} />
+          <DetailLargeTitle title={title} subtitle={subtitle} titleIcon={titleIcon} dateTitle={inHeader ? dateSwitcher : undefined} dayRow={dateSwitcher && !inHeader && lead ? dateSwitcher : undefined} y={scrollY} />
           {banner && <View style={{ marginBottom: 16 }}>{banner}</View>}
-          {dateSwitcher && !inHeader && (
+          {dateSwitcher && !inHeader && !lead && (
             <View style={{ marginBottom: 16, alignItems: "center" }}>
               {/* Bare chevrons and the day, no pill: "‹ Mon, Sep 14 ›" (spec §11 F15). */}
               <DateSwitcher {...dateSwitcher} placement="header" />

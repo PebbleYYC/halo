@@ -54,7 +54,7 @@ function HoursMinutes({ minutes }: { minutes: number }) {
       {h > 0 && (
         <>
           <RollingNumber text={String(h)} lineHeight={BIG_LINE} style={face} />
-          {unit("hr")}
+          {unit("h")}
         </>
       )}
       <RollingNumber text={String(m % 60)} lineHeight={BIG_LINE} style={face} />

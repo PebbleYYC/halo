@@ -19,7 +19,7 @@ import { CalorieBreakdown } from "@/ui/components/CalorieBreakdown";
 import { MetricTags } from "@/ui/components/primitives";
 import { useOpenChart, type ChartRange } from "@/screens/chart/href";
 import { useCalm, type CalmPalette } from "@/ui/calm";
-import { AvatarButton } from "@/ui/components/AvatarButton";
+import { TabCorner } from "@/screens/health/shells";
 import { useBottomClearance } from "@/ui/components/PageShell";
 import { font } from "@/ui/fonts";
 import { GoalsCard } from "@/screens/home/GoalsCard";
@@ -86,7 +86,9 @@ function StrainView({ tab = false }: { tab?: boolean }) {
     title: tab ? "Activity" : "Strain",
     info: STRAIN_INFO,
     onBack: tab ? undefined : onBack,
-    lead: tab ? <AvatarButton /> : undefined,
+    // A tab: info at the top left, the sync status and avatar at the top right (every tab's corner).
+    lead: tab ? <InfoButton info={STRAIN_INFO} label={tab ? "Activity" : "Strain"} variant="header" /> : undefined,
+    action: tab ? <TabCorner /> : undefined,
     bottomInset: tab ? tabClearance : undefined,
     dateSwitcher: switcher(!!q.data && !vm),
     refreshing,
@@ -261,7 +263,7 @@ const WorkoutTimeCard = React.memo(function WorkoutTimeCard({ vm, today, open }:
 function TargetRow({ vm }: { vm: StrainVM }) {
   const c = useCalm();
   const t = vm.target;
-  const text = t.value ? `${formatValue("decimal1", t.value.low)} – ${formatValue("decimal1", t.value.high)}` : "--";
+  const text = t.value ? `${formatValue("decimal1", t.value.low)}–${formatValue("decimal1", t.value.high)}` : "--";
   const reason = t.value ? null : reasonCopy(t.reason, t.nightsLeft).short;
   return (
     <ListRow
@@ -269,7 +271,7 @@ function TargetRow({ vm }: { vm: StrainVM }) {
       iconColor={c.system.orange}
       label="Strain Target"
       detail={reason ?? (t.value?.estimate ? <MetricTags extra={["estimate"]} align="flex-start" style={{ marginTop: 3 }} /> : undefined)}
-      accessibilityLabel={reason ? `Strain Target: ${reason}` : `Strain Target ${text.replace(" – ", " to ")}${t.value?.estimate ? ", estimate" : ""}`}
+      accessibilityLabel={reason ? `Strain Target: ${reason}` : `Strain Target ${text.replace("–", " to ")}${t.value?.estimate ? ", estimate" : ""}`}
       right={
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Txt size={20} lineHeight={24} style={[font.numberAt(20), { color: reason ? c.faint : c.tintInk.peach }]}>

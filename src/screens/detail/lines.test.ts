@@ -21,7 +21,7 @@ describe("targetLine", () => {
     expect(targetLine(10, null)).toBeNull();
   });
   it("says how far below the target the day is", () => {
-    expect(targetLine(8.5, t)).toBe("3.5 below today’s Strain Target of 12.0 – 15.0.");
+    expect(targetLine(8.5, t)).toBe("3.5 below today’s Strain Target of 12.0 to 15.0.");
   });
   it("says inside at both edges and past above it", () => {
     expect(targetLine(12, t)).toBe("Inside today’s Strain Target.");

@@ -15,7 +15,7 @@ export function strainWord(v: number): string {
 /** The day against its Strain Target, in a line: below it (by how much), inside it, or past it; nothing without both. */
 export function targetLine(strain: number | null, t: { low: number; high: number } | null): string | null {
   if (strain === null || !t) return null;
-  if (strain < t.low) return `${formatValue("decimal1", t.low - strain)} below today’s Strain Target of ${formatValue("decimal1", t.low)} – ${formatValue("decimal1", t.high)}.`;
+  if (strain < t.low) return `${formatValue("decimal1", t.low - strain)} below today’s Strain Target of ${formatValue("decimal1", t.low)} to ${formatValue("decimal1", t.high)}.`;
   return strain > t.high ? "Past today’s Strain Target: prioritise sleep tonight." : "Inside today’s Strain Target.";
 }
 
