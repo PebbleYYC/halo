@@ -365,6 +365,29 @@ describe("metrics", () => {
 });
 
 describe("exercises and daily values", () => {
+  it("credits a workout with the records near it, long records included, in any input order", () => {
+    const { exercises } = mapRecords(
+      {
+        ExerciseSession: [
+          { metadata: meta("walk"), startTime: at("2026-10-02", "10:00:00"), endTime: at("2026-10-02", "10:30:00"), exerciseType: ExerciseType.WALKING },
+          { metadata: meta("bike"), startTime: at("2026-10-03", "18:00:00"), endTime: at("2026-10-03", "19:00:00"), exerciseType: ExerciseType.BIKING },
+        ],
+        ActiveCaloriesBurned: [
+          // Out of order on purpose; the 2-hour record starts well before the walk and adds its 15-minute share.
+          { metadata: meta("c3"), startTime: at("2026-10-03", "18:30:00"), endTime: at("2026-10-03", "19:30:00"), energy: { inKilocalories: 120 } },
+          { metadata: meta("c1"), startTime: at("2026-10-02", "08:15:00"), endTime: at("2026-10-02", "10:15:00"), energy: { inKilocalories: 240 } },
+          { metadata: meta("c2"), startTime: at("2026-10-02", "10:15:00"), endTime: at("2026-10-02", "10:30:00"), energy: { inKilocalories: 60 } },
+          { metadata: meta("c4"), startTime: at("2026-10-02", "10:30:00"), endTime: at("2026-10-02", "11:00:00"), energy: { inKilocalories: 999 } }, // starts as the walk ends
+        ],
+      },
+      TZ,
+    );
+    expect(exercises.map((e) => [e.id, e.calories])).toEqual([
+      ["walk", 90],
+      ["bike", 60],
+    ]);
+  });
+
   const len = (m: number) => ({ inMeters: m, inKilometers: m / 1000, inMiles: m / 1609.344, inInches: m * 39.3701, inFeet: m * 3.28084 });
   const energy = (v: number) => ({ inKilocalories: v, inCalories: v * 1000, inJoules: v * 4184, inKilojoules: v * 4.184 });
 

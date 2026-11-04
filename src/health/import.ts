@@ -313,6 +313,40 @@ function morningWindow(day: string, tz: string): Interval {
 
 const inside = (t: number, w: Interval) => t >= w.startTs && t < w.endTs;
 
+/** First index in `xs` (sorted by `key`) whose key is at least `v`. */
+function lowerBound<T>(xs: T[], v: number, key: (x: T) => number): number {
+  let lo = 0;
+  let hi = xs.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (key(xs[mid]) < v) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** The readings (sorted by `t`) with window.startTs <= t < window.endTs, in order: two binary searches, not a scan. */
+function within<T extends { t: number }>(xs: T[], w: Interval): T[] {
+  return xs.slice(lowerBound(xs, w.startTs, (x) => x.t), lowerBound(xs, w.endTs, (x) => x.t));
+}
+
+/** Interval records parsed once and sorted by start, with the longest record's length, for windowed lookups. */
+type IntervalIndex<T> = { items: { r: T; w: Interval; src: string }[]; maxLen: number };
+
+function* indexIntervals<T extends { startTime: string; endTime: string } & Sourced>(records: T[]): Steps<IntervalIndex<T>> {
+  const items: IntervalIndex<T>["items"] = [];
+  let maxLen = 0;
+  let n = 0;
+  for (const r of records) {
+    if (++n % PAUSE_EVERY === 0) yield;
+    const w = interval(r);
+    maxLen = Math.max(maxLen, w.endTs - w.startTs);
+    items.push({ r, w, src: sourceOf(r) });
+  }
+  items.sort((a, b) => a.w.startTs - b.w.startTs);
+  return { items, maxLen };
+}
+
 // The loops that grow with the records read (a day's heart-rate samples, a window of per-minute calorie records) are
 // generators that pause at a `yield` every PAUSE_EVERY items, so the sync can give the JS thread back between pauses
 // (sync.ts runs them with sliced(), src/lib/yield.ts). The exported functions run them straight through with finish(),
@@ -541,22 +575,28 @@ export function* mapExercisesSteps(
   tz: string,
 ): Steps<Exercise[]> {
   const out: Exercise[] = [];
+  // Each record list is parsed and sorted once; a workout then reads only the records near it (a full re-import has
+  // hundreds of workouts and hundreds of thousands of per-minute records: scanning them all per workout took half an hour).
+  const calIndex = yield* indexIntervals(activeCalories);
+  const distIndex = yield* indexIntervals(distance);
   let n = 0;
   for (const r of sessions) {
     const w = interval(r);
     if (w.endTs - w.startTs < MIN_EXERCISE_SEC) continue;
     // The workout's share of each record, summed within a source; the largest source wins (band and phone both measure).
-    const largest = function* <T extends { startTime: string; endTime: string } & Sourced>(records: T[], value: (r: T) => number): Steps<number | null> {
+    const largest = function* <T>(index: IntervalIndex<T>, value: (r: T) => number): Steps<number | null> {
       const bySource = new Map<string, number>();
-      for (const r of records) {
+      const { items } = index;
+      for (let i = lowerBound(items, w.startTs - index.maxLen, (x) => x.w.startTs); i < items.length && items[i].w.startTs <= w.endTs; i++) {
         if (++n % PAUSE_EVERY === 0) yield;
-        const share = overlapShare(interval(r), w);
-        if (share > 0) bySource.set(sourceOf(r), (bySource.get(sourceOf(r)) ?? 0) + value(r) * share);
+        const it = items[i];
+        const share = overlapShare(it.w, w);
+        if (share > 0) bySource.set(it.src, (bySource.get(it.src) ?? 0) + value(it.r) * share);
       }
       return bySource.size ? Math.max(...bySource.values()) : null;
     };
-    const kcal = yield* largest(activeCalories, (c) => c.energy.inKilocalories);
-    const metres = yield* largest(distance, (d) => d.distance.inMeters);
+    const kcal = yield* largest(calIndex, (c) => c.energy.inKilocalories);
+    const metres = yield* largest(distIndex, (d) => d.distance.inMeters);
     out.push({
       id: r.metadata?.id ?? `hc-exercise-${w.startTs}-${w.endTs}`,
       day: localDay(w.startTs, tz),
@@ -812,6 +852,19 @@ export function* mapMetricsSteps(input: MetricsInput, sessions: Session[], steps
   const weight = instant(input.Weight);
   const fat = instant(input.BodyFat);
   for (const xs of [hrv, rhr, resp, spo2, vo2, weight, fat]) for (const x of xs) days.add(x.day);
+  // Each array grouped by local day once (in time order), so a day reads its own readings, not every reading.
+  const byDay = <T extends { day: string }>(xs: T[]) => {
+    const m = new Map<string, T[]>();
+    for (const x of xs) {
+      const list = m.get(x.day);
+      if (list) list.push(x);
+      else m.set(x.day, [x]);
+    }
+    return m;
+  };
+  const [rhrDay, vo2Day, weightDay, fatDay] = [byDay(rhr), byDay(vo2), byDay(weight), byDay(fat)];
+  const respDay = byDay(resp);
+  const spo2Day = byDay(spo2);
   const skin = (input.SkinTemperature ?? []).map((r) => ({ r, w: interval(r) }));
   for (const { w } of skin) days.add(localDay(w.endTs, tz));
 
@@ -821,21 +874,21 @@ export function* mapMetricsSteps(input: MetricsInput, sessions: Session[], steps
     const morning = morningWindow(day, tz);
 
     // Nightly readings: inside the main sleep, else a fallback window.
-    const nightly = <T>(xs: { t: number; day: string; r: T }[], fallback: "morning" | "day") => {
-      const inNight = night ? xs.filter((x) => inside(x.t, night)) : [];
+    const nightly = <T>(xs: { t: number; day: string; r: T }[], fallback: Map<string, { r: T }[]> | null) => {
+      const inNight = night ? within(xs, night) : [];
       if (inNight.length) return inNight.map((x) => x.r);
-      return xs.filter((x) => (fallback === "morning" ? inside(x.t, morning) : x.day === day)).map((x) => x.r);
+      return (fallback ? (fallback.get(day) ?? []) : within(xs, morning)).map((x) => x.r);
     };
-    const hrvMs = mean(nightly(hrv, "morning").map((r) => r.heartRateVariabilityMillis));
-    const respBpm = mean(nightly(resp, "day").map((r) => r.rate));
-    const spo2Pct = mean(nightly(spo2, "day").map((r) => r.percentage));
-    const latestRhr = rhr.filter((x) => x.day === day).at(-1);
-    const dayVo2 = vo2.filter((x) => x.day === day);
+    const hrvMs = mean(nightly(hrv, null).map((r) => r.heartRateVariabilityMillis));
+    const respBpm = mean(nightly(resp, respDay).map((r) => r.rate));
+    const spo2Pct = mean(nightly(spo2, spo2Day).map((r) => r.percentage));
+    const latestRhr = rhrDay.get(day)?.at(-1);
+    const dayVo2 = vo2Day.get(day) ?? [];
     const measuredVo2 = dayVo2.filter((x) => MEASURED_VO2_METHODS.has(x.r.measurementMethod)).at(-1);
     const estimatedVo2 = dayVo2.filter((x) => !MEASURED_VO2_METHODS.has(x.r.measurementMethod)).at(-1);
     // Weight and body fat: the latest reading of the local day, as the web maps Google's sample types.
-    const latestWeight = weight.filter((x) => x.day === day).at(-1);
-    const latestFat = fat.filter((x) => x.day === day).at(-1);
+    const latestWeight = weightDay.get(day)?.at(-1);
+    const latestFat = fatDay.get(day)?.at(-1);
 
     // Skin temperature: records overlapping the main sleep (else the morning window), deltas pooled.
     const tempWindow = night ?? morning;
