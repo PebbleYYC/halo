@@ -98,12 +98,12 @@ export function ActivityCostCard({ cost }: { cost: NonNullable<ActivityVM["cost"
         <Sentence>{costSentence(e, cost)}</Sentence>
         <View style={{ borderTopWidth: 0.5, borderTopColor: c.line }}>
           {rows.map(([k, v], i) => (
-            // A label that wraps keeps its value on its first line.
+            // The label keeps its words whole; a long value wraps in its own half (never "boun-ce-back").
             <View key={k} accessible accessibilityLabel={`${k}: ${v}`} style={[{ minHeight: 44, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, paddingVertical: 11 }, i > 0 && { borderTopWidth: 0.5, borderTopColor: c.line }]}>
               <Txt size={16} lineHeight={21} style={{ flex: 1, minWidth: 0, color: c.ink }}>
                 {k}
               </Txt>
-              <Txt size={16} lineHeight={21} style={[font.numeric(500), { color: c.sub, flexShrink: 1, textAlign: "right" }]}>
+              <Txt size={16} lineHeight={21} style={[font.numeric(500), { color: c.sub, flexShrink: 1, maxWidth: "50%", textAlign: "right" }]}>
                 {v}
               </Txt>
             </View>

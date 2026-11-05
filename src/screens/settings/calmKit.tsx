@@ -400,7 +400,7 @@ export function InfoLine({ label, value, numeric = false, valueColor, children }
         {label}
       </Txt>
       {value !== undefined ? (
-        <Txt size={16} lineHeight={21} align="right" style={[{ color: valueColor ?? c.sub, flexShrink: 1 }, numeric ? font.numeric(500) : null]}>
+        <Txt size={16} lineHeight={21} align="right" style={[{ color: valueColor ?? c.sub, flexShrink: 1, maxWidth: "50%" }, numeric ? font.numeric(500) : null]}>
           {value}
         </Txt>
       ) : (

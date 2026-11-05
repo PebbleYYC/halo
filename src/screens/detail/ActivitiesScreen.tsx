@@ -149,7 +149,7 @@ function DayHead({ g, today }: { g: Group; today: string }) {
     <SectionLabel
       right={
         aside ? (
-          <Txt size={13} lineHeight={18} style={[TABULAR, { color: c.sub, flexShrink: 1, textAlign: "right" }]}>
+          <Txt size={13} lineHeight={18} style={[TABULAR, { color: c.sub, flexShrink: 1, maxWidth: "60%", textAlign: "right" }]}>
             {aside}
           </Txt>
         ) : undefined
