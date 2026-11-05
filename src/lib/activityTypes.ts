@@ -2,8 +2,12 @@
 // "Interval Workout"); Health Connect carries a type code and, from Fitbit, usually that name as the title. Halo shows
 // the title when there is one, else Fitbit's name for the type, and the editor offers Fitbit's list.
 
-/** Fitbit's exercise list, in the order its picker shows the common ones, each with its Health Connect type. */
-export const FITBIT_EXERCISES: { label: string; type: string }[] = [
+/**
+ * Fitbit's exercise list, in the order its picker shows the common ones, each with its Health Connect type. Health
+ * Connect has no type for some (housework, yard work): Fitbit sends those as a general workout under their name, so
+ * picking one sets that `name` too.
+ */
+export const FITBIT_EXERCISES: { label: string; type: string; name?: string }[] = [
   { label: "Walk", type: "WALKING" },
   { label: "Run", type: "RUNNING" },
   { label: "Treadmill", type: "RUNNING_TREADMILL" },
@@ -42,10 +46,12 @@ export const FITBIT_EXERCISES: { label: string; type: string }[] = [
   { label: "Climbing", type: "ROCK_CLIMBING" },
   { label: "Rowing", type: "ROWING" },
   { label: "Paddling", type: "PADDLING" },
+  { label: "Housework", type: "OTHER_WORKOUT", name: "Housework" },
+  { label: "Yard Work", type: "OTHER_WORKOUT", name: "Yard Work" },
   { label: "Workout", type: "OTHER_WORKOUT" },
 ];
 
-const LABEL = new Map(FITBIT_EXERCISES.map((e) => [e.type, e.label]));
+const LABEL = new Map(FITBIT_EXERCISES.filter((e) => !e.name).map((e) => [e.type, e.label]));
 
 /** "ICE_HOCKEY" → "Ice hockey", for a type Fitbit's list doesn't name. */
 const pretty = (type: string) => {
@@ -55,6 +61,12 @@ const pretty = (type: string) => {
 
 /** Fitbit's name for a Health Connect exercise type. */
 export const typeLabel = (type: string) => LABEL.get(type) ?? pretty(type);
+
+/** The list entry a workout matches: a named one (Housework) by its name, else its type's. */
+export function exerciseEntry(type: string, name: string | null | undefined) {
+  const n = name?.trim().toLowerCase();
+  return FITBIT_EXERCISES.find((x) => x.type === type && x.name && x.name.toLowerCase() === n) ?? FITBIT_EXERCISES.find((x) => x.type === type && !x.name) ?? null;
+}
 
 /** A workout's name as Fitbit shows it: its own title, else its type's name. */
 export const workoutName = (e: { type: string; name: string | null }) => e.name?.trim() || typeLabel(e.type);

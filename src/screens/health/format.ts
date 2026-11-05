@@ -1,7 +1,6 @@
 // Health formatting helpers, ported from Halo's src/app/(app)/health/format.ts (tones are theme token names), and the
 // Halo Age screen's small pure sums: the age scale's span and the week-on-week change.
 import { formatValue } from "@/lib/format";
-import { addDays } from "@/lib/time";
 import type { CalmPalette } from "@/ui/calm";
 import type { ColorToken } from "@/ui/theme";
 
@@ -31,19 +30,7 @@ export function ageSpan(a: number, b: number): [number, number] {
   return [lo, Math.max(hi, lo + 10)];
 }
 
-/**
- * The Halo Age a week before the shown one: the latest reading in the weekly `history` before `asOf`, if it falls within
- * the 7 days before it (an older one is not "last week"); null otherwise.
- */
-export function weekBefore(history: readonly { day: string; value: number | null }[], asOf: string): number | null {
-  const floor = addDays(asOf, -7);
-  for (let i = history.length - 1; i >= 0; i--) {
-    const p = history[i];
-    if (p.day >= asOf || p.value === null) continue;
-    return p.day >= floor ? p.value : null;
-  }
-  return null;
-}
+export { weekBefore } from "@/queries/health";
 
 /** "excellent" (the core's key) → "Excellent". */
 export const categoryWord = (c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();

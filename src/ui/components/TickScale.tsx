@@ -109,7 +109,7 @@ function Scale({ p, value, provisional }: { p: TickScaleProps; value: number | n
   // The knob's ring: the gradient's colour under it, else its band's, else the ink.
   const knobColor = frac === null ? calm.faint : p.colors?.length ? colorAt(p.colors, frac) : band ? toneColor(band.tone) : calm.ink;
   const segments = (p.bands ?? []).map((b) => ({ from: clamp01((b.from - p.min) / span), to: clamp01((b.to - p.min) / span), color: alpha(toneColor(b.tone), 0.45) }));
-  const symbol = p.unit === "%" || p.unit === "x";
+  const symbol = p.unit === "%" || p.unit === "x" || p.unit === "×";
   const size = p.variant === "meter" ? 24 : 22;
   const label = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
