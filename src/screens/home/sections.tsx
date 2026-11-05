@@ -98,7 +98,7 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
           <HomeInsight key={vm.insights.map((it) => it.key).join()} items={vm.insights} />
         )}
         {vm.outlook && <DayBanner key="outlook" outlook={vm.outlook} />}
-        {vm.state && <StateCard key="state" state={vm.state} timeZone={timeZone} onOpen={() => go(at("/health/stress"))} onBreathe={() => go("/breathe")} />}
+        {(vm.state || vm.isToday) && <StateCard key="state" state={vm.state} today={vm.isToday} timeZone={timeZone} onOpen={() => go(at("/health/stress"))} onBreathe={() => go("/breathe")} />}
         {vm.isToday && <HeadacheCard key="headache" onOpen={() => go("/health/headache")} />}
         {vm.phone && <PhoneActivity key="phone" stats={vm.phone} day={vm.day} today={vm.today} open={open} />}
         <SectionTitle

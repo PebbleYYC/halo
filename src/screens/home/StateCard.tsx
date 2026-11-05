@@ -22,12 +22,30 @@ const LOOK: Record<StateKey, { label: string; title: string; tint: CalmTint; col
   active: { label: "On the move", title: "On the move", tint: "sand", icon: Footprints, line: "Stress is read while you’re still, so it pauses while you move." },
 };
 
-export function StateCard({ state, timeZone, onOpen, onBreathe }: { state: DayState; timeZone: string; onOpen: () => void; onBreathe: () => void }) {
+const EMPTY: DayState = { now: null, mix: { calm: 0, focused: 0, stressed: 0, active: 0 } };
+
+/**
+ * On today the card always has its place, so stress never seems to vanish: first thing in the morning (Fitbit sends
+ * heart rate in batches, and the night doesn't count) it says what it is waiting for. A past day without stress shows nothing.
+ */
+export function StateCard({ state: given, today, timeZone, onOpen, onBreathe }: { state: DayState | null; today: boolean; timeZone: string; onOpen: () => void; onBreathe: () => void }) {
   const c = useCalm();
   const { c: theme } = useTheme();
+  const state = given ?? EMPTY;
   const total = ORDER.reduce((n, k) => n + state.mix[k], 0);
   const now = state.now ? LOOK[state.now.key] : null;
-  if (!now && total < 15) return null;
+  const waiting = !now && total < 15;
+  if (waiting && !today) return null;
+  if (waiting)
+    return (
+      <HomeCard icon={Leaf} iconTint="sky" title="Stress so far today" onPress={onOpen} accessibilityLabel="Stress so far today: not enough still minutes yet. Opens Stress." gap={8}>
+        <Txt size={15} lineHeight={20} style={{ color: c.sub }}>
+          {state.mix.active > 0
+            ? `Stress is read while you’re still; so far today you’ve mostly been on the move (${minutesText(state.mix.active)}).`
+            : "Stress is read from your still, awake minutes. It shows here once your band has synced a few of them this morning."}
+        </Txt>
+      </HomeCard>
+    );
   const title = now ? `Right now: ${now.title}` : "Stress so far today";
   const dot = (k: StateKey) => theme[LOOK[k].color ?? "mutedForeground"];
   const moving = state.mix.active;
