@@ -23,6 +23,7 @@ Reading this as: a personal health app for one person checking in a few times a 
 
 - Nothing is ever readable under a bar. The top bar's scroll edge is near solid behind its buttons and title, and the page ground fills everything below the top of the tab bar.
 - Text never runs under or into another element. Long labels wrap or shrink to fit; they are never clipped behind an icon, a button or the system gesture bar.
+- A label beside a value keeps its words whole: the value takes at most half the row and wraps there, so no label ever breaks mid-word ("boun-ce-back").
 - Touch targets are at least 44 × 44 px and never closer than 8 px.
 - Sheets and dialogs cover what they sit over; nothing shows through a dialog's text.
 

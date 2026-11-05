@@ -135,7 +135,7 @@ function ImpactList({ vm }: { vm: JournalInsightsVM }) {
                     <Txt size={16} lineHeight={21} style={{ color: c.ink, flexShrink: 1, marginTop: 0.5 }}>
                       {k}
                     </Txt>
-                    <Txt size={16} lineHeight={22} align="right" style={[font.numeric(500), { color: c.sub, flexShrink: 1 }]}>
+                    <Txt size={16} lineHeight={22} align="right" style={[font.numeric(500), { color: c.sub, flexShrink: 1, maxWidth: "50%" }]}>
                       {v}
                     </Txt>
                   </View>
