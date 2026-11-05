@@ -60,8 +60,18 @@ export default function TabsLayout() {
   const action = coach ? { onAction: () => router.push("/coach" as Href), actionLabel: "Open Coach" } : checkIn;
   return (
     <>
-      {/* The pages are the glass's backdrop; the bar floats over them at the foot as the target's overlay. */}
-      <GlassTarget style={{ flex: 1 }} overlay={<FloatingTabBar {...action} />}>
+      {/* The pages are the glass's backdrop; the bar floats over them at the foot as the target's overlay. The fade is
+          in the overlay too, under the bar, as the top bar's scroll edge is: the glass bends the page itself (its
+          colours come through, like the streak capsule's), and the fade still hides text between and around it. */}
+      <GlassTarget
+        style={{ flex: 1 }}
+        overlay={
+          <>
+            <TabBarFade />
+            <FloatingTabBar {...action} />
+          </>
+        }
+      >
         {/* No freezeOnBlur: a frozen tab redrew everything that had changed the moment it was tapped, which was the lag
             on switching. The tabs stay live (and prebuilt), so a switch only shows one and hides another. */}
         <Tabs
@@ -79,8 +89,6 @@ export default function TabsLayout() {
           <Tabs.Screen name="journal" options={{ title: "Journal", href: null }} />
           <Tabs.Screen name="more" options={{ title: "More", href: null }} />
         </Tabs>
-        {/* Inside the target, so the glass bends the faded page and not the raw text under it. */}
-        <TabBarFade />
       </GlassTarget>
       <CheckInSheetHost />
       <TabPreloader />
