@@ -66,16 +66,12 @@ export async function getHealthHub(ctx: QueryCtx): Promise<HealthHubVM> {
     latestHr(ctx),
   ]);
   const hs = hsVm.result;
-  // Healthspan updates weekly: compare the shown week's pace with the stored week before it.
-  const prevDay = addDays(hsVm.asOf, -7);
-  const prevHs = (await loadDays(ctx, prevDay, prevDay)).get(prevDay)?.healthspan;
-  const prevPace = prevHs && prevHs.reason === null ? prevHs.paceOfAging : null;
   const st = row?.stress;
   const sameDays = [7, 14, 21, 28].map((k) => rows.get(addDays(today, -k))?.stress?.highMin).filter(finite);
   const tl = fit.trainingLoad.value;
   return {
     day: today,
-    healthspan: hs.value ? ok({ pulseAge: hs.value.pulseAge, deltaYears: hs.value.deltaYears, pace: hs.value.pace, paceDelta: prevPace == null || hs.value.pace == null ? null : hs.value.pace - prevPace }, hs.provisional) : none(hs.reason ?? "no_data", hs.nightsLeft),
+    healthspan: hs.value ? ok({ pulseAge: hs.value.pulseAge, deltaYears: hs.value.deltaYears, pace: hs.value.pace, ageDelta: ageDeltaOf(hsVm) }, hs.provisional) : none(hs.reason ?? "no_data", hs.nightsLeft),
     monitor: monitor.count.value
       ? ok({ vitals: monitor.vitals.map((v) => ({ key: v.key, short: v.short, status: v.status })), inRange: monitor.count.value.inRange, total: monitor.count.value.total })
       : none(monitor.count.reason ?? "no_data"),
@@ -645,4 +641,25 @@ export async function getHeartRate(day: string, ctx: QueryCtx): Promise<HeartRat
     zones: zoneRows(row),
     zoneNote: zoneNote(row, ctx),
   };
+}
+
+/**
+ * The Halo Age a week before the shown one: the latest reading in the weekly `history` before `asOf`, if it falls within
+ * the 7 days before it (an older one is not "last week"); null otherwise.
+ */
+export function weekBefore(history: readonly { day: string; value: number | null }[], asOf: string): number | null {
+  const floor = addDays(asOf, -7);
+  for (let i = history.length - 1; i >= 0; i--) {
+    const p = history[i];
+    if (p.day >= asOf || p.value === null) continue;
+    return p.day >= floor ? p.value : null;
+  }
+  return null;
+}
+
+/** The Halo Age's move since the week before: the one "vs. last week" both the Health tab and the Halo Age page show. */
+export function ageDeltaOf(vm: Pick<HealthspanVM, "result" | "history" | "asOf">): number | null {
+  const r = vm.result.value;
+  const prev = r ? weekBefore(vm.history, vm.asOf) : null;
+  return r && prev !== null ? r.pulseAge - prev : null;
 }

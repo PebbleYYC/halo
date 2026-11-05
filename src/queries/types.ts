@@ -367,8 +367,9 @@ export type Vital = {
 
 export type HealthHubVM = {
   day: string;
-  /** `paceDelta`: this week's Pace of Aging minus last week's; null without both. `pace` is null without 21 of 30 days. */
-  healthspan: Metric<{ pulseAge: number; deltaYears: number; pace: number | null; paceDelta: number | null }>;
+  /** `pace` is null without 21 of 30 days. */
+  /** `ageDelta`: this Halo Age minus the week before's (as the Halo Age page shows it); null without one. */
+  healthspan: Metric<{ pulseAge: number; deltaYears: number; pace: number | null; ageDelta: number | null }>;
   monitor: Metric<{ vitals: { key: VitalKey; short: string; status: Vital["status"] }[]; inRange: number; total: number }>;
   stress: Metric<{ highMin: number; typicalHighMin: number | null; /** Today’s weekday, short ("Mon"). */ weekday: string; spark: TimePoint[] }>;
   fitness: Metric<{ vo2max: number; category: string; percentile: number; acwr: number | null; acwrTone: ChipTone | null }>;

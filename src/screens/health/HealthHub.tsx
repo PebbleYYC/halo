@@ -23,7 +23,7 @@ import { Grow, HealthCard } from "./kit";
 import { toneInk } from "@/screens/detail/calmKit";
 import { categoryInk, categoryWord, ordinal } from "./format";
 import { LastReading } from "./LastReading";
-import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, type AgePill } from "./HaloAge";
+import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, weekPill, type AgePill } from "./HaloAge";
 import { ErrorState, TabShell, usePush } from "./shells";
 import { homeKey, useDashboardKeys } from "@/screens/home/dashboard";
 import { RecoveryCard } from "@/screens/home/calm";
@@ -36,13 +36,6 @@ import { nutritionOn } from "@/queries/food";
 import { useJournalVersion } from "@/screens/journal/state";
 
 const ACWR_WORD: Record<ChipTone, string> = { optimal: "Optimal", warning: "Pushing", alert: "High risk", neutral: "Detraining" };
-
-/** "Slower vs. last week" / "Faster vs. last week" / "No change vs. last week" (spec §6), from the week-on-week pace change. */
-function paceChip(delta: number | null) {
-  if (delta === null) return null;
-  if (Math.abs(delta) < 0.05) return { tone: "neutral" as const, word: "No change", text: "No change vs. last week" };
-  return delta < 0 ? { tone: "optimal" as const, word: "Slower", text: "Slower vs. last week" } : { tone: "warning" as const, word: "Faster", text: "Faster vs. last week" };
-}
 
 /** A note under the hero: 13/18 grey. */
 function Note({ children }: { children: string }) {
@@ -66,8 +59,8 @@ function HaloAge({ m, onPress }: { m: HealthHubVM["healthspan"] | undefined; onP
       </HaloAgeHeroSkeleton>
     );
   const v = m.value;
-  const chip = v ? paceChip(v.paceDelta) : null;
-  const pills: AgePill[] = v ? [pacePill(c, v.pace), ...(chip ? [{ label: "vs. last week", value: chip.word, color: toneInk(c, chip.tone), spoken: chip.text }] : [])] : [];
+  const week = v ? weekPill(c, v.ageDelta) : null;
+  const pills: AgePill[] = v ? [pacePill(c, v.pace), ...(week ? [week] : [])] : [];
   return (
     <HaloAgeHero
       age={v?.pulseAge ?? null}
@@ -76,7 +69,7 @@ function HaloAge({ m, onPress }: { m: HealthHubVM["healthspan"] | undefined; onP
       reason={v ? null : m.reason}
       pills={pills}
       onPress={onPress}
-      spokenExtra={v ? `Pace of Aging ${v.pace == null ? "not yet" : `${formatValue("decimal1", v.pace)}x`}${chip ? `, ${chip.text}` : ""}` : null}
+      spokenExtra={v ? `Pace of Aging ${v.pace == null ? "not yet" : `${formatValue("decimal1", v.pace)}x`}${week ? `, ${week.spoken}` : ""}` : null}
     >
       {v && <Note>{v.pace == null ? "Updated weekly. Pace shows once 21 of the last 31 days have a Recovery score." : "Updated weekly"}</Note>}
     </HaloAgeHero>

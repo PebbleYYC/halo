@@ -31,13 +31,28 @@ function heroInk(c: CalmPalette, tint: CalmTint) {
 }
 
 /** One of the hero's two pills: a grey label over a value in its colour. */
-export type AgePill = { label: string; value: string; color?: string; spoken?: string };
+export type AgePill = { label: string; value: string; color?: string; spoken?: string; note?: string };
 
 /** The Pace of Aging pill: "0.7×", green under 1.0x (aging slower), orange over it, ink level; a dash before it shows. */
 export function pacePill(c: CalmPalette, pace: number | null): AgePill {
   if (pace === null) return { label: "Pace of aging", value: MISSING, color: c.faint, spoken: "not yet" };
   const text = formatValue("decimal1", pace);
-  return { label: "Pace of aging", value: `${text}×`, color: pace < 1 ? c.tintInk.mint : pace > 1 ? c.tintInk.peach : c.ink, spoken: `${text} x` };
+  // What the multiple means, in words: last month's habits, held, age you this many years per calendar year.
+  const note = text === "1.0" ? "In step with the calendar" : pace < 0 ? "Getting younger" : `${text} years per year`;
+  return { label: "Pace of aging", value: `${text}×`, color: pace < 1 ? c.tintInk.mint : pace > 1 ? c.tintInk.peach : c.ink, spoken: `${text} times: ${note}`, note };
+}
+
+/** "vs. last week": how far the Halo Age moved since the week before, the same on the Health tab and the Halo Age page. */
+export function weekPill(c: CalmPalette, delta: number | null): AgePill | null {
+  if (delta === null) return null;
+  const moved = formatValue("decimal1", Math.abs(delta)) === "0.0" ? 0 : delta;
+  return {
+    label: "vs. last week",
+    value: moved === 0 ? "No change" : `${formatValue("signed1", moved)} yr`,
+    color: moved === 0 ? c.ink : moved < 0 ? c.tintInk.mint : c.tintInk.peach,
+    spoken: moved === 0 ? "no change" : `${formatValue("decimal1", Math.abs(moved))} years ${moved < 0 ? "younger" : "older"} than last week`,
+    note: moved === 0 ? "Halo Age held steady" : moved < 0 ? "Halo Age went down" : "Halo Age went up",
+  };
 }
 
 /** The pills under the scale, side by side (one fills the row): the card's quiet fill, 14 px corners. */
@@ -54,6 +69,11 @@ function Pills({ pills, spoken }: { pills: AgePill[]; spoken: boolean }) {
           <Txt size={20} lineHeight={25} style={[font.numberAt(20), { color: p.color ?? c.ink }]}>
             {p.value}
           </Txt>
+          {p.note ? (
+            <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
+              {p.note}
+            </Txt>
+          ) : null}
         </View>
       ))}
     </View>
@@ -148,7 +168,7 @@ export function HaloAgeHeroSkeleton({ head = false, children }: { head?: boolean
   );
 }
 
-/** The Pace of Aging ruler, −1.0x to 3.0x, slow (turtle, green) to fast (rabbit, red). */
+/** The Pace of Aging ruler, −1.0× to 3.0×, slow (turtle, green) to fast (rabbit, red). */
 export function PaceScale({ pace }: { pace: Metric<number> }) {
   const c = useCalm();
   const v = pace.value;
@@ -160,9 +180,9 @@ export function PaceScale({ pace }: { pace: Metric<number> }) {
       min={-1}
       max={3}
       format="decimal1"
-      unit="x"
-      describe={v == null ? undefined : v < 1 ? "aging slower than your 6-month average" : v > 1 ? "aging faster than your 6-month average" : "aging at the normal rate"}
-      ends={["−1.0x", "1.0x", "3.0x"]}
+      unit="×"
+      describe={v == null ? undefined : v < 1 ? "aging slower than the calendar" : v > 1 ? "aging faster than the calendar" : "aging in step with the calendar"}
+      ends={["−1.0×", "1.0×", "3.0×"]}
       colors={[c.system.green, c.system.yellow, c.system.red]}
       leading={
         <>

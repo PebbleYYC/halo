@@ -7,8 +7,9 @@ import * as React from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useDay } from "@/lib/day";
-import { AGE_LABEL, formatValue } from "@/lib/format";
+import { AGE_LABEL } from "@/lib/format";
 import { getHealthspan, type HealthspanVM } from "@/queries";
+import { ageDeltaOf } from "@/queries/health";
 import { useApp, useQuery } from "@/state/app";
 import { EmptyState, InsightCard, SectionShell, SkeletonText, TickScaleSkeleton, TrendChart, TrendChartSkeleton, Txt, type DateSwitcherProps } from "@/ui";
 import { useCalm, type CalmPalette } from "@/ui/calm";
@@ -18,30 +19,15 @@ import { Sentence } from "@/screens/detail/calmKit";
 import { useOpenChart } from "@/screens/chart/href";
 import { ContributorList, ContributorListSkeleton } from "./ContributorCard";
 import { HEALTHSPAN_INFO } from "./detailInfo";
-import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, PaceScale, type AgePill } from "./HaloAge";
+import { HaloAgeHero, HaloAgeHeroSkeleton, pacePill, PaceScale, weekPill, type AgePill } from "./HaloAge";
 import { DetailScreen, ErrorState } from "./shells";
-import { weekBefore } from "./format";
 
-/** The hero's pills: Pace of Aging, and how far the Halo Age moved since the week before. */
+/** The hero's pills: Pace of Aging, and how far the Halo Age moved since the week before (the Health tab's same pill). */
 function pillsOf(vm: HealthspanVM, c: CalmPalette): AgePill[] {
   const r = vm.result.value;
   if (!r) return [];
-  const prev = weekBefore(vm.history, vm.asOf);
-  const delta = prev === null ? null : r.pulseAge - prev;
-  const moved = delta === null ? null : formatValue("decimal1", Math.abs(delta)) === "0.0" ? 0 : delta;
-  return [
-    pacePill(c, r.pace),
-    ...(moved === null
-      ? []
-      : [
-          {
-            label: "vs. last week",
-            value: moved === 0 ? "No change" : `${formatValue("signed1", moved)} yr`,
-            color: moved === 0 ? c.ink : moved < 0 ? c.tintInk.mint : c.tintInk.peach,
-            spoken: moved === 0 ? "no change" : `${formatValue("decimal1", Math.abs(moved))} years ${moved < 0 ? "younger" : "older"} than last week`,
-          },
-        ]),
-  ];
+  const week = weekPill(c, ageDeltaOf(vm));
+  return [pacePill(c, r.pace), ...(week ? [week] : [])];
 }
 
 /** The hero: the Halo Age in its gradient, your age under its scale, the pace pills and the provisional note. */
@@ -70,8 +56,8 @@ function PaceOfAging({ vm }: { vm: HealthspanVM }) {
           {r && r.pace == null
             ? `Pace of Aging updates each Monday, once 21 of the last 31 days have a Recovery score${r.paceDays != null ? ` (${r.paceDays} so far)` : ""}.`
             : r?.paceProvisional
-              ? "Pace of Aging uses a 6-month window and updates each Monday. It firms up as history builds."
-              : "Compares your last 30 days with your 6-month Halo Age. Updated each Monday."}
+              ? "How fast your Halo Age is moving: your last 30 days against your 6-month Halo Age. 1.0× keeps pace with the calendar, above it ages faster, below it slower. It firms up as six months of history build; updated each Monday."
+              : "How fast your Halo Age is moving: your last 30 days against your 6-month Halo Age. 1.0× keeps pace with the calendar, above it ages faster, below it slower. Updated each Monday."}
         </Sentence>
       </View>
     </SectionShell>
