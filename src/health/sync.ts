@@ -41,9 +41,10 @@ export { forgetChanges };
  * record only to the read its start falls in), so the window's first day keeps the night that began the evening before:
  * every day became the first day of some incremental sync, which rewrote its row without that night (no skin
  * temperature, nightly vitals from the fallback windows, a nap promoted to the main sleep, the night's minutes counted
- * as sedentary); heart-rate and steps records running over midnight keep their samples after it.
+ * as sedentary); heart-rate and steps records running over midnight keep their samples after it. 4: workouts carry
+ * their total calories (what Fitbit shows for a workout), so every stored workout is read again to get them.
  */
-export const IMPORT_VERSION = 3;
+export const IMPORT_VERSION = 4;
 
 /**
  * How far before the window's first local midnight the reads start. Health Connect returns a record only to a read whose
@@ -369,7 +370,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     const sessionIds = new Set(sessions.map((s) => s.id));
     const segments = sleep.segments.filter((g) => sessionIds.has(g.sessionId));
     await slice();
-    const exercises = inWindow(await sliced(mapExercisesSteps(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz)));
+    const exercises = inWindow(await sliced(mapExercisesSteps(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz, input.TotalCaloriesBurned)));
     const dailyValues = [...inWindow(await sliced(mapDailyValuesSteps(input, tz))), ...derived];
     const metrics = inWindow(await sliced(mapMetricsSteps(input, sessions, stepsByDay, tz)));
     await slice();

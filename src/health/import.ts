@@ -563,8 +563,9 @@ export function mapExercises(
   activeCalories: ActiveCaloriesRecord[] = [],
   distance: DistanceRecord[] = [],
   tz: string,
+  totalCalories: TotalCaloriesRecord[] = [],
 ): Exercise[] {
-  return finish(mapExercisesSteps(sessions, activeCalories, distance, tz));
+  return finish(mapExercisesSteps(sessions, activeCalories, distance, tz, totalCalories));
 }
 
 /** mapExercises, pausing as it goes: every workout reads every calorie and distance record. */
@@ -573,12 +574,14 @@ export function* mapExercisesSteps(
   activeCalories: ActiveCaloriesRecord[] = [],
   distance: DistanceRecord[] = [],
   tz: string,
+  totalCalories: TotalCaloriesRecord[] = [],
 ): Steps<Exercise[]> {
   const out: Exercise[] = [];
   // Each record list is parsed and sorted once; a workout then reads only the records near it (a full re-import has
   // hundreds of workouts and hundreds of thousands of per-minute records: scanning them all per workout took half an hour).
   const calIndex = yield* indexIntervals(activeCalories);
   const distIndex = yield* indexIntervals(distance);
+  const totalIndex = yield* indexIntervals(totalCalories);
   let n = 0;
   for (const r of sessions) {
     const w = interval(r);
@@ -597,6 +600,8 @@ export function* mapExercisesSteps(
     };
     const kcal = yield* largest(calIndex, (c) => c.energy.inKilocalories);
     const metres = yield* largest(distIndex, (d) => d.distance.inMeters);
+    // What Fitbit shows for a workout: every calorie burned during it, resting ones included.
+    const total = yield* largest(totalIndex, (c) => c.energy.inKilocalories);
     out.push({
       id: r.metadata?.id ?? `hc-exercise-${w.startTs}-${w.endTs}`,
       day: localDay(w.startTs, tz),
@@ -606,6 +611,7 @@ export function* mapExercisesSteps(
       name: r.title?.trim() || null,
       calories: kcal === null ? null : Math.round(kcal),
       distanceM: metres === null ? null : Math.round(metres),
+      totalCalories: total === null ? null : Math.round(total),
     });
   }
   return out.sort((a, b) => a.startTs - b.startTs);
@@ -937,7 +943,7 @@ export function mapRecords(input: HealthInput, tz: string): MappedRecords {
   const hr = mapHr(input.HeartRate ?? []);
   const steps = mapSteps(input.Steps ?? []);
   const stepsByDay = stepsPerDay(input.Steps ?? [], tz);
-  const exercises = mapExercises(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz);
+  const exercises = mapExercises(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz, input.TotalCaloriesBurned);
   const dailyValues = mapDailyValues(input, tz);
   const metrics = mapMetrics(input, sessions, stepsByDay, tz);
   const externalEntries = mapExternalEntries(input, tz);
