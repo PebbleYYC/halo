@@ -74,6 +74,8 @@ export type TimelineItem =
       day: string;
       name: string;
       activityKind: ActivityKind;
+      /** Health Connect exercise type, for the activity's own icon. */
+      exerciseType: string;
       strain: Metric<number>;
       start: number;
       end: number;

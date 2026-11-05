@@ -247,7 +247,7 @@ export function activityItem(e: ExerciseRow, row: DayRow | undefined): Extract<T
   const kind = activityKind(e.type);
   const a = row?.activities.find((x) => x.id === e.id);
   const strain = a?.effort != null ? ok(toStrain(a.effort)) : none<number>(a && a.hrCount > 0 ? "insufficient_hr_data" : "band_not_worn");
-  return { kind: "activity", id: e.id, day: e.day, name: workoutName(e), activityKind: kind, strain, start: ms(e.startTs), end: ms(e.endTs), ...distanceOf(e) };
+  return { kind: "activity", id: e.id, day: e.day, name: workoutName(e), activityKind: kind, exerciseType: e.type, strain, start: ms(e.startTs), end: ms(e.endTs), ...distanceOf(e) };
 }
 
 /** Distance in km where the workout recorded one, and pace (seconds per km) for runs and walks. */

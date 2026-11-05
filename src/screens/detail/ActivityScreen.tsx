@@ -4,6 +4,7 @@
 // against your 30-day average for this kind of workout, the strain's split between heart rate and muscle, the heart
 // rate through the workout coloured by zone, time in zones, Training Effect, heart-rate recovery and what this kind of
 // workout costs next-morning Recovery. No date switcher; back falls back to that day's Strain.
+import { glyphForType } from "@/ui/activityGlyphs";
 import { Pencil } from "lucide-react-native";
 import { GlassButton } from "@/ui/components/GlassButton";
 import { EditActivitySheet } from "./EditActivitySheet";
@@ -66,7 +67,7 @@ export default function ActivityScreen() {
       />
     );
 
-  const Icon = ACTIVITY_ICON[vm.kind];
+  const Icon = glyphForType(vm.edit.type) ?? ACTIVITY_ICON[vm.kind];
   // No heart rate at all (band off): one notice replaces the empty chart, the empty zones and the dashed heart-rate
   // numbers, instead of the same "band not worn" line three times over an empty page.
   const noHr = vm.hr.value === null && vm.zones.value === null;
@@ -84,7 +85,7 @@ export default function ActivityScreen() {
       subtitle={`${dayLabel(vm.day, today)} ${clock(vm.start, timeZone)} to ${clock(vm.end, timeZone)}`}
       titleIcon={
         <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: calm.tint.peach, alignItems: "center", justifyContent: "center" }}>
-          <Icon size={20} color={calm.tintInk.peach} strokeWidth={2} />
+          {React.createElement(Icon, { size: 20, color: calm.tintInk.peach, strokeWidth: 2 })}
         </View>
       }
       hero={<WorkoutDetails vm={vm} noHr={noHr} />}

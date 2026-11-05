@@ -1,6 +1,7 @@
 // The day's timeline rows as Apple Fitness lists workouts: the activity's glyph on a round tinted disc, the name over
 // its time range and duration (and distance and pace), the row's number on the right in the family's colour with its
 // small caps label, then the thin chevron. A press settles and dims the row on the UI thread (the kit's press).
+import { glyphForType, type Glyph } from "@/ui/activityGlyphs";
 import * as React from "react";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -20,6 +21,8 @@ export type ActivityKind = "run" | "ride" | "walk" | "strength" | "workout";
 export const ACTIVITY_ICON: Record<ActivityKind, LucideIcon> = { run: PersonStanding, ride: Bike, walk: Footprints, strength: Dumbbell, workout: Timer };
 
 export type ActivityCardProps = {
+  /** Health Connect exercise type ("BASKETBALL"): its own icon where there is one, else the kind's. */
+  exerciseType?: string;
   /** "Running", "Strength training", "Cycling", "Walking", "Workout". */
   name: string;
   kind: ActivityKind;
@@ -91,7 +94,7 @@ export function TimelineRow({
   label,
 }: {
   onPress: () => void;
-  icon: LucideIcon;
+  icon: LucideIcon | Glyph;
   /** The family's pastel: peach for activities, lavender for sleep. */
   tint: CalmTint;
   /** The number on the right ("8.4", or a duration node). */
@@ -151,8 +154,8 @@ export function TimelineRow({
   );
 }
 
-export function ActivityCard({ name, kind, strain, start, end, onPress, timeZone, distanceKm, paceS }: ActivityCardProps) {
-  const Icon = ACTIVITY_ICON[kind];
+export function ActivityCard({ name, kind, exerciseType, strain, start, end, onPress, timeZone, distanceKm, paceS }: ActivityCardProps) {
+  const Icon = glyphForType(exerciseType) ?? ACTIVITY_ICON[kind];
   const s = clock(start, timeZone);
   const e = clock(end, timeZone);
   const value = formatValue("decimal1", strain.value);

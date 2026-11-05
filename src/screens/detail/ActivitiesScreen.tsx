@@ -177,6 +177,7 @@ function Day({ g, today, timeZone, onOpen }: { g: Group; today: string; timeZone
                     key={a.id}
                     name={a.name}
                     kind={a.activityKind}
+                    exerciseType={a.exerciseType}
                     strain={a.strain}
                     start={a.start}
                     end={a.end}

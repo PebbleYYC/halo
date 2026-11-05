@@ -202,6 +202,7 @@ export function Activities({ vm, timeZone, at, go, compact = false }: SlotProps 
                   <ActivityCard
                     name={it.name}
                     kind={it.activityKind}
+                    exerciseType={it.exerciseType}
                     strain={it.strain}
                     start={it.start}
                     end={it.end}

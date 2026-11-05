@@ -295,7 +295,7 @@ function Workouts({ vm, timeZone, onOpen }: { vm: StrainVM; timeZone: string; on
           {vm.activities.map((a, i) => (
             <React.Fragment key={a.id}>
               {i > 0 && <View style={{ height: 0.5, marginLeft: 56, backgroundColor: c.line }} />}
-              <ActivityCard name={a.name} kind={a.activityKind} strain={a.strain} start={a.start} end={a.end} distanceKm={a.distanceKm} paceS={a.paceS} onPress={() => onOpen(a.id)} timeZone={timeZone} />
+              <ActivityCard name={a.name} kind={a.activityKind} exerciseType={a.exerciseType} strain={a.strain} start={a.start} end={a.end} distanceKm={a.distanceKm} paceS={a.paceS} onPress={() => onOpen(a.id)} timeZone={timeZone} />
             </React.Fragment>
           ))}
         </View>
