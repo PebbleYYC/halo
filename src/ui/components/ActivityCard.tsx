@@ -155,7 +155,7 @@ export function TimelineRow({
 }
 
 export function ActivityCard({ name, kind, exerciseType, strain, start, end, onPress, timeZone, distanceKm, paceS }: ActivityCardProps) {
-  const Icon = glyphForType(exerciseType) ?? ACTIVITY_ICON[kind];
+  const Icon = glyphForType(exerciseType, name) ?? ACTIVITY_ICON[kind];
   const s = clock(start, timeZone);
   const e = clock(end, timeZone);
   const value = formatValue("decimal1", strain.value);

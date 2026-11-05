@@ -5,7 +5,7 @@
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Check, ChevronRight, Minus, Plus } from "lucide-react-native";
-import { FITBIT_EXERCISES, typeLabel } from "@/lib/activityTypes";
+import { exerciseEntry, FITBIT_EXERCISES, typeLabel } from "@/lib/activityTypes";
 import { clock, hmm } from "@/lib/format";
 import { localDay } from "@/lib/time";
 import type { ActivityVM } from "@/queries";
@@ -130,6 +130,8 @@ export function EditActivitySheet({ vm, open, onClose, onDeleted }: { vm: Activi
   };
 
   const shownName = name.trim() || typeLabel(type);
+  const entry = exerciseEntry(type, name);
+  const typeText = entry?.label ?? typeLabel(type);
 
   return (
     <>
@@ -143,24 +145,26 @@ export function EditActivitySheet({ vm, open, onClose, onDeleted }: { vm: Activi
         {picking ? (
           <View style={{ borderRadius: 14, backgroundColor: c.sheetFill, paddingHorizontal: 16 }}>
             {FITBIT_EXERCISES.map((x, i) => (
-              <React.Fragment key={x.type}>
+              <React.Fragment key={x.label}>
                 {i > 0 && <Rule />}
                 <Pressable
                   onPress={() => {
                     haptic.select();
-                    // A name that only repeated the old type follows the new one.
-                    if (!name.trim() || name.trim() === typeLabel(type) || name.trim() === vm.edit.imported?.name) setName("");
+                    // A name that only repeated the old choice follows the new one; Housework and Yard Work are names.
+                    const plain = !name.trim() || name.trim() === typeLabel(type) || name.trim() === vm.edit.imported?.name || !!entry?.name;
+                    if (x.name) setName(x.name);
+                    else if (plain) setName("");
                     setType(x.type);
                     setPicking(false);
                   }}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: x.type === type }}
+                  accessibilityState={{ selected: x === entry }}
                   style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", opacity: pressed ? 0.6 : 1 })}
                 >
                   <Txt size={16} lineHeight={21} style={{ color: c.ink }}>
                     {x.label}
                   </Txt>
-                  {x.type === type && <Check size={20} color={c.teal} strokeWidth={2.6} />}
+                  {x === entry && <Check size={20} color={c.teal} strokeWidth={2.6} />}
                 </Pressable>
               </React.Fragment>
             ))}
@@ -173,14 +177,14 @@ export function EditActivitySheet({ vm, open, onClose, onDeleted }: { vm: Activi
                 <Pressable
                   onPress={() => setPicking(true)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Exercise type: ${typeLabel(type)}. Change`}
+                  accessibilityLabel={`Exercise type: ${typeText}. Change`}
                   style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, opacity: pressed ? 0.6 : 1 })}
                 >
                   <Txt size={16} lineHeight={21} style={{ color: c.ink, flex: 1 }}>
                     Type
                   </Txt>
                   <Txt size={16} lineHeight={21} style={{ color: c.sub }}>
-                    {typeLabel(type)}
+                    {typeText}
                   </Txt>
                   <ChevronRight size={18} color={c.tertiary} strokeWidth={2.4} />
                 </Pressable>

@@ -8,3 +8,13 @@ describe("workout names", () => {
     expect(typeLabel("FOOTBALL_AUSTRALIAN")).toBe("Football australian");
   });
 });
+
+describe("named exercises", () => {
+  it("match Housework and Yard Work by name, and the plain type otherwise", async () => {
+    const { exerciseEntry } = await import("./activityTypes");
+    expect(exerciseEntry("OTHER_WORKOUT", "housework")?.label).toBe("Housework");
+    expect(exerciseEntry("OTHER_WORKOUT", "Yard Work")?.label).toBe("Yard Work");
+    expect(exerciseEntry("OTHER_WORKOUT", "Leg day")?.label).toBe("Workout");
+    expect(exerciseEntry("TENNIS", null)?.label).toBe("Tennis");
+  });
+});

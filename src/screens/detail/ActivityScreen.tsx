@@ -67,7 +67,7 @@ export default function ActivityScreen() {
       />
     );
 
-  const Icon = glyphForType(vm.edit.type) ?? ACTIVITY_ICON[vm.kind];
+  const Icon = glyphForType(vm.edit.type, vm.edit.name) ?? ACTIVITY_ICON[vm.kind];
   // No heart rate at all (band off): one notice replaces the empty chart, the empty zones and the dashed heart-rate
   // numbers, instead of the same "band not worn" line three times over an empty page.
   const noHr = vm.hr.value === null && vm.zones.value === null;

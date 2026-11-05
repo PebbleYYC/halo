@@ -59,17 +59,31 @@ export const SoccerBall = draw("SoccerBall", [
   <Path key="s" d="M12 7V2.5M16.3 10.1l4.5-1.5M14.7 15.1l2.7 3.9M9.3 15.1l-2.7 3.9M7.7 10.1 3.2 8.6" />,
 ]);
 
-export const TennisBall = draw("TennisBall", [
-  <Circle key="o" cx={12} cy={12} r={10} />,
-  <Path key="l" d="M5.2 4.7c3.3 3.9 3.3 10.7 0 14.6" />,
-  <Path key="r" d="M18.8 4.7c-3.3 3.9-3.3 10.7 0 14.6" />,
-]);
-
 export const Baseball = draw("Baseball", [
   <Circle key="o" cx={12} cy={12} r={10} />,
   <Path key="l" d="M6.5 3.7c2.4 2.3 3.1 5 3.1 8.3s-.7 6-3.1 8.3" />,
   <Path key="r" d="M17.5 3.7c-2.4 2.3-3.1 5-3.1 8.3s.7 6 3.1 8.3" />,
   <Path key="t" d="M8.3 7.5l1.6-.6M9.3 11.2h1.6M8.3 16.5l1.6.6M15.7 7.5l-1.6-.6M14.7 11.2h-1.6M15.7 16.5l-1.6.6" />,
+]);
+
+export const Racket = draw("Racket", [
+  <Ellipse key="h" cx={9} cy={9} rx={6.5} ry={4.8} transform="rotate(45 9 9)" />,
+  <Path key="s" d="M5.2 5.2l7.6 7.6M5.6 9.8l4.2-4.2M8.2 12.4l4.2-4.2" />,
+  <Path key="g" d="m13.6 13.6 6.9 6.9" />,
+  <Circle key="b" cx={19} cy={5} r={2} />,
+]);
+
+export const Broom = draw("Broom", [
+  <Path key="h" d="M21 3l-9 9" />,
+  <Path key="b" d="m9.8 9.8 4.4 4.4" />,
+  <Path key="w" d="M10.6 10.6 3.4 13.3l7.3 7.3 2.7-7.2" />,
+  <Path key="t" d="M12 12 7 17M11.2 11.2 5.2 15.2M12.8 12.8 8.8 18.8" />,
+]);
+
+export const Rake = draw("Rake", [
+  <Path key="h" d="M21 3 10.5 13.5" />,
+  <Path key="b" d="m6 10 8 8" />,
+  <Path key="t" d="M6 10 3.5 12.5M8 12l-2.5 2.5M10 14l-2.5 2.5M12 16l-2.5 2.5M14 18l-2.5 2.5" />,
 ]);
 
 export const Swimmer = draw("Swimmer", [
@@ -179,11 +193,11 @@ const BY_TYPE: Record<string, Glyph> = {
   BASEBALL: Baseball,
   SOFTBALL: Baseball,
   CRICKET: Baseball,
-  TENNIS: TennisBall,
-  TABLE_TENNIS: TennisBall,
-  SQUASH: TennisBall,
-  RACQUETBALL: TennisBall,
-  BADMINTON: TennisBall,
+  TENNIS: Racket,
+  TABLE_TENNIS: Racket,
+  SQUASH: Racket,
+  RACQUETBALL: Racket,
+  BADMINTON: Racket,
   GOLF: GolfFlag,
   ICE_HOCKEY: HockeyStick,
   ROLLER_HOCKEY: HockeyStick,
@@ -198,5 +212,20 @@ const BY_TYPE: Record<string, Glyph> = {
   GYMNASTICS: Trophy,
 };
 
-/** The icon for a workout's exercise type; null for a type with none of its own (the kind's icon then). */
-export const glyphForType = (type: string | null | undefined): Glyph | null => (type ? (BY_TYPE[type] ?? null) : null);
+/**
+ * Activities Health Connect has no type for, which Fitbit sends as a general workout under their name: picked by the
+ * name. The type's own icon wins when there is one.
+ */
+const BY_NAME: [RegExp, Glyph][] = [
+  [/house ?work|clean|chores|vacuum|mop/i, Broom],
+  [/yard ?work|garden|mow|lawn|rak(e|ing)|leaves|shovel/i, Rake],
+  [/tennis|squash|racquet|pickleball|badminton|padel/i, Racket],
+];
+
+/** The icon for a workout (its exercise type, else its name); null when neither has one (the kind's icon then). */
+export function glyphForType(type: string | null | undefined, name?: string | null): Glyph | null {
+  const own = type ? BY_TYPE[type] : undefined;
+  if (own) return own;
+  if (name) for (const [re, g] of BY_NAME) if (re.test(name)) return g;
+  return null;
+}
