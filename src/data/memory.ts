@@ -1,6 +1,7 @@
 // An in-memory Store on Maps: the pipeline tests run on it, and "demo" mode can when nothing need survive a
 // restart. Rows are copied on the way in and out (JSON round-trip), so callers never share objects with the
 // store, as they would not with SQLite.
+import { applyExerciseEdits, type ExerciseEdit } from "./exerciseEdits";
 import type { DayRange, JournalTagChange, JournalTagRow, LoggedEntryRow, ReportRow, ScoreRow, SeriesKind, Store } from "./store";
 import type { DailyValue, Exercise, HealthRecord, HrSample, JournalEntry, Metrics, Profile, Segment, Session, StepsMinute, SyncState } from "./types";
 import type { ActivityCostResult } from "@/core/algorithms/activityCost";
@@ -64,6 +65,7 @@ export class MemoryStore implements Store {
   private sessions = new Map<string, Session>();
   private segments = new Map<string, Segment[]>();
   private exercises = new Map<string, Exercise>();
+  private edits = new Map<string, ExerciseEdit>();
   private hr = new Samples();
   private steps = new Samples();
   private values = new Map<string, DailyValue>();
@@ -170,8 +172,22 @@ export class MemoryStore implements Store {
   async segmentsFor(sessionIds: string[]) {
     return copy(sessionIds.flatMap((id) => this.segments.get(id) ?? []));
   }
-  async allExercises() {
-    return copy([...this.exercises.values()]);
+  async allExercises(opts?: { raw?: boolean }) {
+    const rows = copy([...this.exercises.values()]);
+    return opts?.raw ? rows : applyExerciseEdits(rows, copy([...this.edits.values()]));
+  }
+  async importedExercise(id: string) {
+    const e = this.exercises.get(id);
+    return e ? copy(e) : null;
+  }
+  async exerciseEdits() {
+    return copy([...this.edits.values()]);
+  }
+  async setExerciseEdit(e: ExerciseEdit) {
+    this.edits.set(e.id, copy(e));
+  }
+  async clearExerciseEdit(id: string) {
+    this.edits.delete(id);
   }
   async allJournal() {
     return copy([...this.journal.values()]);
@@ -272,7 +288,7 @@ export class MemoryStore implements Store {
   async clearAll() {
     this.profile = null;
     this.sync = { lastSyncTs: null, firstDay: null, lastError: null };
-    for (const m of [this.metrics, this.sessions, this.segments, this.exercises, this.values, this.journal, this.scores, this.series, this.reports]) m.clear();
+    for (const m of [this.edits, this.metrics, this.sessions, this.segments, this.exercises, this.values, this.journal, this.scores, this.series, this.reports]) m.clear();
     this.activityCost = null;
     this.tags.clear();
     this.logged.clear();

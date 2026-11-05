@@ -453,7 +453,8 @@ export function writer(store: Store, tz: string) {
     /** A workout window, as writeSleep. The filter is on civil start time, which is startTs in this zone. */
     async writeExercises(points: unknown[], win: TimeWindow): Promise<number> {
       const rows = mapExercises(points, tz);
-      const all = await store.allExercises();
+      // As imported: an edit made on the phone is not a change at the source, and its moved time not a deletion.
+      const all = await store.allExercises({ raw: true });
       const byId = new Map(all.map((e) => [e.id, e]));
       const changed = rows.filter((e) => !same(byId.get(e.id) ?? null, e));
       const touched: string[] = [];

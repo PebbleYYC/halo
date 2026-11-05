@@ -1,8 +1,8 @@
 // Activity `/activity/[id]` (spec §7.4). Ported from Halo's src/server/queries/activity.ts.
+import { workoutName } from "@/lib/activityTypes";
 import type { Metric } from "@/lib/reasons";
 import { addDays } from "@/lib/time";
 import {
-  ACTIVITY_NAME,
   activityKind,
   distanceOf,
   exercisesBetween,
@@ -30,12 +30,13 @@ import { localizeStat, unitsOf } from "./units";
 export async function getActivity(id: string, ctx: QueryCtx): Promise<ActivityVM | null> {
   const e = (await ctx.store.allExercises()).find((x) => x.id === id);
   if (!e) return null;
-  const [rows, recent, series, costs, next] = await Promise.all([
+  const [rows, recent, series, costs, next, original] = await Promise.all([
     loadDays(ctx, addDays(e.day, -30), e.day),
     exercisesBetween(ctx, addDays(e.day, -30), e.day),
     loadSeries(ctx, e.day, "hr"),
     getActivityCost(ctx),
     ctx.store.getScores(addDays(e.day, 1)),
+    e.edited ? ctx.store.importedExercise(id) : Promise.resolve(null),
   ]);
   const row = rows.get(e.day);
   const a = row?.activities.find((x) => x.id === id);
@@ -64,7 +65,8 @@ export async function getActivity(id: string, ctx: QueryCtx): Promise<ActivityVM
     ...distance,
     tile("avgHr", "Average heart rate", a?.avgHr, "bpm", same.map((x) => statOf(x)?.avgHr)),
     tile("maxHr", "Max heart rate", a?.maxHr, "bpm", same.map((x) => statOf(x)?.maxHr)),
-    tile("calories", "Calories", e.calories, "kcal", same.map((x) => x.calories), "no_data"),
+    // Fitbit's number for a workout is every calorie burned in it; active calories where the source sent no totals.
+    tile("calories", "Calories", caloriesOf(e), "kcal", same.map(caloriesOf), "no_data"),
   ];
 
   const hrr60 = a?.hrr?.after1Minute;
@@ -76,7 +78,15 @@ export async function getActivity(id: string, ctx: QueryCtx): Promise<ActivityVM
   return {
     id,
     day: e.day,
-    name: ACTIVITY_NAME[kind],
+    name: workoutName(e),
+    edit: {
+      type: e.type,
+      name: e.name,
+      startTs: e.startTs,
+      endTs: e.endTs,
+      edited: !!e.edited,
+      imported: original ? { type: original.type, name: original.name, startTs: original.startTs, endTs: original.endTs } : null,
+    },
     kind,
     start: ms(e.startTs),
     end: ms(e.endTs),
@@ -103,6 +113,9 @@ export async function getActivity(id: string, ctx: QueryCtx): Promise<ActivityVM
     cost: costOf(costs, kind, next?.recovery?.value ?? null),
   };
 }
+
+/** A workout's calories as Fitbit counts them (total), else its active calories. */
+const caloriesOf = (x: ExerciseRow) => x.totalCalories ?? x.calories;
 
 /**
  * An activity's load as heart-rate and muscular shares of its TRIMP, whole percents that sum to 100; null without a

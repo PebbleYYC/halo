@@ -3,6 +3,7 @@
 import type { DailyValue, Exercise, HealthRecord, HrSample, JournalEntry, Metrics, Profile, Segment, Session, StepsMinute, SyncState } from "./types";
 import type { Stage1Activity, Stage1Day, Stage2Row } from "@/pipeline/types";
 import type { Report } from "@/core/algorithms/reports";
+import type { ExerciseEdit } from "./exerciseEdits";
 import type { ActivityCostResult } from "@/core/algorithms/activityCost";
 import type { DetectedActivity } from "@/core/algorithms/autoWorkout";
 
@@ -36,6 +37,12 @@ export interface Store {
   deleteSessions(ids: string[]): Promise<void>;
   /** Removes workouts by id: workouts the source no longer has. */
   deleteExercises(ids: string[]): Promise<void>;
+  /** The person's edits to imported workouts; `allExercises` already applies them. */
+  exerciseEdits(): Promise<ExerciseEdit[]>;
+  /** The workout as imported, before any edit. */
+  importedExercise(id: string): Promise<Exercise | null>;
+  setExerciseEdit(edit: ExerciseEdit): Promise<void>;
+  clearExerciseEdit(id: string): Promise<void>;
   /** ECG readings and irregular-rhythm notifications (Google Health only), upserted by id. */
   upsertHealthRecords(rows: HealthRecord[]): Promise<void>;
   /** Days whose intraday samples changed since the pipeline last ran (stage 1 reruns them). */
@@ -46,7 +53,8 @@ export interface Store {
   allMetrics(): Promise<Metrics[]>;
   allSessions(): Promise<Session[]>;
   segmentsFor(sessionIds: string[]): Promise<Segment[]>;
-  allExercises(): Promise<Exercise[]>;
+  /** Workouts with the person's edits applied (deleted ones left out); `raw`: as imported, for the importers. */
+  allExercises(opts?: { raw?: boolean }): Promise<Exercise[]>;
   allJournal(): Promise<JournalEntry[]>;
   dailyValues(range?: DayRange): Promise<DailyValue[]>;
   /** Every day's value for one key, by day. */

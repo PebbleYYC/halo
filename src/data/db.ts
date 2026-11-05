@@ -2,6 +2,7 @@
 // one person per database. JSON columns hold the score and series blobs; heart rate and steps are bucketed per
 // UTC day like Halo's hr_days / steps_days (parallel JSON arrays of second-of-day offsets and values), since a
 // row per 1 Hz sample is far too slow over months. Every batch write runs in one exclusive transaction.
+import { applyExerciseEdits, type ExerciseEdit } from "./exerciseEdits";
 import { openDatabaseAsync, type SQLiteDatabase } from "expo-sqlite";
 import { isDeadConnection } from "./deadConnection";
 import type { DayRange, EntrySource, JournalTagChange, JournalTagRow, LoggedEntryRow, ReportRow, ScoreRow, SeriesKind, Store } from "./store";
@@ -71,6 +72,9 @@ const MIGRATIONS = [
   // HRV Status and Garmin-style training (Training Effect, Recovery Time, Training Readiness and Status), version 19.
   "alter table daily_scores add column hrv_status text",
   "alter table daily_scores add column training text",
+  // Edit activities (mobile): total calories as Fitbit shows them, and the person's edits kept apart from imports.
+  "alter table exercises add column total_kcal real",
+  "create table if not exists exercise_edits (id text primary key, type text, name text, start_ts integer, end_ts integer, day text, deleted integer not null default 0)",
 ];
 
 const DAY = 86_400;
@@ -94,7 +98,8 @@ type SessionRow = {
   asleep_min: number | null; awake_min: number | null; deep_min: number | null; light_min: number | null; rem_min: number | null;
 };
 type SegmentRow = { session_id: string; start_ts: number; end_ts: number; stage: Segment["stage"] };
-type ExerciseRow = { id: string; day: string; start_ts: number; end_ts: number; type: string; name: string | null; calories: number | null; distance_m: number | null };
+type ExerciseRow = { id: string; day: string; start_ts: number; end_ts: number; type: string; name: string | null; calories: number | null; distance_m: number | null; total_kcal?: number | null };
+type EditRow = { id: string; type: string | null; name: string | null; start_ts: number | null; end_ts: number | null; day: string | null; deleted: number };
 type BucketRow = { bucket: number; offsets: string; vals: string };
 type ScoresRow = {
   day: string; scoring_version: number; strain: string | null; activities: string | null; session_rhr_bpm: number | null;
@@ -159,6 +164,7 @@ const exerciseOf = (r: ExerciseRow): Exercise => ({
   name: r.name,
   calories: r.calories,
   distanceM: r.distance_m,
+  totalCalories: r.total_kcal ?? null,
 });
 
 const SCORE_JSON = ["strain", "activities", "recovery", "sleep", "training_load", "strain_target", "sleep_planner", "energy_bank", "stress", "health_monitor", "healthspan", "fitness", "journal_impact", "detected", "hrv_status", "training"] as const;
@@ -307,8 +313,8 @@ class SqliteStore implements Store {
     await this.tx((db) =>
       this.many(
         db,
-        "insert or replace into exercises (id, day, start_ts, end_ts, type, name, calories, distance_m) values (?, ?, ?, ?, ?, ?, ?, ?)",
-        rows.map((e) => [e.id, e.day, e.startTs, e.endTs, e.type, e.name, e.calories, e.distanceM]),
+        "insert or replace into exercises (id, day, start_ts, end_ts, type, name, calories, distance_m, total_kcal) values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        rows.map((e) => [e.id, e.day, e.startTs, e.endTs, e.type, e.name, e.calories, e.distanceM, e.totalCalories ?? null]),
       ),
     );
   }
@@ -457,8 +463,25 @@ class SqliteStore implements Store {
     }
     return out.sort((a, b) => a.startTs - b.startTs);
   }
-  async allExercises() {
-    return (await this.db.getAllAsync<ExerciseRow>("select * from exercises order by start_ts, id")).map(exerciseOf);
+  async allExercises(opts?: { raw?: boolean }) {
+    const rows = (await this.db.getAllAsync<ExerciseRow>("select * from exercises order by start_ts, id")).map(exerciseOf);
+    return opts?.raw ? rows : applyExerciseEdits(rows, await this.exerciseEdits());
+  }
+  async importedExercise(id: string) {
+    const r = await this.db.getFirstAsync<ExerciseRow>("select * from exercises where id = ?", id);
+    return r ? exerciseOf(r) : null;
+  }
+  async exerciseEdits(): Promise<ExerciseEdit[]> {
+    const rows = await this.db.getAllAsync<EditRow>("select * from exercise_edits");
+    return rows.map((r) => ({ id: r.id, type: r.type, name: r.name, startTs: r.start_ts, endTs: r.end_ts, day: r.day, deleted: !!r.deleted }));
+  }
+  async setExerciseEdit(e: ExerciseEdit) {
+    await this.tx((db) =>
+      db.runAsync("insert or replace into exercise_edits (id, type, name, start_ts, end_ts, day, deleted) values (?, ?, ?, ?, ?, ?, ?)", [e.id, e.type, e.name, e.startTs, e.endTs, e.day, e.deleted ? 1 : 0]),
+    );
+  }
+  async clearExerciseEdit(id: string) {
+    await this.tx((db) => db.runAsync("delete from exercise_edits where id = ?", [id]));
   }
   async allJournal() {
     return this.db.getAllAsync<JournalEntry>("select day, tag, value from journal_entries order by day, tag");
@@ -646,7 +669,7 @@ class SqliteStore implements Store {
 const TABLES = [
   "profile", "sync_state", "daily_metrics", "sleep_sessions", "sleep_segments", "exercises", "hr_days", "steps_days", "daily_values",
   "journal_entries", "intraday_dirty", "daily_scores", "intraday_series", "reports", "activity_cost",
-  "journal_tags", "logged_entries", "health_records",
+  "journal_tags", "logged_entries", "health_records", "exercise_edits",
 ];
 
 /** Opens (and migrates) the database. WAL with synchronous=normal: durable across crashes, no fsync per autocommit write. */

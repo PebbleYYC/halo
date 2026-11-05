@@ -277,6 +277,8 @@ export type ActivityVM = {
   id: string;
   day: string;
   name: string;
+  /** What the editor starts from: the workout as shown, whether it was edited, and Fitbit's own version. */
+  edit: { type: string; name: string | null; startTs: number; endTs: number; edited: boolean; imported: { type: string; name: string | null; startTs: number; endTs: number } | null };
   kind: ActivityKind;
   start: number;
   end: number;

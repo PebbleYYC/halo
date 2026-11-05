@@ -4,6 +4,9 @@
 // against your 30-day average for this kind of workout, the strain's split between heart rate and muscle, the heart
 // rate through the workout coloured by zone, time in zones, Training Effect, heart-rate recovery and what this kind of
 // workout costs next-morning Recovery. No date switcher; back falls back to that day's Strain.
+import { Pencil } from "lucide-react-native";
+import { GlassButton } from "@/ui/components/GlassButton";
+import { EditActivitySheet } from "./EditActivitySheet";
 import * as React from "react";
 import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -45,6 +48,7 @@ export default function ActivityScreen() {
   const q = useQuery((ctx) => getActivity(id, ctx), [id]);
   const vm = q.data;
   const onBack = useBack(vm ? dayHref("/strain", vm.day, today) : "/");
+  const [editing, setEditing] = React.useState(false);
 
   const common = { onBack, align: "start", refreshing, onRefresh } as const;
   if (q.error && !vm) return <DetailScreen {...common} title="Activity" primary={<LoadError onRetry={retry} />} />;
@@ -68,8 +72,14 @@ export default function ActivityScreen() {
   const noHr = vm.hr.value === null && vm.zones.value === null;
 
   return (
+    <>
     <DetailScreen
       {...common}
+      action={
+        <GlassButton onPress={() => setEditing(true)} accessibilityLabel="Edit activity">
+          <Pencil size={19} color={calm.teal} strokeWidth={2.4} />
+        </GlassButton>
+      }
       title={vm.name}
       subtitle={`${dayLabel(vm.day, today)} ${clock(vm.start, timeZone)} to ${clock(vm.end, timeZone)}`}
       titleIcon={
@@ -109,6 +119,8 @@ export default function ActivityScreen() {
       ]}
       footer={vm.insight ? <InsightCard body={vm.insight} /> : null}
     />
+    <EditActivitySheet vm={vm} open={editing} onClose={() => setEditing(false)} onDeleted={onBack} />
+    </>
   );
 }
 
@@ -199,7 +211,7 @@ function WorkoutDetails({ vm, noHr }: { vm: ActivityVM; noHr: boolean }) {
   const s = vm.strain.value;
   const duration = vm.stats.find((k) => k.key === "duration");
   // Without heart rate the heart-rate numbers are dashes the notice below explains: they are left out.
-  const stats = vm.stats.filter((k) => k.key !== "duration" && !(noHr && k.metric.value === null));
+  const stats = vm.stats.filter((k) => k.key !== "duration" && !(noHr && k.metric.value === null) && !(k.key === "calories" && k.metric.value === null));
   const strainCell: CellData = {
     key: "strain",
     label: "Activity strain",

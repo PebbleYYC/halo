@@ -2,6 +2,7 @@
 // day's value against its 30-day average, history over W / M / 6M / 1Y with the range's stats, where the number comes
 // from), plus the sections that make that metric useful, chosen per key below. Ported from Halo's
 // src/server/queries/metric.ts; the hourly section reads the day's steps from store.readSteps.
+import { workoutName } from "@/lib/activityTypes";
 import { addDays, localMidnight } from "@/lib/time";
 import {
   type BodyKey,
@@ -21,8 +22,6 @@ import {
   weekOf,
 } from "./_lib";
 import {
-  ACTIVITY_NAME,
-  activityKind,
   dayStartOf,
   type DayRow,
   type ExerciseRow,
@@ -406,7 +405,7 @@ const BUILD: Record<Exclude<SectionKind, "outliers">, (s: SectionCtx, key: Detai
   workouts: (s) => {
     const items = s.exs
       .filter((e) => e.day === s.day)
-      .map((e) => ({ id: e.id, name: e.name ?? ACTIVITY_NAME[activityKind(e.type)], start: ms(e.startTs), end: ms(e.endTs), calories: e.calories }));
+      .map((e) => ({ id: e.id, name: workoutName(e), start: ms(e.startTs), end: ms(e.endTs), calories: e.calories }));
     const a = s.rows.get(s.day)?.extra.active_calories;
     return { kind: "workouts", active: finite(a) ? a : null, items };
   },

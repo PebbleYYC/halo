@@ -46,8 +46,13 @@ export type Exercise = {
   endTs: number;
   type: string;
   name: string | null;
+  /** Active calories in the workout (the share of each ActiveCaloriesBurned record inside it). */
   calories: number | null;
   distanceM: number | null;
+  /** Total calories burned in the workout, what Fitbit shows for it (TotalCaloriesBurned); absent before import v4. */
+  totalCalories?: number | null;
+  /** Set on a workout the person edited (src/data/exerciseEdits.ts). */
+  edited?: boolean;
 };
 
 /** Daily aggregates for a civil day. Everything optional; null when the source has none. */
