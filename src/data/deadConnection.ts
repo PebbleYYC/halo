@@ -8,5 +8,8 @@
 export const isDeadConnection = (e: unknown): boolean => {
   const m = e instanceof Error ? e.message : String(e);
   if (/ERR_INTERNAL_SQLITE_ERROR|Error code \d+/.test(m)) return false;
-  return /NativeDatabase|NativeStatement/.test(m) && /NullPointerException|AccessClosedResource|closed resource|\bclosed\b/i.test(m);
+  // "Cannot use shared object that was already released" (expo-modules' SharedObject, with "cannot be cast to type
+  // class expo.modules.sqlite.NativeDatabase (received class java.lang.Integer)"): the native handle was freed under
+  // the JS one. Seen on Today ("Home couldn't load") after Android recreated Halo's native modules.
+  return /NativeDatabase|NativeStatement/.test(m) && /NullPointerException|AccessClosedResource|closed resource|\bclosed\b|already released|cannot be cast to type/i.test(m);
 };

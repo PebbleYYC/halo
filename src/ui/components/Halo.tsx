@@ -116,6 +116,18 @@ type RingArcProps = {
  * One ring on an Svg: the track, any faint stretches on it, then the arc in two gradient halves (butt ends, the first
  * running a degree past the joint so the halves meet without a seam), the tail disc, the head disc and the ticks.
  */
+/** A clockwise arc on the ring from `a0` to `a1` degrees (from 12 o'clock), on the UI thread; a bare move when empty. */
+function arcPath(cx: number, cy: number, r: number, a0: number, a1: number): string {
+  "worklet";
+  const sweep = Math.max(0, Math.min(359.9, a1 - a0));
+  const x0 = cx + r * Math.sin((a0 * Math.PI) / 180);
+  const y0 = cy - r * Math.cos((a0 * Math.PI) / 180);
+  if (sweep < 0.01) return `M${x0} ${y0}`;
+  const x1 = cx + r * Math.sin(((a0 + sweep) * Math.PI) / 180);
+  const y1 = cy - r * Math.cos(((a0 + sweep) * Math.PI) / 180);
+  return `M${x0} ${y0}A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${x1} ${y1}`;
+}
+
 function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track, segments, ticks, tickColor, glow, progress: p }: RingArcProps) {
   const key = colors.join("|");
   const geo = React.useMemo(() => {
@@ -132,17 +144,17 @@ function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track,
     };
   }, [cx, cy, r, start, sweep, key]);
   const { list, positions } = geo;
-  // Each half's length; the first half's path runs a degree further (its dash shows that extra only once it is full).
-  const L = geo.halves[0].length;
-  const L1 = (Math.PI * r * (sweep / 2 + 1)) / 180;
+  // Each half is drawn as the arc it shows, rebuilt from the progress every frame. (It was a dashed stroke whose
+  // offset and opacity the two halves updated apart: the first half could stay hidden while the second drew, so a
+  // ring past half showed only its second half.) The first half runs a degree past its end once full, under the seam.
+  const half = sweep / 2;
   const first = (q: number) => {
     "worklet";
-    const vis = q >= 0.999 ? L1 : L * q;
-    return { strokeDashoffset: L1 - vis, strokeOpacity: q > 0.001 ? 1 : 0 };
+    return { d: arcPath(cx, cy, r, start, start + half * q + (q >= 0.999 ? 1 : 0)), strokeOpacity: q > 0.001 ? 1 : 0 };
   };
   const second = (q: number) => {
     "worklet";
-    return { strokeDashoffset: L * (1 - q), strokeOpacity: q > 0.001 ? 1 : 0 };
+    return { d: arcPath(cx, cy, r, start + half, start + half + half * q), strokeOpacity: q > 0.001 ? 1 : 0 };
   };
   const a1 = useAnimatedProps(() => first(clamp01(p.value * 2)));
   const a2 = useAnimatedProps(() => second(clamp01(p.value * 2 - 1)));
@@ -178,12 +190,12 @@ function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track,
       })}
       {glow && (
         <G opacity={0.28}>
-          <AnimatedPath d={geo.halves[0].d} stroke={`url(#${id}h0)`} strokeWidth={stroke * 2.2} fill="none" strokeDasharray={[L1, L1]} animatedProps={g1} />
-          <AnimatedPath d={geo.halves[1].d} stroke={`url(#${id}h1)`} strokeWidth={stroke * 2.2} fill="none" strokeDasharray={[L, L]} animatedProps={g2} />
+          <AnimatedPath stroke={`url(#${id}h0)`} strokeWidth={stroke * 2.2} fill="none" animatedProps={g1} />
+          <AnimatedPath stroke={`url(#${id}h1)`} strokeWidth={stroke * 2.2} fill="none" animatedProps={g2} />
         </G>
       )}
-      <AnimatedPath d={geo.halves[0].d} stroke={`url(#${id}h0)`} strokeWidth={stroke} fill="none" strokeDasharray={[L1, L1]} animatedProps={a1} />
-      <AnimatedPath d={geo.halves[1].d} stroke={`url(#${id}h1)`} strokeWidth={stroke} fill="none" strokeDasharray={[L, L]} animatedProps={a2} />
+      <AnimatedPath stroke={`url(#${id}h0)`} strokeWidth={stroke} fill="none" animatedProps={a1} />
+      <AnimatedPath stroke={`url(#${id}h1)`} strokeWidth={stroke} fill="none" animatedProps={a2} />
       <AnimatedCircle cx={geo.tail.x} cy={geo.tail.y} r={stroke / 2} fill={geo.tailColor} animatedProps={tail} />
       <AnimatedCircle r={stroke / 2} animatedProps={head} />
       {ticks?.map(tick)}
