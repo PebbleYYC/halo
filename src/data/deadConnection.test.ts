@@ -5,6 +5,13 @@ describe("isDeadConnection", () => {
   it("recognises the dead-handle errors seen on the phone, and nothing else", () => {
     expect(isDeadConnection(new Error("Call to function 'NativeDatabase.prepareAsync' has been rejected.\n→ Caused by: java.lang.NullPointerException: java.lang.NullPointerException"))).toBe(true);
     expect(isDeadConnection(new Error("Call to function 'NativeStatement.runAsync' has been rejected. AccessClosedResourceException"))).toBe(true);
+    expect(
+      isDeadConnection(
+        new Error(
+          "Call to function 'NativeDatabase.prepareAsync' has been rejected.\n→ Caused by: The 1st argument cannot be cast to type class expo.modules.sqlite.NativeDatabase (received class java.lang.Integer)\n→ Caused by: Cannot use shared object that was already released",
+        ),
+      ),
+    ).toBe(true);
     expect(isDeadConnection(new Error("Call to function 'NativeStatement.getAllAsync' has been rejected.\n→ Caused by: Access to closed resource"))).toBe(true);
     expect(isDeadConnection(new Error("UNIQUE constraint failed: daily_metrics.day"))).toBe(false);
     expect(isDeadConnection(new Error("Health Connect is not available"))).toBe(false);

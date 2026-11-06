@@ -46,7 +46,7 @@ export function StateCard({ state: given, today, timeZone, onOpen, onBreathe }: 
         </Txt>
       </HomeCard>
     );
-  const title = now ? `Right now: ${now.title}` : "Stress so far today";
+  const title = now ? `Right now: ${now.title}` : today ? "Stress so far today" : "Stress";
   const dot = (k: StateKey) => theme[LOOK[k].color ?? "mutedForeground"];
   const moving = state.mix.active;
   const spoken = [...ORDER.filter((k) => state.mix[k] > 0).map((k) => `${LOOK[k].label} ${minutesText(state.mix[k])}`), moving > 0 ? `On the move ${minutesText(moving)}` : ""].filter(Boolean).join(", ");
