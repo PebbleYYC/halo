@@ -4,8 +4,8 @@
 import type { ImpactMetric, TagImpact } from "@/core/algorithms/journalImpact";
 import type { JournalEntry } from "@/data/types";
 import type { JournalTagRow, Store } from "@/data/store";
-import { isMedicineTag, withMedicineNoDays } from "@/lib/medicine";
-import { addDays } from "@/lib/time";
+import { isMedicineTag, medicineTag, withMedicineNoDays } from "@/lib/medicine";
+import { addDays, localMinutes } from "@/lib/time";
 import type { JournalImpactRow } from "@/pipeline/types";
 import { finite, loadDays, meanSd, type QueryCtx, todayOf } from "./common";
 import type { BehavioursVM, ImpactMetricKey, JournalInsightsVM, JournalTag, JournalVM } from "./types";
@@ -226,4 +226,80 @@ export async function getJournalInsights(metric: ImpactMetricKey = "recovery", c
   }
   items.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.key.localeCompare(b.key));
   return { metric, unit, items, needsMore };
+}
+
+/** A medicine's dose timing against the next day's outcome: its earlier half of days against its later half. */
+export type MedTimingRow = {
+  tag: string;
+  label: string;
+  /** The split, "21:15": earlier days took their first dose before it. */
+  split: string;
+  early: { n: number; avg: number };
+  late: { n: number; avg: number };
+};
+
+/** Days with a timed dose needed, and per side; the earlier and later halves must sit at least this far apart. */
+export const MED_TIMING = { minDays: 10, minSide: 4, minGapMin: 30 } as const;
+
+const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+
+/**
+ * "When you take it" (mobile): for each medicine with at least 10 timed doses in 90 days, the days split at the median
+ * time of their first dose, and the next day's outcome (Recovery, HRV or Sleep, as Insights' metric) averaged on each
+ * side. Medicines whose doses all fall within half an hour of each other are left out: there's no "when" to compare.
+ */
+export function medTiming(
+  doses: { tag: string; day: string; minute: number }[],
+  outcome: (day: string) => number | null | undefined,
+  labelOf: (tag: string) => string,
+): MedTimingRow[] {
+  const first = new Map<string, Map<string, number>>();
+  for (const d of doses) {
+    const days = first.get(d.tag) ?? new Map<string, number>();
+    days.set(d.day, Math.min(days.get(d.day) ?? Infinity, d.minute));
+    first.set(d.tag, days);
+  }
+  const out: MedTimingRow[] = [];
+  for (const [tag, days] of first) {
+    const rows = [...days].map(([day, minute]) => ({ minute, next: outcome(addDays(day, 1)) })).filter((r): r is { minute: number; next: number } => finite(r.next));
+    if (rows.length < MED_TIMING.minDays) continue;
+    const sorted = [...rows].sort((a, b) => a.minute - b.minute);
+    const mid = sorted[Math.floor(sorted.length / 2)].minute;
+    const early = sorted.filter((r) => r.minute < mid);
+    const late = sorted.filter((r) => r.minute >= mid);
+    if (early.length < MED_TIMING.minSide || late.length < MED_TIMING.minSide) continue;
+    const median = (xs: { minute: number }[]) => xs[Math.floor(xs.length / 2)].minute;
+    if (median(late) - median(early) < MED_TIMING.minGapMin) continue;
+    out.push({
+      tag,
+      label: labelOf(tag),
+      split: hhmm(mid),
+      early: { n: early.length, avg: meanSd(early.map((r) => r.next)).mean! },
+      late: { n: late.length, avg: meanSd(late.map((r) => r.next)).mean! },
+    });
+  }
+  return out.sort((a, b) => Math.abs(b.early.avg - b.late.avg) - Math.abs(a.early.avg - a.late.avg) || a.label.localeCompare(b.label));
+}
+
+/** Insights' "When you take it" for `metric`, from the last 90 days of logged doses. */
+export async function getMedicineTiming(metric: ImpactMetricKey = "recovery", ctx: QueryCtx): Promise<MedTimingRow[]> {
+  const key = METRIC[metric];
+  const from = addDays(ctx.today, -90);
+  const [entries, tags, rows] = await Promise.all([
+    ctx.store.loggedEntries(ctx.now - 91 * 86_400, 5000),
+    tagsOf(ctx),
+    loadDays(ctx, addDays(from, 1), ctx.today),
+  ]);
+  const label = new Map(tags.map((t) => [t.tag, t.label]));
+  const doses = entries.flatMap((e) => {
+    if (e.type !== "medication" || e.day < from) return [];
+    const name = String((e.data as { name?: unknown } | null)?.name ?? "");
+    const tag = medicineTag(name);
+    return tag ? [{ tag, day: e.day, minute: localMinutes(e.ts, ctx.timeZone) }] : [];
+  });
+  const outcome = (day: string) => {
+    const r = rows.get(day);
+    return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
+  };
+  return medTiming(doses, outcome, (t) => label.get(t) ?? t);
 }

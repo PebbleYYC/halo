@@ -10,7 +10,7 @@
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
 import { FORMATS } from "@/lib/format";
 import { flOzToMl, mlToFlOz } from "@/lib/units";
@@ -24,6 +24,8 @@ import { useActionCtx } from "./AddBehaviour";
 import { Chips, ConfirmDialog, DialogAction, ErrorAlert, Field, TextField, toast } from "./controls";
 import { EMPTY, toInput, wallNow, when, type Form } from "./forms";
 import { bumpJournal } from "./state";
+import { TimeStepper } from "./TimeStepper";
+import { useMedicines } from "@/state/medicines";
 import { useApp } from "@/state/app";
 import { FoodSheet, foodRequest, type FoodRequest } from "../nutrition/FoodSheet";
 
@@ -187,21 +189,28 @@ export function Log({ vm }: LogProps) {
   };
   const shut = () => setKind(null);
   // Opened from Today's quick log (`/journal?log=water`): straight to that log's form, once, then the param is cleared.
-  const params = useLocalSearchParams<{ log?: string }>();
+  const params = useLocalSearchParams<{ log?: string; med?: string }>();
+  const schedules = useMedicines();
+  const doseOf = (name: string) => schedules.find((m) => m.name.toLowerCase() === name.trim().toLowerCase())?.dose ?? "";
   const router = useRouter();
   const openRef = React.useRef(open);
+  const doseRef = React.useRef(doseOf);
   React.useEffect(() => {
     openRef.current = open;
+    doseRef.current = doseOf;
   });
   React.useEffect(() => {
     const k = params.log;
     if (!k || !(LOG_KINDS as readonly string[]).includes(k)) return;
+    const med = k === "medicine" && typeof params.med === "string" ? params.med : null;
     const id = setTimeout(() => {
       openRef.current(k as LogKind);
-      router.setParams({ log: undefined });
+      // From a medicine reminder: that medicine and its dose, taken now.
+      if (med) setForm((f) => ({ ...f, name: med, dose: doseRef.current(med) }));
+      router.setParams({ log: undefined, med: undefined });
     }, 0);
     return () => clearTimeout(id);
-  }, [params.log, router]);
+  }, [params.log, params.med, router]);
 
   const set = (k: string) => (v: string | string[]) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -239,12 +248,10 @@ export function Log({ vm }: LogProps) {
     rescoreIfBody(remove.type);
   };
 
+  const medNames = [...new Set([...schedules.map((m) => m.name), ...vm.medicines])];
   const recent = all ? vm.recent : vm.recent.slice(0, 6);
-  const timeField = shown !== "period" && (
-    <Field label="Time" hint="(YYYY-MM-DD HH:mm)">
-      <TextField value={at} onChangeText={setAt} keyboardType="numbers-and-punctuation" autoComplete="off" maxLength={16} accessibilityLabel="Time" numeric />
-    </Field>
-  );
+  // When it happened: day and time steppers (a dose's time feeds Insights' timing).
+  const timeField = shown !== "period" && <TimeStepper value={at} onChange={setAt} timeZone={vm.timeZone} label={shown === "medicine" ? "Taken" : "Time"} />;
   const numeric = (k: string, label: string, hint: string, opts: { decimal?: boolean; placeholder?: string } = {}) => (
     <Field label={label} hint={hint} style={{ flex: 1 }}>
       <TextField
@@ -392,8 +399,18 @@ export function Log({ vm }: LogProps) {
 
         {shown === "medicine" && (
           <Section title="Medicine" first>
-            {vm.medicines.length > 0 && (
-              <Chips label="Your medicines" options={vm.medicines.map((m) => [m, m] as const)} value={form.name as string} onChange={set("name")} />
+            {medNames.length > 0 && (
+              <Chips
+                label="Your medicines"
+                options={medNames.map((m) => [m, m] as const)}
+                value={form.name as string}
+                onChange={(v) => {
+                  set("name")(v);
+                  // A scheduled medicine brings its dose.
+                  const dose = doseOf(String(v));
+                  if (dose) set("dose")(dose);
+                }}
+              />
             )}
             <Field label="Name">
               <TextField value={form.name as string} onChangeText={(t) => set("name")(t)} placeholder="e.g. Melatonin" autoCapitalize="words" maxLength={32} accessibilityLabel="Medicine name" />
@@ -401,8 +418,13 @@ export function Log({ vm }: LogProps) {
             <Field label="Dose" hint="(optional)">
               <TextField value={form.dose as string} onChangeText={(t) => set("dose")(t)} placeholder="e.g. 3 mg" maxLength={40} accessibilityLabel="Dose" returnKeyType="done" onSubmitEditing={save} />
             </Field>
-            <Sentence style={{ paddingHorizontal: 4 }}>Each medicine becomes a behaviour in your journal. From its first dose, days without one count as “no”, so Insights can show how it affects your next-day Recovery, HRV and Sleep.</Sentence>
             {timeField}
+            <Sentence style={{ paddingHorizontal: 4 }}>Each medicine becomes a behaviour in your journal. From its first dose, days without one count as “no”, and the time you took it is kept, so Insights can show how both whether and when affect your next-day Recovery, HRV and Sleep.</Sentence>
+            <Pressable onPress={() => router.push("/settings?s=medicines" as Href)} accessibilityRole="link" hitSlop={6} style={{ paddingHorizontal: 4 }}>
+              <Txt size={15} lineHeight={20} style={{ color: c.teal }}>
+                Doses, times and reminders
+              </Txt>
+            </Pressable>
           </Section>
         )}
 

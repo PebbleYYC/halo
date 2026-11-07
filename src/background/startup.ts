@@ -4,6 +4,7 @@ import { parseTime } from "./decide";
 import { cancelCheckIn, installNotificationHandler, notificationPermission, scheduleCheckIn } from "./notify";
 import { readSettings, type BackgroundSettings } from "./settings";
 import { syncRegistration } from "./task";
+import { syncMedReminders } from "./medReminders";
 
 export async function startBackground(): Promise<void> {
   try {
@@ -12,6 +13,8 @@ export async function startBackground(): Promise<void> {
     // The task also runs the update check, so it stays registered while either is on.
     await syncRegistration(s.backgroundSync || s.updates);
     await applyCheckIn(s);
+    // Medicine reminders back on the schedule (a reinstall or a cleared schedule loses them); only once allowed.
+    if ((await notificationPermission()) === "granted") await syncMedReminders();
   } catch (e) {
     console.warn("[background] start", e instanceof Error ? e.message : String(e));
   }

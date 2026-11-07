@@ -7,10 +7,11 @@
 // the bar is its overlay, so the glass bends what is under it. The scroll offset lives on the UI thread (Reanimated):
 // the large title's fold, the inline title, the scroll edge and the cards that rise as they scroll into view all read
 // it there, and no JS runs while the page scrolls. Pull to refresh reads the live heart rate first, then syncs.
+import { useScrollTopOnReselect } from "@/ui/motion/tabReselect";
 import { askLocationOnce } from "@/weather/place";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
-import { useRouter, useScrollToTop, type Href } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CircleAlert } from "lucide-react-native";
 import Animated from "react-native-reanimated";
@@ -59,7 +60,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   // Tapping Today in the bar while already on it scrolls back to the top.
   const scrollRef = React.useRef<ScrollView>(null);
-  useScrollToTop(scrollRef);
+  useScrollTopOnReselect(scrollRef);
   // The scroll offset on the UI thread: the title's fold, the bar, and the cards that rise as they scroll into view.
   const { setRef: setScrollRef, y: scrollY } = useRevealScroll(scrollRef);
   const top = insets.top + BAR_ROW;

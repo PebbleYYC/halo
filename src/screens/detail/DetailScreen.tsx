@@ -1,8 +1,8 @@
 // The detail-screen frame for Recovery, Strain, Sleep, Activity and Activities. It is the kit's DetailShell layout,
 // value for value, plus what DetailShell cannot take yet: a pull-to-refresh control and in-page anchors (the web's
 // `#drivers` / `#planner`), which need the ScrollView's ref.
+import { useScrollTopOnReselect } from "@/ui/motion/tabReselect";
 import * as React from "react";
-import { useScrollToTop } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { CircleAlert } from "lucide-react-native";
@@ -118,7 +118,7 @@ export function DetailScreen({
   // As a tab root (Sleep, Activity), tapping its tab again scrolls back to the top; on a pushed screen this does nothing.
   const ownScroll = React.useRef<ScrollRef | null>(null);
   const scrollRef = anchors?.scroll ?? ownScroll;
-  useScrollToTop(scrollRef as React.RefObject<ScrollView>);
+  useScrollTopOnReselect(scrollRef as React.RefObject<ScrollView>);
   // Keyboard-aware only where there are fields: the score screens keep a plain (Reanimated) ScrollView, whose offset
   // on the UI thread lets sections below the fold rise as they scroll into view (motion/Rise).
   const Scroll = (keyboardAware ? KeyboardAwareScrollView : Animated.ScrollView) as unknown as typeof ScrollView;

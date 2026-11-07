@@ -14,6 +14,8 @@ import { notifyAfterRun } from "./alerts";
 import { taskSkipReason, type AlertSource } from "./decide";
 import { appendLog } from "./log";
 import { installNotificationHandler } from "./notify";
+import { handleMedResponse, MED_TASK } from "./medReminders";
+import * as Notifications from "expo-notifications";
 import { backgroundStore, runSync } from "./runSync";
 import { readSettings } from "./settings";
 
@@ -60,6 +62,11 @@ export async function runBackgroundTask(): Promise<BackgroundTask.BackgroundTask
 }
 
 TaskManager.defineTask(TASK_NAME, runBackgroundTask);
+// A medicine reminder's Taken or Snooze, pressed with Halo in the background or closed: Android starts this task.
+TaskManager.defineTask<Notifications.NotificationTaskPayload>(MED_TASK, async ({ data }) => {
+  if (data && "actionIdentifier" in data) await handleMedResponse(data).catch(() => false);
+});
+void Notifications.registerTaskAsync(MED_TASK).catch(() => {});
 // Also global: a notification arriving while Halo is open must still show.
 installNotificationHandler();
 
