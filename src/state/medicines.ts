@@ -1,6 +1,5 @@
-// Your medicines' schedules, kept on this phone (AsyncStorage): name, dose, the times of day and the days of the week,
-// and whether to remind. A dose itself is a journal entry (Log › Medicine, or Taken on a reminder); this is only the
-// plan the reminders and the Log sheet start from. No React in the store half, so the background task can read it.
+// Medicine schedules on this phone (name, dose, times, days, reminder); the doses themselves are journal entries.
+// The store half has no React, so the background task can read it.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as React from "react";
 

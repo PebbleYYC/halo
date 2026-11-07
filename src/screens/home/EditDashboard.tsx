@@ -4,6 +4,7 @@
 // / Move down; "More metrics" holds the rest by group under a search field, each row led by the green add mark, and a
 // tap on the row adds it to the end. Done keeps the list on the phone (dashboard.ts); Reset to default restores `defaults`. Each metric
 // leads with its family's icon square.
+import { StableTextInput } from "@/ui/components/StableTextInput";
 import * as React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -48,7 +49,7 @@ function SearchField({ value, onChangeText }: { value: string; onChangeText: (q:
       <View pointerEvents="none" style={{ position: "absolute", left: 10 }}>
         <Search size={18} color={c.sub} strokeWidth={2.2} />
       </View>
-      <TextInput
+      <StableTextInput
         ref={ref}
         value={value}
         onChangeText={onChangeText}

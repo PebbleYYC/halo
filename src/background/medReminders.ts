@@ -1,8 +1,5 @@
-// Medicine reminders (mobile), as Guava's: a scheduled notification at each of a medicine's times, with Taken and
-// Snooze 10 min right on it. Taken logs the dose at that moment into the journal (the same entry as Log › Medicine)
-// without opening Halo; Snooze shows it again in 10 minutes. Android runs the button's code in the background, even
-// with Halo closed (expo-notifications' background task, registered at startup in task.ts); with Halo open, the
-// response listener in links.ts takes it. No React here, so the headless task can import it.
+// Medicine reminders with Taken and Snooze on the notification; Taken logs the dose without opening Halo.
+// Buttons run in expo-notifications' background task (task.ts) or, with Halo open, links.ts. No React: imported headless.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { localDay } from "@/lib/time";
@@ -43,11 +40,7 @@ const contentOf = (m: Pick<MedSchedule, "id" | "name" | "dose">): Notifications.
   categoryIdentifier: MED_CATEGORY,
 });
 
-/**
- * Puts every reminder on the system's schedule to match `list` (all of the medicines' at once): the old ones go, then
- * each time of a medicine with reminders on is scheduled daily, or weekly on each of its days. Never throws; false if
- * the schedule couldn't be set.
- */
+/** Replaces every scheduled reminder to match `list`: daily, or weekly on chosen days. Never throws; false on failure. */
 export async function syncMedReminders(list?: MedSchedule[]): Promise<boolean> {
   try {
     const meds = list ?? (await readMedicines());
@@ -92,11 +85,8 @@ async function firstTime(key: string): Promise<boolean> {
   return true;
 }
 
-/**
- * A press on a reminder's button. Taken: logs the dose now (the journal's medicine entry; that day's scores rescore
- * at the next sync) and clears the notification. Snooze: shows the same reminder again in 10 minutes. True when the
- * response was a reminder button (handled now or before), so the caller doesn't also open its link.
- */
+/** Taken logs the dose now and marks the day for rescoring; Snooze re-shows it in 10 minutes. True for a reminder button,
+ *  so the caller doesn't also open its link. */
 export async function handleMedResponse(r: Notifications.NotificationResponse): Promise<boolean> {
   const action = r.actionIdentifier;
   if (action !== "taken" && action !== "snooze") return false;

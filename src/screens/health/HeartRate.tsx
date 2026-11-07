@@ -9,7 +9,7 @@
 // The "2 minutes ago" line ticks on its own.
 //
 // Live over Bluetooth (src/state/liveBle.tsx): while the band shares heart rate and Halo is connected, today's hero
-// becomes the Live section — the band's bpm, the heart-rate zone it is in (the day's zones from the pipeline: resting
+// becomes the Live section: the band's bpm, the heart-rate zone it is in (the day's zones from the pipeline: resting
 // to max on heart-rate reserve, the profile's max when the day has none yet), the last 2 minutes and the live RMSSD.
 // Otherwise the hero offers "Go live". Live readings are display-only; the chart and zones below stay Health Connect's.
 import * as React from "react";

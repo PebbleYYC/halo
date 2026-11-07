@@ -8,6 +8,7 @@
 // controller's chat scroll view), each message row is memoised and useChat keeps every unchanged message object, so a
 // chunk re-renders the streaming answer alone; inside it the evidence cards are memoised on their tool output. New
 // messages spring in on the UI thread, once each; a message already on screen when the chat opened never animates.
+import { StableTextInput } from "@/ui/components/StableTextInput";
 import * as React from "react";
 import { AccessibilityInfo, FlatList, Pressable, Share, TextInput, useWindowDimensions, View, type LayoutChangeEvent, type ListRenderItemInfo, type ScrollViewProps, type StyleProp, type ViewStyle } from "react-native";
 import { KeyboardChatScrollView, KeyboardStickyView, useKeyboardHandler, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
@@ -507,7 +508,7 @@ function Composer({ inputRef, value, onChange, onSend, onStop, busy, bottom, onH
       <LinearGradient pointerEvents="none" colors={[alpha(c.ground, 0), alpha(c.ground, 0.85), c.ground]} locations={[0, 0.55, 1]} style={{ position: "absolute", left: 0, right: 0, top: -12, bottom: 0 }} />
       <View style={{ paddingHorizontal: 12, paddingBottom: bottom }} onLayout={(e) => onHeight(e.nativeEvent.layout.height - bottom)}>
         <LiquidGlass cornerRadius={COMPOSER_H / 2} style={{ minHeight: COMPOSER_H, flexDirection: "row", alignItems: "flex-end", paddingLeft: 16, paddingRight: 4, paddingVertical: 4, gap: 6 }}>
-          <TextInput
+          <StableTextInput
             ref={inputRef}
             value={value}
             onChangeText={onChange}

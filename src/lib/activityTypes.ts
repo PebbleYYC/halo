@@ -1,12 +1,6 @@
-// Workout names as Fitbit writes them (mobile). Fitbit's app names a workout by its exercise ("Weights", "Spinning",
-// "Interval Workout"); Health Connect carries a type code and, from Fitbit, usually that name as the title. Halo shows
-// the title when there is one, else Fitbit's name for the type, and the editor offers Fitbit's list.
+// Workout names as Fitbit shows them: the workout's own title, else Fitbit's name for its Health Connect type.
 
-/**
- * Fitbit's exercise list, in the order its picker shows the common ones, each with its Health Connect type. Health
- * Connect has no type for some (housework, yard work): Fitbit sends those as a general workout under their name, so
- * picking one sets that `name` too.
- */
+/** Fitbit's exercise list with each Health Connect type. Housework and Yard Work have no type, so they carry a `name`. */
 export const FITBIT_EXERCISES: { label: string; type: string; name?: string }[] = [
   { label: "Walk", type: "WALKING" },
   { label: "Run", type: "RUNNING" },

@@ -640,7 +640,7 @@ class LiveHeartRate {
 
   /**
    * Connects when it should, called whenever something changes (boot, radio on, permission granted, foreground, a
-   * setting): a scan that was waiting, a paused reconnect, the band the background let go, or — with auto-connect —
+   * setting): a scan that was waiting, a paused reconnect, the band the background let go, or (with auto-connect)
    * the remembered band.
    */
   private maybeConnect() {

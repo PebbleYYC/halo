@@ -1,5 +1,5 @@
 // Live heart rate for the screens: the Bluetooth controller's state (src/health/ble.ts) and its samples, turned into
-// what the screens draw — the bpm, the last 60 s of RR intervals and their RMSSD, the 2-minute trace. Raw samples
+// what the screens draw: the bpm, the last 60 s of RR intervals and their RMSSD, the 2-minute trace. Raw samples
 // land in refs (a band notifies about once a second); React hears about them at most 4 times a second.
 //
 // Display-only: nothing here writes to the Store. Health Connect stays the scoring source (no double counting).
