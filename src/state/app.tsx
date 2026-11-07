@@ -12,6 +12,7 @@ import { useNotificationDeepLinks } from "@/background/links";
 import { markUiRuntime, registerAppStore, runSync } from "@/background/runSync";
 import { startBackground } from "@/background/startup";
 import { openStore } from "@/data/db";
+import { runOneTimeCleanups } from "@/data/cleanups";
 import { seedDemo } from "@/data/seed";
 import type { Store } from "@/data/store";
 import type { HrSample, Profile, SyncState } from "@/data/types";
@@ -228,6 +229,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // This runtime has a screen: its syncs slice their work so taps and frames get through (src/lib/yield.ts).
         markUiRuntime();
         void startBackground();
+        // Once per install: merge the L-theanine and magnesium variants into one medicine (src/data/cleanups.ts).
+        const cleaned = await runOneTimeCleanups(st);
         const [profile, source, sync, avail, google] = await Promise.all([
           st.getProfile(),
           AsyncStorage.getItem(SOURCE_KEY).catch(() => null) as Promise<Source | null>,
@@ -251,7 +254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         patch({ status: hasScores ? "ready" : "syncing" });
         if (!hasScores) {
           void run(st, profile, source);
-        } else if (source !== "demo" && syncedRecently(sync.lastSyncTs, timeZone)) {
+        } else if (source !== "demo" && !cleaned && syncedRecently(sync.lastSyncTs, timeZone)) {
           // Synced minutes ago (by the app or the background task) and still the same day: the saved scores are
           // current, and skipping the import and rescore keeps the first seconds free for taps and scrolling.
           perf("launch-sync", "skipped", `${Math.round(Date.now() / 1000 - (sync.lastSyncTs ?? 0))}s since the last`);
