@@ -25,10 +25,11 @@ import { EditProfileButton } from "./ProfileSheet";
 import { AppSection, CoachSection, DataSourceSection, ProfileSection } from "./sections";
 import { UnitsSection } from "./units";
 import { HeadacheSection } from "./headache";
+import { MedicinesSection } from "./medicines";
 import { WeeklyPlanSection } from "./weeklyPlan";
 
-export type SectionId = "profile" | "source" | "goals" | "notifications" | "live" | "app" | "units" | "headache" | "coach" | "claude";
-const IDS: SectionId[] = ["profile", "source", "goals", "notifications", "live", "app", "units", "headache", "coach", "claude"];
+export type SectionId = "profile" | "source" | "goals" | "notifications" | "live" | "app" | "units" | "headache" | "medicines" | "coach" | "claude";
+const IDS: SectionId[] = ["profile", "source", "goals", "notifications", "live", "app", "units", "headache", "medicines", "coach", "claude"];
 /** The web's ids and older names: ?s=account, ?s=sync, ?s=appearance. */
 const ALIAS: Record<string, SectionId> = { account: "profile", sync: "source", appearance: "app" };
 
@@ -42,6 +43,7 @@ const TITLE: Record<SectionId, string> = {
   app: "Appearance",
   units: "Units",
   headache: "Headache risk",
+  medicines: "Medicines",
   coach: "Coach",
   claude: "Connect to Claude",
 };
@@ -74,6 +76,8 @@ function Section({ id }: { id: SectionId }) {
       return <UnitsSection />;
     case "headache":
       return <HeadacheSection />;
+    case "medicines":
+      return <MedicinesSection />;
     case "coach":
       return <CoachSection />;
     case "claude":

@@ -3,10 +3,10 @@
 // and a tap on the tab scrolling back to the top. It is the Health tabs' frame (shells.tsx) with what a page with a
 // search field needs: a tap on a result while the keyboard is up lands on the result, and a drag closes the keyboard.
 // The page's blocks rise into place in a short cascade as it opens (motion/Rise), on the UI thread.
+import { useScrollTopOnReselect } from "@/ui/motion/tabReselect";
 import * as React from "react";
 import { View, type ScrollView } from "react-native";
 import Animated from "react-native-reanimated";
-import { useScrollToTop } from "expo-router";
 import { useApp } from "@/state/app";
 import { BottomSheet, Button, SyncStatus, syncView, TitleHeader, Txt, useTheme, type SyncShellStatus } from "@/ui";
 import { LargeTitle, useBarInset } from "@/ui/components/DetailHeader";
@@ -71,7 +71,7 @@ export function MoreShell({ title, onBack, head, children }: { title: string; on
   const clearance = useBottomClearance("tabs");
   const top = useBarInset();
   const scrollRef = React.useRef<ScrollView>(null);
-  useScrollToTop(scrollRef);
+  useScrollTopOnReselect(scrollRef);
   // The offset lives on the UI thread, for the bar's inline title and scroll edge; no JS runs on scroll.
   const { setRef, y } = useRevealScroll(scrollRef);
   return (

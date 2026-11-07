@@ -8,7 +8,7 @@ import { StyleSheet, View } from "react-native";
 import { Lock } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { formatValue } from "@/lib/format";
-import { getJournalInsights } from "@/queries/journal";
+import { getJournalInsights, getMedicineTiming, MED_TIMING } from "@/queries/journal";
 import type { ImpactMetricKey, JournalInsightsVM } from "@/queries/types";
 import { useQuery } from "@/state/app";
 import { BottomSheet, DriverList, DriverListSkeleton, Txt } from "@/ui";
@@ -69,6 +69,8 @@ export default function InsightsScreen() {
       footer={
         <View style={{ gap: 28 }}>
           {vm && vm.needsMore.length > 0 && <Unlock needsMore={vm.needsMore} word={WORD[metric]} />}
+          {/* Mobile: not only whether a medicine was taken, but when. */}
+          <MedTimingSection metric={metric} version={version} />
           {/* Mobile: workouts are behaviours too; what each kind costs next-day Recovery. */}
           {metric === "recovery" && <ActivityCostSection />}
           <Sentence size={13} style={{ paddingHorizontal: 4 }}>
@@ -183,6 +185,62 @@ function Unlock({ needsMore, word }: { needsMore: JournalInsightsVM["needsMore"]
           );
         })}
       </View>
+    </View>
+  );
+}
+
+/**
+ * "When you take it": each medicine's earlier doses against its later ones (split at its median time), and the next
+ * day's metric after each. Shown once a medicine has 10 timed doses spread over more than half an hour.
+ */
+function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; version: number }) {
+  const c = useCalm();
+  const q = useQuery((ctx) => getMedicineTiming(metric, ctx), [metric, version]);
+  const rows = q.data;
+  if (!rows?.length) return null;
+  const sd = metric === "hrv";
+  const v = (x: number) => (sd ? `${formatValue("signed1", x)} SD` : `${formatValue("int", x)}%`);
+  const word = WORD[metric];
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ gap: 4, paddingHorizontal: 4 }}>
+        <View accessibilityRole="header">
+          <Title>When you take it</Title>
+        </View>
+        <Sentence>{`Your next-day ${word} after earlier and later doses, split at each medicine’s usual time. From ${MED_TIMING.minDays} days with a logged time.`}</Sentence>
+      </View>
+      <Surface padding={16} gap={0}>
+        {rows.map((r, i) => {
+          // Higher is better for all three outcomes.
+          const earlyWins = r.early.avg > r.late.avg;
+          return (
+            <View
+              key={r.tag}
+              accessible
+              accessibilityLabel={`${r.label}: before ${r.split}, next-day ${word} ${v(r.early.avg)} over ${r.early.n} days; from ${r.split}, ${v(r.late.avg)} over ${r.late.n} days.`}
+              style={[{ paddingVertical: 12, gap: 6 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
+            >
+              <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
+                {r.label}
+              </Txt>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`Before ${r.split} · ${r.early.n} days`}</Txt>
+                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: earlyWins ? c.tintInk.mint : c.ink }]}>
+                    {v(r.early.avg)}
+                  </Txt>
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`From ${r.split} · ${r.late.n} days`}</Txt>
+                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: !earlyWins ? c.tintInk.mint : c.ink }]}>
+                    {v(r.late.avg)}
+                  </Txt>
+                </View>
+              </View>
+            </View>
+          );
+        })}
+      </Surface>
     </View>
   );
 }

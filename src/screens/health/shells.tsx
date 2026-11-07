@@ -1,10 +1,11 @@
 // Screen chrome for the Health screens: the kit's PageShell and DetailShell layouts with pull-to-refresh, the back
 // and day-switch behaviour, the header's sync status, and the error state. The kit shells own their ScrollView and
 // take no RefreshControl, so these compose the same kit pieces (Ground, TitleHeader, DetailHeader, the large title).
+import { useScrollTopOnReselect } from "@/ui/motion/tabReselect";
 import { AvatarButton } from "@/ui/components/AvatarButton";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
-import { useRouter, type Href, useScrollToTop } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { CloudOff } from "lucide-react-native";
 import { useApp } from "@/state/app";
 import {
@@ -127,7 +128,7 @@ export function TabShell({ title, lead, onBack, gap = 32, eyebrow, children }: {
   const clearance = useBottomClearance("tabs");
   // Tapping the tab again while on it scrolls back to the top.
   const scrollRef = React.useRef<ScrollView>(null);
-  useScrollToTop(scrollRef);
+  useScrollTopOnReselect(scrollRef);
   // Sections rise into place as the tab opens and as they scroll into view (motion/Rise).
   const { setRef, y: revealY } = useRevealScroll(scrollRef);
   const top = useBarInset();

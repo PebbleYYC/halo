@@ -3,6 +3,7 @@
 // drop that slides between tabs on a spring and stretches as it goes (Reanimated, UI thread). Both pieces refract the
 // pages scrolling under them when the bar is a GlassTarget's overlay (the tabs layout); elsewhere (the kit preview)
 // they draw glass's stand-in.
+import { emitTabReselect } from "@/ui/motion/tabReselect";
 import * as React from "react";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
@@ -272,7 +273,10 @@ export function TabBar(props: TabBarProps) {
     if (nav) {
       const route = routes[i];
       const e = nav.navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-      if (!e.defaultPrevented && i !== current) nav.navigation.navigate(route.name);
+      if (e.defaultPrevented) return;
+      // The tab you're on: back to the top of its page.
+      if (i === current) emitTabReselect();
+      else nav.navigation.navigate(route.name);
       return;
     }
     own?.onChange(i, tabs[i]);

@@ -9,7 +9,7 @@
 import * as React from "react";
 import { useRouter, type Href } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import { Archive, Bell, Bluetooth, BookOpen, Cable, CalendarDays, CalendarRange, ChartLine, ClipboardCheck, CloudRain, Database, Download, FlaskConical, HeartPulse, History, ListChecks, MessagesSquare, Palette, Plug, RefreshCw, Ruler, SwatchBook, Target, Trash2, UserRound } from "lucide-react-native";
+import { Archive, Bell, Bluetooth, BookOpen, Cable, CalendarDays, CalendarRange, ChartLine, ClipboardCheck, CloudRain, Pill, Database, Download, FlaskConical, HeartPulse, History, ListChecks, MessagesSquare, Palette, Plug, RefreshCw, Ruler, SwatchBook, Target, Trash2, UserRound } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { useCoachSetup } from "@/coach/session";
 import { describeHealthConnect } from "@/health/sync";
@@ -22,6 +22,7 @@ import { useApp, useQuery, useSyncProgress } from "@/state/app";
 import { useLiveBleControl } from "@/state/liveBle";
 import { useUnits } from "@/state/units";
 import { useWeatherSettings } from "@/state/weather";
+import { useMedicines } from "@/state/medicines";
 import { Txt, useTheme } from "@/ui";
 import { LIVE_LINKS } from "@/screens/breathe/entries";
 import { useNow } from "../health/shells";
@@ -97,6 +98,7 @@ export default function MoreScreen() {
   const { units } = useUnits();
   const preset = presetOf(units);
   const weather = useWeatherSettings();
+  const meds = useMedicines();
   const unitsAside = preset === "metric" ? "Metric" : preset === "canadian" ? "Mixed" : preset === "imperial" ? "US" : "Custom";
 
   const syncing = app.status === "syncing";
@@ -134,6 +136,7 @@ export default function MoreScreen() {
         { icon: Plug, system: "green", label: "Data source", aside: sourceLabel, href: "/settings?s=source", keywords: "health connect google fitbit sync permissions disconnect" },
         { icon: Target, system: "orange", label: "Goals", href: "/settings?s=goals", keywords: "steps distance floors water sleep active zone minutes weekly plan targets rings" },
         { icon: Ruler, system: "gray", label: "Units", aside: unitsAside, href: "/settings?s=units", keywords: "metric imperial kilograms pounds kg lb centimetres feet inches miles kilometres celsius fahrenheit millilitres fluid ounces" },
+        { icon: Pill, system: "green", label: "Medicines", aside: meds.length ? `${meds.length}` : undefined, href: "/settings?s=medicines", keywords: "medicine medication pill dose reminder supplement" },
         { icon: CloudRain, system: "teal", label: "Headache risk", aside: weather.enabled ? (weather.source === "city" ? (weather.city?.name ?? "City") : "Location") : "Off", href: "/settings?s=headache", keywords: "headache migraine weather pressure barometric humidity location city alert" },
         { icon: Palette, system: "indigo", label: "Appearance", aside: choice === "system" ? "System" : choice === "light" ? "Light" : "Dark", href: "/settings?s=app", keywords: "theme dark light mode app display" },
       ],
