@@ -6,7 +6,7 @@
 // logged entries, exactly as the web's demo mode keeps them: every type's access is "demo" (kept in Halo) and
 // `atGoogle` is always false.
 import type { LoggedEntryRow, Store } from "@/data/store";
-import { isMedicineTag } from "@/lib/medicine";
+import { isMedicineTag, medicineTag } from "@/lib/medicine";
 import { addDays, localDay, localMidnight } from "@/lib/time";
 import { FORMATS, LOG_TYPES, type LoggedEntry, type LogType } from "./_lib";
 import { type QueryCtx, todayOf } from "./common";
@@ -309,4 +309,20 @@ export async function getLog(ctx: QueryCtx, opts: { demo?: boolean } = {}): Prom
     demo: !!opts.demo,
     medicines: tags.filter((t) => isMedicineTag(t.tag) && !t.hidden).map((t) => t.label),
   };
+}
+
+/** A logged dose, for the check-in's medicine rows and the dose editor. */
+export type Dose = { id: string; ts: number; name: string; dose: string; tag: string; fromFitbit: boolean };
+
+/** The doses logged on `day` (oldest first). */
+export async function dosesOn(store: Store, day: string, timeZone: string): Promise<Dose[]> {
+  const rows = await store.loggedEntries(localMidnight(day, timeZone) - 3600, 5000);
+  return rows
+    .filter((e) => e.type === "medication" && e.day === day)
+    .map((e) => {
+      const d = (e.data ?? {}) as { name?: unknown; dose?: unknown };
+      const name = String(d.name ?? "");
+      return { id: e.id, ts: e.ts, name, dose: typeof d.dose === "string" ? d.dose : "", tag: medicineTag(name), fromFitbit: e.source === "health_connect" };
+    })
+    .sort((a, b) => a.ts - b.ts);
 }

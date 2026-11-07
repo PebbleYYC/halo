@@ -7,7 +7,7 @@ import type { Profile } from "@/data/types";
 import { DEFAULT_JOURNAL_TAGS, ensureDefaultTags, getBehaviours, MAX_TAGS } from "@/queries/journal";
 import type { QueryCtx } from "@/queries/ctx";
 import { IMPERIAL } from "@/lib/units";
-import { addCustomTag, deleteLogEntry, loadCheckIn, logEntry, logFoods, reorderBehaviours, saveJournalEntry, setBehaviourHidden, setFoodSeparate, updateFoodEntry, type ActionCtx } from "./actions";
+import { addCustomTag, deleteLogEntry, editDose, loadCheckIn, logEntry, logFoods, reorderBehaviours, saveJournalEntry, setBehaviourHidden, setFoodSeparate, updateFoodEntry, type ActionCtx } from "./actions";
 
 const TZ = "Asia/Kolkata";
 // 20:00 UTC on Oct 2 is 01:30 on Oct 3 in Kolkata.
@@ -241,6 +241,15 @@ describe("logEntry", () => {
     expect((await store.allJournal()).some((e) => e.tag === "med_melatonin")).toBe(true);
     await deleteLogEntry(c(), { id: second.id });
     expect((await store.allJournal()).some((e) => e.tag === "med_melatonin")).toBe(false);
+  });
+
+  it("editing a dose's time to another day moves that day's yes with it", async () => {
+    await logEntry(c(), { kind: "medicine", name: "Melatonin", dose: "3 mg", at: "2026-10-02T07:00" });
+    const [dose] = await rows();
+    expect(await editDose(c(), { id: dose.id, ts: dose.ts, name: "Melatonin", dose: "5 mg", at: "2026-10-01 21:30" })).toMatchObject({ ok: true });
+    const after = await rows();
+    expect(after.map((r) => [r.day, r.data])).toEqual([["2026-10-01", { name: "Melatonin", dose: "5 mg" }]]);
+    expect((await store.allJournal()).filter((e) => e.tag === "med_melatonin").map((e) => e.day)).toEqual(["2026-10-01"]);
   });
 
   it("food keeps a blank name as null", async () => {

@@ -377,3 +377,22 @@ export async function deleteLogEntry(c: ActionCtx, input: { id: string }): Promi
   }
   return { ok: true, data: undefined };
 }
+
+/**
+ * Changes a logged dose (its medicine, dose or time): the new one is logged first, then the old one removed, so the
+ * days' medicine answers follow it (a dose moved to another day takes that day's "yes" with it, and leaves the old
+ * day's only if no other dose of it remains). Doses logged in Fitbit are not edited here.
+ */
+export async function editDose(c: ActionCtx, input: { id: string; ts: number; name: string; dose?: string; at: string }): Promise<ActionResult<{ demo: boolean }>> {
+  const row = (await c.store.loggedEntries(input.ts - 1, 5000)).find((r) => r.id === input.id);
+  if (!row || row.type !== "medication") return fail("This dose is no longer in your log.");
+  if (row.source !== "pulse") return fail("Doses logged in Fitbit are changed in Fitbit.");
+  // The journal's actions take "YYYY-MM-DDTHH:mm"; the steppers' "YYYY-MM-DD HH:mm" too.
+  const at = input.at.trim().replace(/\s+/, "T");
+  const added = await logEntry(c, { kind: "medicine", name: input.name, dose: input.dose, at });
+  if (!added.ok) return added;
+  const removed = await deleteLogEntry(c, { id: input.id });
+  if (!removed.ok) return removed;
+  await c.store.markIntradayDirty([row.day, localDay(fromWall(at, c.timeZone), c.timeZone)]);
+  return added;
+}

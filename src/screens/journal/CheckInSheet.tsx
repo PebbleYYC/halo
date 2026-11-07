@@ -23,7 +23,10 @@ import { CalmButton, IconTile, TintPill, useCalm, type CalmTint } from "../setti
 import { loadCheckIn, saveJournalEntry } from "./actions";
 import { AddBehaviour, useActionCtx } from "./AddBehaviour";
 import { ConfirmDialog, DialogAction, ErrorAlert, haptic, TagBadge, toast, YesNo } from "./controls";
-import { changedEntries, type Values } from "./forms";
+import { changedEntries, wallNow, type Values } from "./forms";
+import { DoseEditor } from "./DoseEditor";
+import { dosesOn, type Dose } from "@/queries/log";
+import type { ActionCtx } from "./actions";
 import { bumpJournal, openCheckIn, useOpenCheckInListener } from "./state";
 import { TAG_GROUPS, tagIcon } from "./tags";
 
@@ -152,6 +155,9 @@ export function CheckInSheetHost() {
   const [saving, setSaving] = React.useState(false);
   const [saveError, setSaveError] = React.useState(false);
   const [confirm, setConfirm] = React.useState(false);
+  // The day's logged doses, under their medicines; `editing`: a dose being changed, or a medicine's new one ("new:tag").
+  const [doses, setDoses] = React.useState<Dose[]>([]);
+  const [editing, setEditing] = React.useState<string | null>(null);
 
   const tags = data?.tags ?? [];
   const saved = data?.checkIn.entries ?? {};
@@ -167,6 +173,8 @@ export function CheckInSheetHost() {
     setLoadError(false);
     setSaveError(false);
     setConfirm(false);
+    setDoses([]);
+    setEditing(null);
     setOpen(true);
     setRequest((r) => ({ day: d, n: (r?.n ?? 0) + 1 }));
   });
@@ -185,12 +193,37 @@ export function CheckInSheetHost() {
         if (!r.ok) return setLoadError(true);
         setData({ day: request.day, ...r.data });
         setValues({ ...r.data.checkIn.entries });
+        void dosesOn(q.store, request.day, q.timeZone).then((d) => live && setDoses(d)).catch(() => {});
       })
       .catch(() => live && setLoadError(true));
     return () => {
       live = false;
     };
   }, [request]);
+
+  const doseDone = async (touched: string[]) => {
+    setEditing(null);
+    const q = ctxRef.current;
+    if (!q || !data) return;
+    const now = await dosesOn(q.store, data.day, q.timeZone).catch(() => doses);
+    setDoses(now);
+    // The action wrote the day's "yes" (or took it away with its last dose): the saved answers and the open ones follow.
+    const fresh = await loadCheckIn(q, data.day).catch(() => null);
+    if (fresh?.ok) {
+      const medTags = new Set(fresh.data.tags.filter((t) => t.group === "medicine").map((t) => t.tag));
+      setData((d) => d && { ...d, tags: fresh.data.tags, checkIn: fresh.data.checkIn });
+      setValues((v) => {
+        const next = { ...v };
+        for (const t of medTags) {
+          if (t in fresh.data.checkIn.entries) next[t] = fresh.data.checkIn.entries[t];
+          else delete next[t];
+        }
+        return next;
+      });
+    }
+    bumpJournal();
+    if (touched.length) void app.refresh();
+  };
 
   const finish = () => {
     setConfirm(false);
@@ -304,6 +337,20 @@ export function CheckInSheetHost() {
                           </Txt>
                           <YesNo label={t.label} compact value={values[t.tag]} onChange={(v) => setValues((s) => ({ ...s, [t.tag]: v }))} />
                         </View>
+                        {g.key === "medicine" && data && (
+                          <MedicineDoses
+                            tag={t.tag}
+                            name={t.label}
+                            day={data.day}
+                            doses={doses.filter((d) => d.tag === t.tag)}
+                            answeredYes={Number(values[t.tag]) > 0}
+                            editing={editing}
+                            setEditing={setEditing}
+                            actx={actx}
+                            timeZone={app.timeZone}
+                            onDone={(days) => void doseDone(days)}
+                          />
+                        )}
                       </React.Fragment>
                     ))}
                   </View>
@@ -335,3 +382,63 @@ export function CheckInSheetHost() {
     </>
   );
 }
+
+/**
+ * Under a medicine in the check-in: the doses logged that day with their times, each tappable to change, and "Add the
+ * time taken" to log one (answering Yes alone records that it was taken, not when).
+ */
+function MedicineDoses({
+  tag,
+  name,
+  day,
+  doses,
+  answeredYes,
+  editing,
+  setEditing,
+  actx,
+  timeZone,
+  onDone,
+}: {
+  tag: string;
+  name: string;
+  day: string;
+  doses: Dose[];
+  answeredYes: boolean;
+  editing: string | null;
+  setEditing: (id: string | null) => void;
+  actx: ActionCtx | null;
+  timeZone: string;
+  onDone: (days: string[]) => void;
+}) {
+  const c = useCalm();
+  const adding = editing === `new:${tag}`;
+  if (!doses.length && !answeredYes && !adding) return null;
+  const link = (label: string, onPress: () => void, a11y?: string) => (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y ?? label} hitSlop={4} style={({ pressed }) => ({ minHeight: 36, justifyContent: "center", opacity: pressed ? 0.6 : 1 })}>
+      <Txt size={15} lineHeight={20} style={{ color: c.teal, fontVariant: ["tabular-nums"] }}>
+        {label}
+      </Txt>
+    </Pressable>
+  );
+  return (
+    <View style={{ paddingLeft: 14 + 30 + 12, paddingRight: 14, paddingBottom: 10, gap: 4 }}>
+      {doses.map((d) =>
+        editing === d.id ? (
+          <DoseEditor key={d.id} actx={actx} dose={d} name={name} day={day} timeZone={timeZone} onDone={onDone} onCancel={() => setEditing(null)} />
+        ) : d.fromFitbit ? (
+          <Txt key={d.id} size={15} lineHeight={20} style={{ color: c.sub }}>{`Taken ${clockOf(d.ts, timeZone)}${d.dose ? ` · ${d.dose}` : ""} · logged in Fitbit`}</Txt>
+        ) : (
+          <React.Fragment key={d.id}>{link(`Taken ${clockOf(d.ts, timeZone)}${d.dose ? ` · ${d.dose}` : ""}`, () => setEditing(d.id), `${name} taken at ${clockOf(d.ts, timeZone)}. Change`)}</React.Fragment>
+        ),
+      )}
+      {adding ? (
+        <DoseEditor actx={actx} dose={null} name={name} day={day} timeZone={timeZone} onDone={onDone} onCancel={() => setEditing(null)} />
+      ) : (
+        link(doses.length ? "Add another dose" : "Add the time taken", () => setEditing(`new:${tag}`))
+      )}
+    </View>
+  );
+}
+
+/** "21:04" in the profile's time zone. */
+const clockOf = (ts: number, timeZone: string) => wallNow(timeZone, ts).slice(11);
