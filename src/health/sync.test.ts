@@ -278,3 +278,62 @@ describe("syncHealthConnect under Health Connect's start-time reads", () => {
     expect(await periods()).toEqual(once);
   });
 });
+
+const { getChanges } = await import("react-native-health-connect");
+const changes = vi.mocked(getChanges);
+
+describe("syncHealthConnect edits at the source", () => {
+  /** A store already synced under this importer and policy, the last sync this morning. */
+  async function synced() {
+    await setSourcePolicy("fitbit_only");
+    const store = new MemoryStore();
+    await store.setProfile({ birthDate: "1999-06-01", sex: "male", maxHr: null, heightCm: 173, timeZone: TZ });
+    await store.setSyncState({ lastSyncTs: sec("2026-10-07T06:00:00Z"), firstDay: "2026-09-01", lastError: null });
+    storage.set("pulse.hc.changesToken", "old");
+    storage.set("pulse.hc.readTypes", JSON.stringify(["HeartRate", "SleepSession", "Steps", "TotalCaloriesBurned"]));
+    storage.set(IMPORT_STATE_KEY, JSON.stringify({ version: IMPORT_VERSION, policy: "fitbit_only" }));
+    return store;
+  }
+
+  it("re-imports only the days of a night edited weeks ago, not the days between", async () => {
+    const store = await synced();
+    // Stored: the night of Sept 20 as first synced (woke 06:00). Fitbit's edit: woke 07:30.
+    await store.upsertSessions([{ id: "s-0920", day: "2026-09-20", startTs: sec("2026-09-19T23:00:00Z"), endTs: sec("2026-09-20T06:00:00Z"), isMainSleep: true, asleepMin: 420, efficiency: 95, wakeCount: 0 } as never], []);
+    const edited = { metadata: meta("s-0920", FITBIT, 6), startTime: "2026-09-19T23:00:00Z", endTime: "2026-09-20T07:30:00Z", stages: [] };
+    const data = fixture();
+    data.SleepSession.push(edited);
+    hc.readAll.mockImplementation(startTimeRead(data));
+    changes.mockResolvedValueOnce({ nextChangesToken: "t1", upsertionChanges: [{ record: edited as never }], deletionChanges: [], hasMore: false, changesTokenExpired: false });
+
+    const r = await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+    expect(r.from).toBe("2026-10-04");
+    expect(r.counts.editedDays).toBe(2);
+    const night = (await store.allSessions()).find((s) => s.id === "s-0920");
+    expect(night?.endTs).toBe(sec("2026-09-20T07:30:00Z"));
+    // Read: the edited night's two days and the usual window, never Sept 21 to Oct 3.
+    const sleepReads = hc.readAll.mock.calls.filter(([t]) => t === "SleepSession").map(([, range]) => [(range as { start: Date }).start.toISOString().slice(0, 10), (range as { end: Date }).end.toISOString().slice(0, 10)]);
+    expect(sleepReads).toEqual([
+      ["2026-10-03", "2026-10-07"],
+      ["2026-09-18", "2026-09-21"],
+    ]);
+  });
+
+  it("drops a workout deleted at the source, re-importing only its day", async () => {
+    const store = await synced();
+    await store.upsertExercises([{ id: "old-walk", day: "2026-09-15", startTs: sec("2026-09-15T08:00:00Z"), endTs: sec("2026-09-15T08:40:00Z"), type: "WALKING", name: null, calories: null, distanceM: null }]);
+    changes.mockResolvedValueOnce({ nextChangesToken: "t1", upsertionChanges: [], deletionChanges: [{ recordId: "old-walk" }], hasMore: false, changesTokenExpired: false });
+    const r = await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+    expect(r.from).toBe("2026-10-04");
+    expect((await store.allExercises()).map((e) => e.id)).toEqual([]);
+  });
+});
+
+describe("dayRuns", () => {
+  it("groups consecutive days", async () => {
+    const { dayRuns } = await import("./sync");
+    expect(dayRuns(["2026-10-05", "2026-10-01", "2026-10-02", "2026-10-02"])).toEqual([
+      ["2026-10-01", "2026-10-02"],
+      ["2026-10-05", "2026-10-05"],
+    ]);
+  });
+});
