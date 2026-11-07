@@ -22,3 +22,21 @@ export function dayWord(at: string, now: string): string {
   const back = Math.round((b - a) / 1440);
   return back === 0 ? "Today" : back === 1 ? "Yesterday" : `${MONTHS[+at.slice(5, 7) - 1]} ${+at.slice(8, 10)}`;
 }
+
+/**
+ * A typed time of day as "HH:MM": "21:40", "2140", "9:40", "940", "9", "9:40 pm", "12am". Null when it isn't one.
+ */
+export function parseClock(text: string): string | null {
+  const t = text.trim().toLowerCase().replace(/\s+/g, "");
+  const m = /^(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?$/.exec(t);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = m[2] === undefined ? 0 : Number(m[2]);
+  const ap = m[3]?.[0];
+  if (min > 59) return null;
+  if (ap) {
+    if (h < 1 || h > 12) return null;
+    h = (h % 12) + (ap === "p" ? 12 : 0);
+  } else if (h > 23) return null;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}

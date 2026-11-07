@@ -1,6 +1,5 @@
-// Edits to imported workouts (mobile): kept apart from the imported rows, keyed by the workout's id, so a re-import
-// (which rewrites `exercises`) never undoes them. Every reader gets the edited workouts through `applyExerciseEdits`;
-// a deleted one is left out everywhere (scores, lists, charts).
+// Edits to imported workouts, kept apart from `exercises` by id so a re-import never undoes them.
+// Readers get them through `applyExerciseEdits`; a deleted workout is left out everywhere.
 import type { Exercise } from "./types";
 
 export type ExerciseEdit = {

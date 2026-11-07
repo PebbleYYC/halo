@@ -13,6 +13,9 @@ import { haptic } from "@/ui/motion/haptics";
 import { CalmChip, CalmInput } from "./calmKit";
 import { ButtonRow, InsetGroup, NavRow, SwitchRow } from "./list";
 import { toast } from "./toast";
+import { parseClock } from "@/screens/journal/wallTime";
+import { StableTextInput } from "@/ui/components/StableTextInput";
+import { font } from "@/ui/fonts";
 
 const STEP_MIN = 15;
 const MAX_TIMES = 6;
@@ -58,6 +61,14 @@ export function MedicinesSection() {
 /** A time of day with − and + either side (15 minutes a step), and a remove button. */
 function TimeRow({ time, onChange, onRemove, removable }: { time: string; onChange: (t: string) => void; onRemove: () => void; removable: boolean }) {
   const c = useCalm();
+  const [typing, setTyping] = React.useState(false);
+  const [draft, setDraft] = React.useState(time);
+  const commit = () => {
+    if (!typing) return;
+    setTyping(false);
+    const t = parseClock(draft);
+    if (t) onChange(t);
+  };
   const step = (d: number) => {
     haptic.select();
     onChange(toTime(toMin(time) + d));
@@ -73,9 +84,36 @@ function TimeRow({ time, onChange, onRemove, removable }: { time: string; onChan
   return (
     <View style={{ minHeight: 56, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 }}>
       {round(Minus, `${time}, 15 minutes earlier`, () => step(-STEP_MIN))}
-      <Txt size={20} lineHeight={25} weight={600} align="center" style={{ color: c.ink, minWidth: 72, fontVariant: ["tabular-nums"] }}>
-        {time}
-      </Txt>
+      {typing ? (
+        <StableTextInput
+          autoFocus
+          defaultValue={time}
+          onChangeText={setDraft}
+          onSubmitEditing={commit}
+          onBlur={commit}
+          keyboardType="numbers-and-punctuation"
+          returnKeyType="done"
+          selectTextOnFocus
+          maxLength={8}
+          accessibilityLabel="Time, as 21:40 or 9:40 pm"
+          style={{ width: 88, height: 40, borderRadius: 12, borderWidth: 1.5, borderColor: c.teal, color: c.ink, fontSize: 20, textAlign: "center", fontVariant: ["tabular-nums"], ...font.numeric(600), paddingVertical: 0 }}
+        />
+      ) : (
+        // Tap the time to type it.
+        <Pressable
+          onPress={() => {
+            setDraft(time);
+            setTyping(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${time}. Type a time`}
+          style={({ pressed }) => ({ width: 88, height: 40, borderRadius: 12, backgroundColor: c.fill, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.6 : 1 })}
+        >
+          <Txt size={20} lineHeight={25} weight={600} style={{ color: c.ink, fontVariant: ["tabular-nums"] }}>
+            {time}
+          </Txt>
+        </Pressable>
+      )}
       {round(Plus, `${time}, 15 minutes later`, () => step(STEP_MIN))}
       <View style={{ flex: 1 }} />
       {removable && (

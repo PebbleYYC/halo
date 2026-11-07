@@ -1,5 +1,5 @@
-// Data check `/more/datacheck`: for each of the last 10 days, what the source holds per metric — Health Connect split by
-// the app and device that wrote it, or the Google Health API by device with its daily roll-ups — next to what Halo
+// Data check `/more/datacheck`: for each of the last 10 days, what the source holds per metric (Health Connect split by
+// the app and device that wrote it, or the Google Health API by device with its daily roll-ups) next to what Halo
 // stored, so a number that differs from the Fitbit app can be traced. Read-only: it never changes data. Laid out as an
 // iOS settings page: the feature header with Run check and Share, then one inset grouped list per day (each metric a row
 // with Halo's value on the right and every source under it, ★ in orange on what Halo keeps). The report can be shared
@@ -11,7 +11,7 @@ import { googleToken } from "@/google/auth";
 import { runGoogleDataCheck } from "@/google/dataCheck";
 import { runDataCheck } from "@/health/dataCheck";
 import { formatReport, type DayCheck, type SourceLine } from "@/health/dataCheckSummary";
-import { formatDay, DAY } from "@/lib/format";
+import { formatDay, DAY, MISSING } from "@/lib/format";
 import { conversionFor, roundTo, shown } from "@/lib/units";
 import { useApp } from "@/state/app";
 import { useUnits } from "@/state/units";
@@ -146,14 +146,14 @@ export default function DataCheckScreen() {
                   const unit = conv?.unit ?? (m.unit || undefined);
                   return (
                     <RowBox key={m.key} gap={8}>
-                      <MetricHead label={m.label} pulse={m.pulse == null ? "—" : String(to(m.pulse))} unit={unit} />
+                      <MetricHead label={m.label} pulse={m.pulse == null ? MISSING : String(to(m.pulse))} unit={unit} />
                       {m.sources.length ? m.sources.map((s) => <SourceRow key={s.source} s={{ ...s, value: to(s.value) }} unit={unit} />) : <Nothing>{`Nothing from ${where}`}</Nothing>}
                     </RowBox>
                   );
                 })}
               <RowBox key="sleep" gap={8}>
                 {/* What Halo stored is a sentence per session ("main 23:10–07:05 asleep 452 min"): it wraps under the name. */}
-                <View accessible accessibilityLabel={`Sleep: Halo ${d.sleep.pulse.join(" | ") || "—"}`} style={{ gap: 2 }}>
+                <View accessible accessibilityLabel={`Sleep: Halo ${d.sleep.pulse.join(" | ") || MISSING}`} style={{ gap: 2 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
                     <Txt size={16} lineHeight={21} weight={600} style={{ color: c.ink }}>
                       Sleep
@@ -161,7 +161,7 @@ export default function DataCheckScreen() {
                     <Caption>Halo</Caption>
                   </View>
                   <Txt size={15} lineHeight={20} weight={500} style={{ color: c.ink }}>
-                    {d.sleep.pulse.join(" | ") || "—"}
+                    {d.sleep.pulse.join(" | ") || MISSING}
                   </Txt>
                 </View>
                 {d.sleep.sources.length ? d.sleep.sources.map((s, i) => <SourceRow key={`${s.source}-${i}`} s={s} unit="h" records={false} />) : <Nothing>{`No sleep from ${where}`}</Nothing>}

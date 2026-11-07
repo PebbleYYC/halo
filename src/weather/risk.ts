@@ -1,6 +1,5 @@
-// Headache risk for a day: weather changes the studies link to new headaches (a day-to-day pressure change, high
-// humidity, a temperature or wind jump) plus the body's own lowered threshold (short sleep, low Recovery, stress,
-// alcohol). Points add up to Low, Medium or High, and every point keeps its reason.
+// Headache risk: weather triggers (pressure change, humidity, temperature or wind jump) plus body factors (short sleep,
+// low Recovery, stress, alcohol) add points to Low, Medium or High, each point keeping its reason.
 import { addDays } from "@/lib/time";
 import type { WeatherDay } from "./openMeteo";
 

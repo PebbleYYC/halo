@@ -373,7 +373,7 @@ function SheetLabel({ children }: { children: string }) {
 }
 
 /**
- * The Go-live sheet: the three steps in Google Health, then the band — a scan that starts on its own when Bluetooth
+ * The Go-live sheet: the three steps in Google Health, then the band, a scan that starts on its own when Bluetooth
  * is ready (and again on coming back from Google Health), the bands it finds, the connection. The footer holds the
  * one action the state calls for.
  */

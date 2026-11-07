@@ -6,6 +6,7 @@
 // a mount entrance for screens with no push to wait for. Every press settles and dims on the UI thread (press.tsx); the
 // menu, the disclosure's chevron and the search field's Cancel move on Reanimated springs, and stay still under Reduce
 // motion. A list straight on a bottom sheet takes the sheet's raised fill, so it reads in both schemes.
+import { StableTextInput } from "@/ui/components/StableTextInput";
 import * as React from "react";
 import { ActivityIndicator, Image, Keyboard, Pressable, StyleSheet, TextInput, type StyleProp, type ViewStyle, useWindowDimensions, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
@@ -606,7 +607,7 @@ export function SearchField({ value, onChangeText, placeholder = "Search" }: { v
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
       <Animated.View layout={still ? undefined : LinearTransition.springify().damping(26).stiffness(320)} style={{ flex: 1, height: 38, borderRadius: 19, backgroundColor: c.fill, flexDirection: "row", alignItems: "center", paddingLeft: 11, paddingRight: 6, gap: 6 }}>
         <Search size={17} color={c.sub} strokeWidth={2.2} />
-        <TextInput
+        <StableTextInput
           ref={input}
           value={value}
           onChangeText={onChangeText}

@@ -4,6 +4,7 @@
 // inset to the text) under small capital headers, iOS's switch, segmented control and button styles, and the system
 // colours for data. Numbers are Inter bold with tabular figures, the unit small and grey beside them. Every colour comes
 // from useCalm(); every press settles and dims on the UI thread (press.tsx).
+import { StableTextInput } from "@/ui/components/StableTextInput";
 import * as React from "react";
 import { Pressable, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from "react-native";
 import Reanimated from "react-native-reanimated";
@@ -535,7 +536,7 @@ export const CalmInput = React.forwardRef<TextInput, TextInputProps & { invalid?
   const fill = useFillOn(on);
   const [focused, setFocused] = React.useState(false);
   return (
-    <TextInput
+    <StableTextInput
       ref={ref}
       placeholderTextColor={c.tertiary}
       allowFontScaling={false}

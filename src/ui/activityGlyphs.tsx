@@ -1,7 +1,5 @@
-// An icon per exercise type (mobile), as Fitbit gives each of its exercises its own. Lucide's glyphs where it has one
-// (bike, dumbbell, volleyball, rugby ball, mountain, fist…); the sports it lacks (basketball, soccer, tennis, swimming,
-// yoga, hockey, golf, running, skating, stairs) are drawn here on Lucide's grid (24 px, 2 px round strokes), so they sit
-// with the rest. Original drawings, not Fitbit's artwork.
+// An icon per exercise type: Lucide's where it has one, else drawn here on its grid (24 px, 2 px round strokes).
+// Original drawings, not Fitbit's artwork.
 import * as React from "react";
 import Svg, { Circle, Ellipse, Path } from "react-native-svg";
 import {

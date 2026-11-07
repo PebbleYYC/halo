@@ -1,7 +1,5 @@
-// Edit an activity (mobile), as Fitbit's exercise editor: the exercise type from Fitbit's list, its name, when it
-// started and how long it lasted, and delete. Edits are kept on this phone apart from what Health Connect sends
-// (src/data/exerciseEdits.ts), so a sync never undoes them; "Use Fitbit's version" drops them. Saving rescores the
-// day (or both days, when the start moves across midnight).
+// Edit an activity as Fitbit does: type, name, start, duration, delete. Edits live apart from synced data
+// (exerciseEdits.ts); saving rescores the day, or both days when the start crosses midnight.
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Check, ChevronRight, Minus, Plus } from "lucide-react-native";

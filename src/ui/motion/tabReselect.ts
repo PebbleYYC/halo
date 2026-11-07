@@ -1,6 +1,5 @@
-// Tapping the tab you're on scrolls its page back to the top (iOS's rule), with the bar's light haptic. The bar
-// announces the re-tap here and the focused tab page scrolls itself. (React Navigation's useScrollToTop reached the
-// Reanimated scroll views through internals that didn't hold, so a re-tap did nothing.)
+// Re-tapping the current tab scrolls its page to the top. useScrollToTop couldn't reach the Reanimated scroll views,
+// so the bar signals here and the focused page scrolls itself.
 import * as React from "react";
 import type { ScrollView } from "react-native";
 import { useNavigation } from "expo-router";

@@ -1,6 +1,6 @@
 // Settings › Connect to Claude (`/settings?s=claude`): Halo's data in Claude through the person's own MCP connector
 // (src/mcp), as an iOS settings page. Before setup: the feature header with what it does, what leaves the phone, then
-// the two steps in one grouped list — make a Cloudflare token from the pre-filled link, paste it and Set up (each setup
+// the two steps in one grouped list: make a Cloudflare token from the pre-filled link, paste it and Set up (each setup
 // step named as it runs). After: when Halo last sent data and to which account, Send now, the link to paste into
 // Claude with Copy and how to add it there, and Remove in red (deletes the Worker from Cloudflare).
 import * as React from "react";

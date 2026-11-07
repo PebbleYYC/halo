@@ -1,6 +1,7 @@
-// Data check, pure part: per local day, what Health Connect holds for each metric — split by the app and device that
-// wrote it — next to what Halo stored. Lets a mismatch with the Fitbit app be traced to its cause (another source,
+// Data check, pure part: per local day, what Health Connect holds for each metric (split by the app and device that
+// wrote it) next to what Halo stored. Lets a mismatch with the Fitbit app be traced to its cause (another source,
 // a day boundary, a missing record, or Halo's own mapping). The Health Connect reads live in dataCheck.ts.
+import { MISSING } from "@/lib/format";
 import { localDay } from "@/lib/time";
 import type { Metrics, Session } from "@/data/types";
 import { DEVICE_NAME, isFitbit } from "./sourcePolicy";
@@ -114,11 +115,11 @@ export function formatReport(days: DayCheck[], policy: string, opts: { source?: 
     out.push("", `■ ${d.day}`);
     for (const m of d.metrics) {
       if (!m.sources.length && m.pulse == null) continue;
-      out.push(`  ${m.label}: Halo ${m.pulse == null ? "—" : round(m.pulse)}${m.unit ? ` ${m.unit}` : ""}`);
+      out.push(`  ${m.label}: Halo ${m.pulse == null ? MISSING : round(m.pulse)}${m.unit ? ` ${m.unit}` : ""}`);
       for (const s of m.sources) out.push(`    ${s.fitbit ? "★" : " "} ${s.source}: ${s.value}${m.unit ? ` ${m.unit}` : ""} (${s.records} rec; ${s.detail})`);
     }
     if (d.sleep.sources.length || d.sleep.pulse.length) {
-      out.push(`  Sleep: Halo ${d.sleep.pulse.join(" | ") || "—"}`);
+      out.push(`  Sleep: Halo ${d.sleep.pulse.join(" | ") || MISSING}`);
       for (const s of d.sleep.sources) out.push(`    ${s.fitbit ? "★" : " "} ${s.source}: ${s.value} h (${s.detail})`);
     }
   }

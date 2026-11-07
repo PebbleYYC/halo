@@ -100,7 +100,7 @@ export type SyncResult = {
   warnings: string[];
 };
 
-// Health Connect's changes feed: a token per sync, so the next sync learns about every record written since — including
+// Health Connect's changes feed: a token per sync, so the next sync learns about every record written since, including
 // history the health app backfills with old dates (it does so when a data type is first shared), which a "last few
 // days" window would never see. Kept outside the Store (importState.ts).
 /** Pages of changes to walk before giving up and re-reading everything. */
