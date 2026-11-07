@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
 import { FORMATS } from "@/lib/format";
 import { flOzToMl, mlToFlOz } from "@/lib/units";
-import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
+import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type Dose, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
 import { useUnits } from "@/state/units";
 import { BottomSheet, Skeleton, Txt } from "@/ui";
 import { usePress, usePressStyle } from "@/ui/components/press";
@@ -24,6 +24,8 @@ import { useActionCtx } from "./AddBehaviour";
 import { Chips, ConfirmDialog, DialogAction, ErrorAlert, Field, TextField, toast } from "./controls";
 import { EMPTY, toInput, wallNow, when, type Form } from "./forms";
 import { bumpJournal } from "./state";
+import { DoseEditor } from "./DoseEditor";
+import { medicineTag } from "@/lib/medicine";
 import { TimeStepper } from "./TimeStepper";
 import { useMedicines } from "@/state/medicines";
 import { useApp } from "@/state/app";
@@ -169,6 +171,8 @@ export function Log({ vm }: LogProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [remove, setRemove] = React.useState<LoggedEntry | null>(null);
+  // A logged dose being changed (its time, dose or medicine).
+  const [doseEdit, setDoseEdit] = React.useState<Dose | null>(null);
   const [removing, setRemoving] = React.useState(false);
   const [all, setAll] = React.useState(false);
   // Food's own sheet: one session per opening.
@@ -310,15 +314,22 @@ export function Log({ vm }: LogProps) {
                     <View style={{ marginTop: (ENTRY_BAND - 30) / 2 }}>
                       <IconTile icon={TYPE_ICON[e.type]} tint={TYPE_TINT[e.type]} size={30} />
                     </View>
-                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                    <Pressable
+                      // A dose opens its editor: when it was taken, the dose, the medicine.
+                      onPress={e.type === "medication" && !external ? () => setDoseEdit(entryDose(e)) : undefined}
+                      disabled={e.type !== "medication" || external}
+                      accessibilityRole={e.type === "medication" && !external ? "button" : undefined}
+                      accessibilityHint={e.type === "medication" && !external ? "Change the time, dose or medicine" : undefined}
+                      style={({ pressed }) => ({ flex: 1, minWidth: 0, gap: 2, opacity: pressed ? 0.6 : 1 })}
+                    >
                       <Txt size={16} lineHeight={21} style={{ color: c.ink }}>
                         {e.title}
                         <Txt size={15} lineHeight={21} weight={400} style={{ color: c.sub }}>{`  ${e.detail}`}</Txt>
                       </Txt>
-                      <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
-                        {external ? `${whenLine} · Logged in Fitbit` : whenLine}
+                      <Txt size={13} lineHeight={18} style={{ color: e.type === "medication" && !external ? c.teal : c.sub, fontVariant: ["tabular-nums"] }}>
+                        {external ? `${whenLine} · Logged in Fitbit` : e.type === "medication" ? `${whenLine} · Edit` : whenLine}
                       </Txt>
-                    </View>
+                    </Pressable>
                     {external ? (
                       <View style={{ width: 44 }} />
                     ) : (
@@ -494,6 +505,25 @@ export function Log({ vm }: LogProps) {
         <FoodSheet key={food.id} request={food} open={foodOpen} onClose={() => setFoodOpen(false)} today={vm.foodToday} overviewLink />
       )}
 
+      <BottomSheet open={!!doseEdit} onClose={() => setDoseEdit(null)} title={doseEdit ? doseEdit.name : "Dose"} description="When you took it">
+        {doseEdit && (
+          <DoseEditor
+            key={doseEdit.id}
+            actx={actx}
+            dose={doseEdit}
+            name={doseEdit.name}
+            day={vm.today}
+            timeZone={vm.timeZone}
+            onCancel={() => setDoseEdit(null)}
+            onDone={() => {
+              setDoseEdit(null);
+              toast("Dose updated");
+              bumpJournal();
+              rescoreIfBody("medication");
+            }}
+          />
+        )}
+      </BottomSheet>
       <ConfirmDialog
         open={remove !== null}
         onClose={() => !removing && setRemove(null)}
@@ -520,4 +550,9 @@ export function LogSkeleton() {
       ))}
     </View>
   );
+}
+
+/** A journal list dose as the dose editor takes it: the list's title is the medicine, its detail the dose ("Taken" for none). */
+function entryDose(e: LoggedEntry): Dose {
+  return { id: e.id, ts: e.ts, name: e.title, dose: e.detail === "Taken" ? "" : e.detail, tag: medicineTag(e.title), fromFitbit: e.source === "health_connect" };
 }
