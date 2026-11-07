@@ -133,21 +133,49 @@ const recordStart = (r: { time?: string; startTime?: string }): number | null =>
   return Number.isFinite(ms) ? Math.floor(ms / 1000) : null;
 };
 
-/** The earliest instant among records written since `token` (null when nothing changed), or "expired". */
-async function earliestChangeSince(token: string): Promise<{ earliest: number | null } | "expired"> {
+/** What changed since `token`: the earliest start among other records (a backfill), and the sleep and workouts edited
+ *  (their start and end) or deleted (their ids). */
+export type ChangeScan = { earliest: number | null; edited: { startTs: number; endTs: number; type: "SleepSession" | "ExerciseSession" }[]; deleted: string[] };
+
+/** A change's record kind: by its type when the record carries one, else by shape (a sleep has stages, a workout a type). */
+function changedKind(r: object): "SleepSession" | "ExerciseSession" | null {
+  const t = (r as { recordType?: unknown }).recordType;
+  if (t === "SleepSession" || t === "ExerciseSession") return t;
+  if (typeof t === "string") return null;
+  return "stages" in r ? "SleepSession" : "exerciseType" in r ? "ExerciseSession" : null;
+}
+
+async function changesSince(token: string): Promise<ChangeScan | "expired"> {
   let tok = token;
-  let earliest: number | null = null;
+  const scan: ChangeScan = { earliest: null, edited: [], deleted: [] };
   for (let page = 0; page < MAX_CHANGE_PAGES; page++) {
     const res = await getChanges({ changesToken: tok });
     if (res.changesTokenExpired) return "expired";
     for (const c of res.upsertionChanges) {
-      const t = recordStart(c.record as { time?: string; startTime?: string });
-      if (t !== null && (earliest === null || t < earliest)) earliest = t;
+      const r = c.record as { time?: string; startTime?: string; endTime?: string };
+      const t = recordStart(r);
+      if (t === null) continue;
+      const kind = changedKind(r);
+      if (kind) scan.edited.push({ startTs: t, endTs: r.endTime ? Math.floor(Date.parse(r.endTime) / 1000) : t, type: kind });
+      else if (scan.earliest === null || t < scan.earliest) scan.earliest = t;
     }
+    for (const d of res.deletionChanges) scan.deleted.push(d.recordId);
     tok = res.nextChangesToken;
-    if (!res.hasMore) return { earliest };
+    if (!res.hasMore) return scan;
   }
   return "expired";
+}
+
+/** Days in order, grouped into runs of consecutive days: ["10-01","10-02","10-05"] → [["10-01","10-02"],["10-05","10-05"]]. */
+export function dayRuns(days: string[]): [string, string][] {
+  const sorted = [...new Set(days)].sort();
+  const runs: [string, string][] = [];
+  for (const d of sorted) {
+    const last = runs[runs.length - 1];
+    if (last && addDays(last[1], 1) === d) last[1] = d;
+    else runs.push([d, d]);
+  }
+  return runs;
 }
 
 /** Types read once for the whole window; HeartRate and Steps are read per day. */
@@ -209,21 +237,34 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     }
 
     let fromDay: string;
+    /** Days of sleep or workouts edited or deleted at the source since the last sync: re-imported alone, not the days between. */
+    const editedDays = new Set<string>();
     // (plan.full already covers a missing token or first sync; repeated so the else branch can rely on both.)
     if (plan.full || !token || state.lastSyncTs === null || backfill) {
       fromDay = firstFrom;
       counts.full = 1;
       if (backfill) counts.backfill = 1;
     } else {
-      const changed = await earliestChangeSince(token).catch(() => "expired" as const);
+      const changed = await changesSince(token).catch(() => "expired" as const);
       fromDay = localDay(state.lastSyncTs - RESYNC_DAYS * 86_400, tz);
       if (changed === "expired") {
         fromDay = historyFrom;
         counts.full = 1;
-      } else if (changed.earliest !== null) {
-        const backfill = localDay(changed.earliest, tz);
-        if (backfill < fromDay) fromDay = backfill;
-        counts.backfillFrom = 1;
+      } else {
+        if (changed.earliest !== null) {
+          const backfill = localDay(changed.earliest, tz);
+          if (backfill < fromDay) fromDay = backfill;
+          counts.backfillFrom = 1;
+        }
+        // An edited night counts on its start and wake days; a workout on its own. A deleted one, on the day Halo kept it.
+        for (const e of changed.edited) {
+          editedDays.add(localDay(e.startTs, tz));
+          if (e.type === "SleepSession") editedDays.add(localDay(e.endTs, tz));
+        }
+        if (changed.deleted.length) {
+          const gone = new Set(changed.deleted);
+          for (const x of [...(await store.allSessions()), ...(await store.allExercises({ raw: true }))]) if (gone.has(x.id)) editedDays.add(x.day);
+        }
       }
       if (fromDay < historyFrom) fromDay = historyFrom;
     }
@@ -233,164 +274,180 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     const nextToken = grantedTypes.length
       ? (await getChanges({ recordTypes: grantedTypes as ReadType[] }).catch(() => null))?.nextChangesToken ?? null
       : null;
-    const dayCount = daysBetween(fromDay, today) + 1;
-    const windowStart = localMidnight(fromDay, tz);
-    /** The window's whole-window read for `type`, from its lead before the first midnight (READ_LEAD_S). */
-    const range = (type: ReadType) => ({ start: new Date((windowStart - (type === "MenstruationPeriod" ? PERIOD_LEAD_S : READ_LEAD_S)) * 1000), end: now });
-    /** Only the window's days are written: a lead day's rows would be rebuilt from part of its records. */
-    const inWindow = <T extends { day: string }>(xs: T[]) => xs.filter((x) => x.day >= fromDay);
-
-    const total = WINDOW_TYPES.length + dayCount + 1;
-    let done = 0;
-
-    // The mapping below is sliced (src/lib/yield.ts): its record loops pause, and the steps between them await slice(),
-    // so taps and scrolling get the JS thread every few milliseconds while a sync runs. It changes no result.
-
-    // 1. Whole-window reads.
-    const input: HealthInput = {};
+    // The import of the days fromDay..toDay (from the reads' lead before them); `replace` clears what earlier imports
+    // wrote for them first, so a record the source deleted or moved doesn't stay.
     let recordsKept = 0;
-    for (const type of WINDOW_TYPES) {
-      progress(`read:${type}`, done, total);
-      if (granted.has(type)) {
-        const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, origins), policy, tz));
-        (input as Record<string, unknown[]>)[type] = records;
-        counts[`read:${type}`] = records.length;
-        recordsKept += records.length;
-      }
-      done++;
-    }
+    let done = 0;
+    let total = 0;
+    const importRange = async (fromDay: string, toDay: string, replace: boolean, rescoreAll: boolean) => {
+      const dayCount = daysBetween(fromDay, toDay) + 1;
+      const endTs = toDay === today ? nowTs : Math.min(nowTs, localMidnight(addDays(toDay, 1), tz));
+      const windowStart = localMidnight(fromDay, tz);
+      /** The window's whole-window read for `type`, from its lead before the first midnight (READ_LEAD_S). */
+      const range = (type: ReadType) => ({ start: new Date((windowStart - (type === "MenstruationPeriod" ? PERIOD_LEAD_S : READ_LEAD_S)) * 1000), end: new Date(endTs * 1000) });
+      /** Only the window's days are written: a lead day's rows would be rebuilt from part of its records. */
+      const inWindow = <T extends { day: string }>(xs: T[]) => xs.filter((x) => x.day >= fromDay && x.day <= toDay);
 
-    // Health Connect carries no activity minutes, Active Zone Minutes or daily average heart rate, so each day's are
-    // derived from its heart rate and steps as they are read (derive.ts). Sleep and workouts bound the sedentary minutes;
-    // max HR is the profile's, as the pipeline resolves it.
-    const profile = await store.getProfile();
-    const maxHr = profile ? resolveMaxHr(profile, today) : null;
-    const spans = (xs: { startTime: string; endTime: string }[] | undefined): Interval[] => (xs ?? []).map((r) => ({ startTs: ts(r.startTime), endTs: ts(r.endTime) }));
-    const sleepSpans = spans(input.SleepSession);
-    const exerciseSpans = spans(input.ExerciseSession);
-    const touching = (xs: Interval[], lo: number, hi: number) => xs.filter((x) => x.endTs > lo && x.startTs < hi);
-    // Fitbit's zones sit on heart-rate reserve, so each day needs its resting HR: this window's readings, and the stored
-    // ones from before it (restingHrOn carries the newest forward up to 30 days, else 60 bpm).
-    const restingReadings: [string, number][] = [
-      ...(await store.allMetrics()).flatMap((m): [string, number][] => (m.rhrBpm != null ? [[m.day, m.rhrBpm]] : [])),
-      ...(input.RestingHeartRate ?? [])
-        .map((r) => ({ t: ts(r.time), bpm: r.beatsPerMinute }))
-        .sort((a, b) => a.t - b.t)
-        .map((r): [string, number] => [localDay(r.t, tz), r.bpm]),
-    ];
-    const derived: DailyValue[] = [];
+      total = WINDOW_TYPES.length + dayCount + 1;
+      done = 0;
 
-    // A re-import replaces: what earlier imports wrote for these days goes before the new rows are written, so a day the
-    // new mapping or policy leaves without steps, a workout or a derived minute doesn't keep the old one. The first day
-    // goes too: the reads' lead (READ_LEAD_S) brings back its night, which began before the window.
-    if (plan.reimport) await store.clearImported({ from: fromDay, to: today }, windowStart, nowTs + 1);
+      // The mapping below is sliced (src/lib/yield.ts): its record loops pause, and the steps between them await slice(),
+      // so taps and scrolling get the JS thread every few milliseconds while a sync runs. It changes no result.
 
-    // 2. Per-day heart rate and steps, written as they come. A record comes back with the day its start falls in, so one
-    // running over midnight carries its later samples into the next day (`spill`); the first day reads the lead for
-    // records begun before the window.
-    const stepsByDay = new Map<string, number>();
-    const dirty: string[] = [];
-    let hrCount = 0;
-    let stepCount = 0;
-    const spill: { HeartRate: HeartRateRecords; Steps: StepsRecords } = { HeartRate: [], Steps: [] };
-    /** The day's records of `type`: those begun on it, and those begun before it that run past its midnight. */
-    const dayRecords = async <T extends "HeartRate" | "Steps">(type: T, i: number, dayStart: number, dayRange: { start: Date; end: Date }) => {
-      const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, origins), policy, tz));
-      recordsKept += read.length;
-      const before =
-        i === 0
-          ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, origins), policy, tz))
-          : spill[type];
-      return uniqueRecords([...before.filter((r) => ts(r.endTime) > dayStart), ...read]) as RecordsOf<T>;
-    };
-    for (let i = 0; i < dayCount; i++) {
-      const day = addDays(fromDay, i);
-      progress(`read:day:${day}`, done, total);
-      const dayStart = localMidnight(day, tz);
-      const nextMidnight = localMidnight(addDays(day, 1), tz);
-      const dayEnd = Math.min(nextMidnight, nowTs);
-      if (dayEnd <= dayStart) {
+      // 1. Whole-window reads.
+      const input: HealthInput = {};
+      for (const type of WINDOW_TYPES) {
+        progress(`read:${type}`, done, total);
+        if (granted.has(type)) {
+          const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, origins), policy, tz));
+          (input as Record<string, unknown[]>)[type] = records;
+          counts[`read:${type}`] = records.length;
+          recordsKept += records.length;
+        }
         done++;
-        continue;
       }
-      const clip = { startTs: dayStart, endTs: dayEnd };
-      const dayRange = { start: new Date(dayStart * 1000), end: new Date(dayEnd * 1000) };
-      let touched = false;
-      let hr: HrSample[] = [];
-      let minutes: StepsMinute[] = [];
-      /** The day's largest source's steps per minute, for the derived activity minutes. */
-      let deriveSteps: StepsMinute[] = [];
-      if (granted.has("HeartRate")) {
-        const hrRecords = await dayRecords("HeartRate", i, dayStart, dayRange);
-        spill.HeartRate = hrRecords.filter((r) => ts(r.endTime) > nextMidnight);
-        hr = await sliced(mapHrSteps(hrRecords, clip));
-        if (hr.length) {
-          await store.putHr(hr);
-          hrCount += hr.length;
-          touched = true;
+
+      // Health Connect carries no activity minutes, Active Zone Minutes or daily average heart rate, so each day's are
+      // derived from its heart rate and steps as they are read (derive.ts). Sleep and workouts bound the sedentary minutes;
+      // max HR is the profile's, as the pipeline resolves it.
+      const profile = await store.getProfile();
+      const maxHr = profile ? resolveMaxHr(profile, today) : null;
+      const spans = (xs: { startTime: string; endTime: string }[] | undefined): Interval[] => (xs ?? []).map((r) => ({ startTs: ts(r.startTime), endTs: ts(r.endTime) }));
+      const sleepSpans = spans(input.SleepSession);
+      const exerciseSpans = spans(input.ExerciseSession);
+      const touching = (xs: Interval[], lo: number, hi: number) => xs.filter((x) => x.endTs > lo && x.startTs < hi);
+      // Fitbit's zones sit on heart-rate reserve, so each day needs its resting HR: this window's readings, and the stored
+      // ones from before it (restingHrOn carries the newest forward up to 30 days, else 60 bpm).
+      const restingReadings: [string, number][] = [
+        ...(await store.allMetrics()).flatMap((m): [string, number][] => (m.rhrBpm != null ? [[m.day, m.rhrBpm]] : [])),
+        ...(input.RestingHeartRate ?? [])
+          .map((r) => ({ t: ts(r.time), bpm: r.beatsPerMinute }))
+          .sort((a, b) => a.t - b.t)
+          .map((r): [string, number] => [localDay(r.t, tz), r.bpm]),
+      ];
+      const derived: DailyValue[] = [];
+
+      // A re-import replaces: what earlier imports wrote for these days goes before the new rows are written, so a day the
+      // new mapping or policy leaves without steps, a workout or a derived minute doesn't keep the old one. The first day
+      // goes too: the reads' lead (READ_LEAD_S) brings back its night, which began before the window.
+      if (replace) await store.clearImported({ from: fromDay, to: toDay }, windowStart, endTs + 1);
+
+      // 2. Per-day heart rate and steps, written as they come. A record comes back with the day its start falls in, so one
+      // running over midnight carries its later samples into the next day (`spill`); the first day reads the lead for
+      // records begun before the window.
+      const stepsByDay = new Map<string, number>();
+      const dirty: string[] = [];
+      let hrCount = 0;
+      let stepCount = 0;
+      const spill: { HeartRate: HeartRateRecords; Steps: StepsRecords } = { HeartRate: [], Steps: [] };
+      /** The day's records of `type`: those begun on it, and those begun before it that run past its midnight. */
+      const dayRecords = async <T extends "HeartRate" | "Steps">(type: T, i: number, dayStart: number, dayRange: { start: Date; end: Date }) => {
+        const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, origins), policy, tz));
+        recordsKept += read.length;
+        const before =
+          i === 0
+            ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, origins), policy, tz))
+            : spill[type];
+        return uniqueRecords([...before.filter((r) => ts(r.endTime) > dayStart), ...read]) as RecordsOf<T>;
+      };
+      for (let i = 0; i < dayCount; i++) {
+        const day = addDays(fromDay, i);
+        progress(`read:day:${day}`, done, total);
+        const dayStart = localMidnight(day, tz);
+        const nextMidnight = localMidnight(addDays(day, 1), tz);
+        const dayEnd = Math.min(nextMidnight, endTs);
+        if (dayEnd <= dayStart) {
+          done++;
+          continue;
         }
-      }
-      if (granted.has("Steps")) {
-        const records = await dayRecords("Steps", i, dayStart, dayRange);
-        spill.Steps = records.filter((r) => ts(r.endTime) > nextMidnight);
-        minutes = mapSteps(records, clip);
-        if (minutes.length) {
-          await store.putSteps(minutes);
-          stepCount += minutes.length;
-          touched = true;
-          for (const [d, v] of await sliced(stepsPerDaySteps(records, tz, clip))) stepsByDay.set(d, (stepsByDay.get(d) ?? 0) + v);
-          deriveSteps = largestSourceSteps(records, clip);
+        const clip = { startTs: dayStart, endTs: dayEnd };
+        const dayRange = { start: new Date(dayStart * 1000), end: new Date(dayEnd * 1000) };
+        let touched = false;
+        let hr: HrSample[] = [];
+        let minutes: StepsMinute[] = [];
+        /** The day's largest source's steps per minute, for the derived activity minutes. */
+        let deriveSteps: StepsMinute[] = [];
+        if (granted.has("HeartRate")) {
+          const hrRecords = await dayRecords("HeartRate", i, dayStart, dayRange);
+          spill.HeartRate = hrRecords.filter((r) => ts(r.endTime) > nextMidnight);
+          hr = await sliced(mapHrSteps(hrRecords, clip));
+          if (hr.length) {
+            await store.putHr(hr);
+            hrCount += hr.length;
+            touched = true;
+          }
         }
-      }
-      if (maxHr !== null && touched) {
+        if (granted.has("Steps")) {
+          const records = await dayRecords("Steps", i, dayStart, dayRange);
+          spill.Steps = records.filter((r) => ts(r.endTime) > nextMidnight);
+          minutes = mapSteps(records, clip);
+          if (minutes.length) {
+            await store.putSteps(minutes);
+            stepCount += minutes.length;
+            touched = true;
+            for (const [d, v] of await sliced(stepsPerDaySteps(records, tz, clip))) stepsByDay.set(d, (stepsByDay.get(d) ?? 0) + v);
+            deriveSteps = largestSourceSteps(records, clip);
+          }
+        }
+        if (maxHr !== null && touched) {
+          await slice();
+          const extras = deriveDayExtras({
+            start: dayStart,
+            end: nextMidnight,
+            hr,
+            steps: deriveSteps,
+            maxHr,
+            restingHr: restingHrOn(day, restingReadings),
+            sleep: touching(sleepSpans, dayStart, nextMidnight),
+            exercises: touching(exerciseSpans, dayStart, nextMidnight),
+          });
+          for (const v of extras) derived.push({ day, ...v });
+        }
+        if (touched) dirty.push(day);
+        done++;
         await slice();
-        const extras = deriveDayExtras({
-          start: dayStart,
-          end: nextMidnight,
-          hr,
-          steps: deriveSteps,
-          maxHr,
-          restingHr: restingHrOn(day, restingReadings),
-          sleep: touching(sleepSpans, dayStart, nextMidnight),
-          exercises: touching(exerciseSpans, dayStart, nextMidnight),
-        });
-        for (const v of extras) derived.push({ day, ...v });
       }
-      if (touched) dirty.push(day);
-      done++;
+      counts.hr = (counts.hr ?? 0) + hrCount;
+      counts.steps = (counts.steps ?? 0) + stepCount;
+
+      // 3. Map and write the rest: the window's days only (the lead day's rows would be built from part of its records).
+      progress("write", done, total);
+      const sleep = mapSleep(input.SleepSession ?? [], tz);
+      const sessions = inWindow(sleep.sessions);
+      const sessionIds = new Set(sessions.map((s) => s.id));
+      const segments = sleep.segments.filter((g) => sessionIds.has(g.sessionId));
       await slice();
-    }
-    counts.hr = hrCount;
-    counts.steps = stepCount;
+      const exercises = inWindow(await sliced(mapExercisesSteps(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz, input.TotalCaloriesBurned)));
+      const dailyValues = [...inWindow(await sliced(mapDailyValuesSteps(input, tz))), ...derived];
+      const metrics = inWindow(await sliced(mapMetricsSteps(input, sessions, stepsByDay, tz)));
+      await slice();
+      // Water, food and cycle logs made in Fitbit: the window's rows are replaced, so what Fitbit deleted goes too.
+      const external = inWindow(mapExternalEntries(input, tz));
 
-    // 3. Map and write the rest: the window's days only (the lead day's rows would be built from part of its records).
-    progress("write", done, total);
-    const sleep = mapSleep(input.SleepSession ?? [], tz);
-    const sessions = inWindow(sleep.sessions);
-    const sessionIds = new Set(sessions.map((s) => s.id));
-    const segments = sleep.segments.filter((g) => sessionIds.has(g.sessionId));
-    await slice();
-    const exercises = inWindow(await sliced(mapExercisesSteps(input.ExerciseSession ?? [], input.ActiveCaloriesBurned, input.Distance, tz, input.TotalCaloriesBurned)));
-    const dailyValues = [...inWindow(await sliced(mapDailyValuesSteps(input, tz))), ...derived];
-    const metrics = inWindow(await sliced(mapMetricsSteps(input, sessions, stepsByDay, tz)));
-    await slice();
-    // Water, food and cycle logs made in Fitbit: the window's rows are replaced, so what Fitbit deleted goes too.
-    const external = inWindow(mapExternalEntries(input, tz));
+      if (sessions.length) await store.upsertSessions(sessions, segments);
+      if (exercises.length) await store.upsertExercises(exercises);
+      if (dailyValues.length) await store.upsertDailyValues(dailyValues);
+      if (metrics.length) await store.upsertMetrics(metrics);
+      await store.replaceExternalEntries({ from: fromDay, to: toDay }, external);
+      // A replaced range lost its scores: every day of it is recomputed, not only those with new samples.
+      const rescore = replace && rescoreAll ? Array.from({ length: dayCount }, (_, i) => addDays(fromDay, i)) : dirty;
+      if (rescore.length) await store.markIntradayDirty(rescore);
+      counts.sessions = (counts.sessions ?? 0) + sessions.length;
+      counts.segments = (counts.segments ?? 0) + segments.length;
+      counts.exercises = (counts.exercises ?? 0) + exercises.length;
+      counts.dailyValues = (counts.dailyValues ?? 0) + dailyValues.length;
+      counts.derived = (counts.derived ?? 0) + derived.length;
+      counts.externalEntries = (counts.externalEntries ?? 0) + external.length;
+      counts.metrics = (counts.metrics ?? 0) + metrics.length;
+      done++;
+    };
 
-    if (sessions.length) await store.upsertSessions(sessions, segments);
-    if (exercises.length) await store.upsertExercises(exercises);
-    if (dailyValues.length) await store.upsertDailyValues(dailyValues);
-    if (metrics.length) await store.upsertMetrics(metrics);
-    await store.replaceExternalEntries({ from: fromDay, to: today }, external);
-    if (dirty.length) await store.markIntradayDirty(dirty);
-    counts.sessions = sessions.length;
-    counts.segments = segments.length;
-    counts.exercises = exercises.length;
-    counts.dailyValues = dailyValues.length;
-    counts.derived = derived.length;
-    counts.externalEntries = external.length;
-    counts.metrics = metrics.length;
-    done++;
+    const editsInWindow = [...editedDays].some((d) => d >= fromDay);
+    await importRange(fromDay, today, plan.reimport || editsInWindow, editsInWindow);
+    // Sleep and workouts edited at the source before the window: only their days, each re-imported in place.
+    const older = dayRuns([...editedDays].filter((d) => d < fromDay && d >= historyFrom));
+    for (const [a, b] of older) await importRange(a, b, true, true);
+    if (editedDays.size) counts.editedDays = editedDays.size;
 
     // Under "Fitbit only", nothing at all from the Fitbit app means the policy is hiding everything (another band's app,
     // or Google Health not sharing yet): say so rather than show an empty Halo.
