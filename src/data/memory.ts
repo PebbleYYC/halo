@@ -219,6 +219,16 @@ export class MemoryStore implements Store {
   async scoresIn(range: DayRange) {
     return copy([...this.scores.values()].filter((r) => inRange(r.day, range)).sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0)));
   }
+  async bodySignalsIn(range: DayRange) {
+    return [...this.scores.values()]
+      .filter((r) => inRange(r.day, range))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+      .map((r) => {
+        const asleep = r.sleep?.main?.asleepMin ?? null;
+        const need = r.sleep ? (r.sleep.needMin ?? r.sleep.needHours * 60) : null;
+        return { day: r.day, shortMin: asleep != null && need ? need - asleep : null, highStressMin: r.stress?.highMin ?? null };
+      });
+  }
   async putScores(row: ScoreRow) {
     this.scores.set(row.day, copy(row));
   }
