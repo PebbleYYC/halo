@@ -1,11 +1,11 @@
 // Headache risk `/health/headache` and Today's card: the stored weather (weather/sync.ts) scored with the day's own
-// signals (weather/risk.ts), and how logged headaches line up with pressure drops.
+// signals (weather/risk.ts), and how logged headaches line up with each trigger.
 import { recoveryBand } from "@/lib/bands";
 import { addDays, localMidnight, wall } from "@/lib/time";
 import { cDeltaToF, type Units } from "@/lib/units";
 import { readWeatherSettings } from "@/state/weather";
 import type { PressureHour } from "@/weather/openMeteo";
-import { dayRisk, headachePattern, type DayRisk, type Pattern, type RiskFactor } from "@/weather/risk";
+import { RISK, dayRisk, headachePattern, pressureLevels, type DayBody, type DayRisk, type Pattern, type Personal, type RiskFactor } from "@/weather/risk";
 import { readWeather } from "@/weather/sync";
 import { loadDays, nightNeedMin, type QueryCtx, todayOf } from "./common";
 import { minutesText } from "./outlook";
@@ -29,12 +29,21 @@ export type HeadacheVM = {
 };
 
 export function factorText(f: RiskFactor, units: Units): string {
+  const text = baseText(f, units);
+  return f.personal ? `${text}, one of your triggers` : text;
+}
+
+function baseText(f: RiskFactor, units: Units): string {
   const r1 = (x: number) => Math.round(Math.abs(x) * 10) / 10;
   switch (f.key) {
     case "pressure_drop":
       return `Pressure falling ${r1(f.hPa)} hPa from the day before`;
     case "pressure_rise":
       return `Pressure rising ${r1(f.hPa)} hPa from the day before`;
+    case "high_pressure":
+      return "Pressure high for where you are";
+    case "low_pressure":
+      return "Pressure low for where you are";
     case "humidity":
       return `Humid, ${Math.round(f.pct)}% on average`;
     case "temp_jump": {
@@ -66,32 +75,48 @@ export async function getHeadache(ctx: QueryCtx): Promise<HeadacheVM> {
   const units = unitsOf(ctx);
   const from = addDays(today, -92);
   const [rows, journal, logged] = await Promise.all([
-    loadDays(ctx, addDays(today, -1), today),
+    loadDays(ctx, from, today),
     ctx.store.allJournal(),
     ctx.store.loggedEntries(localMidnight(from, ctx.timeZone), 10_000),
   ]);
+  const alcoholDays = new Set(journal.filter((e) => e.tag === "alcohol" && e.value > 0).map((e) => e.day));
+  const shortOf = (day: string): number | null => {
+    const r = rows.get(day);
+    const asleep = r?.sleep?.main?.asleepMin ?? null;
+    const need = nightNeedMin(r?.sleep);
+    return asleep != null && need ? need - asleep : null;
+  };
   const row = rows.get(today);
-  const asleep = row?.sleep?.main?.asleepMin ?? null;
-  const need = nightNeedMin(row?.sleep);
   const body = {
-    sleepShortMin: asleep != null && need ? need - asleep : null,
+    sleepShortMin: shortOf(today),
     recoveryRed: row?.recovery?.value != null && recoveryBand(row.recovery.value) === "red",
     highStressMin: row?.stress?.highMin ?? null,
-    alcoholYesterday: journal.some((e) => e.day === addDays(today, -1) && e.tag === "alcohol" && e.value > 0),
+    alcoholYesterday: alcoholDays.has(addDays(today, -1)),
   };
   const withReasons = (r: DayRisk | null): HeadacheRisk | null => (r ? { ...r, reasons: r.factors.map((f) => factorText(f, units)) } : null);
   const days = weather.data.days;
   const headacheDays = new Set(
     logged.filter((e) => e.type === "symptoms" && ((e.data as { symptoms?: string[] }).symptoms ?? []).includes("HEADACHE")).map((e) => e.day),
   );
+  // Your own day, per past day, for the pattern: short sleep, high stress, alcohol the evening before.
+  const history = new Map<string, DayBody>();
+  for (const d of days) {
+    if (d.day > today) continue;
+    const short = shortOf(d.day);
+    const stress = rows.get(d.day)?.stress?.highMin ?? null;
+    history.set(d.day, { shortSleep: short == null ? null : short >= RISK.sleepShortMin, highStress: stress == null ? null : stress >= RISK.stressMin, alcoholBefore: alcoholDays.has(addDays(d.day, -1)) });
+  }
+  const pattern = headachePattern(days, headacheDays, today, history);
+  const personal: Personal | undefined =
+    pattern.kind === "ready" ? { linked: new Set(pattern.links.filter((l) => l.verdict === "more").map((l) => l.key)), levels: pressureLevels(days, today) } : undefined;
   const lo = `${addDays(today, -1)}T00:00`;
   const hi = `${addDays(today, 2)}T00:00`;
   return {
     ...base,
     missing: null,
-    today: withReasons(dayRisk(days, today, body)),
-    tomorrow: withReasons(dayRisk(days, addDays(today, 1), null)),
-    pattern: headachePattern(days, headacheDays, today),
+    today: withReasons(dayRisk(days, today, body, personal)),
+    tomorrow: withReasons(dayRisk(days, addDays(today, 1), null, personal)),
+    pattern,
     hours: weather.data.hours.filter((h) => h.t >= lo && h.t < hi),
   };
 }

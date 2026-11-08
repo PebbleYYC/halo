@@ -1,14 +1,17 @@
 // A controlled `value` written back mid-composition garbles Android text edited mid-word. The native field owns its
 // text here; the value is handed over again only when the app itself changes it (a prefill, a clear), keeping focus.
 import * as React from "react";
-import { TextInput, type TextInputProps } from "react-native";
+import { Keyboard, TextInput, type TextInputProps } from "react-native";
+import { isRestoredFocus } from "./focusGuard";
 
-export const StableTextInput = React.forwardRef<TextInput, TextInputProps>(function StableTextInput({ value, defaultValue, onChangeText, onFocus, onBlur, ...props }, ref) {
+export const StableTextInput = React.forwardRef<TextInput, TextInputProps>(function StableTextInput({ value, defaultValue, onChangeText, onFocus, onBlur, onPressIn, ...props }, ref) {
   const inner = React.useRef<TextInput>(null);
   React.useImperativeHandle(ref, () => inner.current as TextInput);
   // What the native field holds, as far as the app knows: its last report, or the value last handed over.
   const typed = React.useRef(value ?? defaultValue ?? "");
   const focused = React.useRef(false);
+  // A touch (or the app's own refocus) is behind the next focus: it is the person's, never a restored one.
+  const touched = React.useRef(false);
   const [given, setGiven] = React.useState({ text: value ?? defaultValue ?? "", gen: 0, refocus: false });
 
   // The app set a different text than the field holds: hand it over (a fresh field with it), focus kept.
@@ -18,7 +21,9 @@ export const StableTextInput = React.forwardRef<TextInput, TextInputProps>(funct
   }
 
   React.useEffect(() => {
-    if (given.refocus) inner.current?.focus();
+    if (!given.refocus) return;
+    touched.current = true;
+    inner.current?.focus();
   }, [given]);
 
   return (
@@ -30,7 +35,19 @@ export const StableTextInput = React.forwardRef<TextInput, TextInputProps>(funct
         typed.current = t;
         onChangeText?.(t);
       }}
+      onPressIn={(e) => {
+        touched.current = true;
+        onPressIn?.(e);
+      }}
       onFocus={(e) => {
+        const asked = touched.current || props.autoFocus === true;
+        touched.current = false;
+        // Android restoring focus as the app comes back: let it go, and keep the keyboard closed.
+        if (!asked && isRestoredFocus()) {
+          inner.current?.blur();
+          Keyboard.dismiss();
+          return;
+        }
         focused.current = true;
         onFocus?.(e);
       }}

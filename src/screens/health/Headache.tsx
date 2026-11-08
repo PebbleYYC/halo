@@ -1,5 +1,5 @@
 // Headache risk `/health/headache`: today's level and why, tomorrow's from the forecast, pressure from yesterday to
-// tomorrow, and how your logged headaches line up with pressure drops. Weather from Open-Meteo (CC BY 4.0).
+// tomorrow, and which triggers your logged headaches follow. Weather from Open-Meteo (CC BY 4.0).
 import * as React from "react";
 import { Linking, View, type LayoutChangeEvent } from "react-native";
 import { useRouter, type Href } from "expo-router";
@@ -11,12 +11,12 @@ import { SectionShell, Txt, useTheme } from "@/ui";
 import type { InfoContent } from "@/ui/components/InfoButton";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
-import { Sentence } from "@/screens/detail/calmKit";
+import { Grouped, Sentence } from "@/screens/detail/calmKit";
 import { DetailScreen, LoadError } from "@/screens/detail/DetailScreen";
 import { useBack, useRefresh } from "@/screens/detail/nav";
 import { CalmButton } from "@/screens/settings/calmKit";
 import { askLocation } from "@/weather/place";
-import type { RiskLevel } from "@/weather/risk";
+import type { RiskLevel, TriggerKey, TriggerLink, Verdict } from "@/weather/risk";
 import { DATA_COLORS, STRESS_COLOR, STRESS_WORD } from "@/lib/bands";
 import type { ColorToken } from "@/ui/theme";
 
@@ -31,7 +31,7 @@ export const LEVEL: Record<RiskLevel, { word: string; color: ColorToken; tint: C
 const INFO: InfoContent = {
   title: "About headache risk",
   body:
-    "Halo estimates your chance of a headache from the weather and your own day. Day-to-day pressure changes are the best-studied weather trigger, with high humidity and sudden temperature or wind changes also linked; short sleep, low Recovery, stress and alcohol lower the threshold. Weather affects some people and not others, so log your headaches in the Journal (Symptoms › Headache) and Halo will show whether they follow pressure drops for you. Weather data by Open-Meteo.com (CC BY 4.0). Only your location rounded to about 10 km is sent to it.",
+    "Halo estimates your chance of a headache from the weather and your own day. Day-to-day pressure changes are the best-studied weather trigger, with high humidity and sudden temperature or wind changes also linked; short sleep, low Recovery, stress and alcohol lower the threshold. Weather affects some people and not others, so log your headaches in the Journal (Symptoms › Headache) and Halo will show which triggers yours follow (pressure drops and rises, high or low pressure, humidity, temperature and wind changes, short sleep, stress, alcohol) and count those a point more. Weather data by Open-Meteo.com (CC BY 4.0). Only your location rounded to about 10 km is sent to it.",
 };
 
 function RiskBlock({ risk, label }: { risk: HeadacheRisk; label: string }) {
@@ -97,13 +97,75 @@ function PressureChart({ hours, nowHour }: { hours: HeadacheVM["hours"]; nowHour
   );
 }
 
-function PatternText({ p }: { p: NonNullable<HeadacheVM["pattern"]> }) {
+const TRIGGER: Record<TriggerKey, string> = {
+  pressure_drop: "Pressure drops",
+  pressure_rise: "Pressure rises",
+  high_pressure: "High pressure",
+  low_pressure: "Low pressure",
+  humidity: "Humid days",
+  temp_swing: "Temperature swings",
+  wind_jump: "Wind picking up",
+  short_sleep: "Short sleep",
+  stress: "High stress",
+  alcohol: "Alcohol the day before",
+};
+const VERDICT: Record<Verdict, string> = { more: "Linked", unclear: "Not clear", no_link: "No link" };
+
+function listText(words: string[]): string {
+  return words.length < 2 ? (words[0] ?? "") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+function TriggerRow({ link }: { link: TriggerLink }) {
+  const c = useCalm();
+  const { c: theme } = useTheme();
+  const detail = `${link.hits} ${link.hits === 1 ? "headache" : "headaches"} on ${link.onDays} such days${link.ratio != null && link.hits > 0 ? `, ${link.ratio.toFixed(1)}× your usual rate` : ""}`;
+  return (
+    <View accessible accessibilityLabel={`${TRIGGER[link.key]}: ${VERDICT[link.verdict]}. ${detail}`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Txt size={15} lineHeight={20} style={{ color: c.ink }}>
+          {TRIGGER[link.key]}
+        </Txt>
+        <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
+          {detail}
+        </Txt>
+      </View>
+      <Txt size={15} lineHeight={20} weight={600} style={{ flexShrink: 0, color: link.verdict === "more" ? theme[LEVEL.high.color] : c.sub }}>
+        {VERDICT[link.verdict]}
+      </Txt>
+    </View>
+  );
+}
+
+function PatternView({ p }: { p: NonNullable<HeadacheVM["pattern"]> }) {
+  const c = useCalm();
   if (p.kind === "not_enough")
-    return <Sentence>{`Log headaches in the Journal (Log › Symptoms › Headache). After ${p.needed} (you have ${p.headacheDays}), Halo shows whether yours follow pressure drops.`}</Sentence>;
-  if (p.kind === "more")
-    return <Sentence>{`Your headaches follow pressure drops: ${p.onDropDays} of your ${p.headacheDays} logged headaches fell on the ${p.dropDays} days pressure fell by 3 hPa or more${p.ratio ? `, about ${p.ratio.toFixed(1)}× your usual rate` : ""}.`}</Sentence>;
-  if (p.kind === "no_link") return <Sentence>{`No clear weather link for you so far: across ${p.headacheDays} logged headaches, pressure drops made no difference. Other triggers may matter more.`}</Sentence>;
-  return <Sentence>{`Not clear yet: ${p.onDropDays} of ${p.headacheDays} logged headaches fell on pressure-drop days. More logs will settle it.`}</Sentence>;
+    return <Sentence>{`Log headaches in the Journal (Log › Symptoms › Headache). After ${p.needed} (you have ${p.headacheDays}), Halo shows which triggers yours follow.`}</Sentence>;
+  const linked = p.links.filter((l) => l.verdict === "more").map((l) => TRIGGER[l.key].toLowerCase());
+  const summary = !p.links.length
+    ? `Not enough days of each trigger yet to compare your ${p.headacheDays} logged headaches.`
+    : linked.length
+      ? `Your headaches follow ${listText(linked)}. Halo counts ${linked.length === 1 ? "it" : "them"} a point more in your risk.`
+      : p.links.every((l) => l.verdict === "no_link")
+        ? `Across ${p.headacheDays} logged headaches, none of these makes a difference for you so far.`
+        : `Nothing stands out yet across ${p.headacheDays} logged headaches. More logs will settle it.`;
+  const levels = p.links.some((l) => l.key === "high_pressure" || l.key === "low_pressure");
+  return (
+    <View style={{ gap: 8 }}>
+      <Sentence>{summary}</Sentence>
+      {p.links.length > 0 && (
+        <Grouped>
+          {p.links.map((l) => (
+            <TriggerRow key={l.key} link={l} />
+          ))}
+        </Grouped>
+      )}
+      {levels && (
+        <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
+          High and low pressure mean your own top and bottom fifth of days, since pressure depends on altitude.
+        </Txt>
+      )}
+    </View>
+  );
 }
 
 function Missing({ vm }: { vm: HeadacheVM }) {
@@ -175,7 +237,7 @@ export default function HeadacheScreen() {
         </SectionShell>,
         vm.pattern ? (
           <SectionShell key="pattern" variant="card" title="Your pattern">
-            <PatternText p={vm.pattern} />
+            <PatternView p={vm.pattern} />
           </SectionShell>
         ) : null,
         <View key="credit" style={{ paddingHorizontal: 4, gap: 4 }}>
