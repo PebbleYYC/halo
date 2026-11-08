@@ -69,6 +69,8 @@ export interface Store {
   // Scores (JSON blobs per day, the pipeline's memo and the screens' source)
   getScores(day: string): Promise<ScoreRow | null>;
   scoresIn(range: DayRange): Promise<ScoreRow[]>;
+  /** Only each day's sleep-need and high-stress minutes, parsing two columns not fourteen (the headache pattern over months). */
+  bodySignalsIn(range: DayRange): Promise<BodySignals[]>;
   putScores(row: ScoreRow): Promise<void>;
   getSeries(day: string, kind: SeriesKind): Promise<(number | null)[] | null>;
   /** An empty `data` removes the series (a day with no Energy Bank curve), so getSeries returns null for it. */
@@ -129,6 +131,9 @@ export type LoggedEntryRow = { id: string; type: string; ts: number; day: string
 export type ReportRow = { period: string; data: Report };
 
 /** Mirrors Halo's daily_scores: stage-1 and stage-2 outputs for one day, typed by the pipeline's own types. */
+/** A day's body signals for the headache pattern: minutes short of the sleep need, and high-stress minutes. */
+export type BodySignals = { day: string; shortMin: number | null; highStressMin: number | null };
+
 export type ScoreRow = {
   day: string;
   scoringVersion: number;

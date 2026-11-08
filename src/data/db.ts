@@ -558,6 +558,18 @@ class SqliteStore implements Store {
     }
     return out;
   }
+  async bodySignalsIn(range: DayRange) {
+    const rows = await this.db.getAllAsync<{ day: string; sleep: string | null; stress: string | null }>(
+      "select day, sleep, stress from daily_scores where day >= ? and day <= ? order by day",
+      [range.from, range.to],
+    );
+    return rows.map((r) => {
+      const s = parse(r.sleep) as ScoreRow["sleep"];
+      const asleep = s?.main?.asleepMin ?? null;
+      const need = s ? (s.needMin ?? s.needHours * 60) : null;
+      return { day: r.day, shortMin: asleep != null && need ? need - asleep : null, highStressMin: (parse(r.stress) as ScoreRow["stress"])?.highMin ?? null };
+    });
+  }
   async putScores(row: ScoreRow) {
     await this.tx((db) => db.runAsync(SCORES_SQL, [row.day, row.scoringVersion, row.sessionRhrBpm, ...SCORE_JSON.map((k) => json(row[k]))]));
   }

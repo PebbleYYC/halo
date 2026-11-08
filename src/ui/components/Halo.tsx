@@ -146,11 +146,13 @@ function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track,
   const { list, positions } = geo;
   // Each half is drawn as the arc it shows, rebuilt from the progress every frame. (It was a dashed stroke whose
   // offset and opacity the two halves updated apart: the first half could stay hidden while the second drew, so a
-  // ring past half showed only its second half.) The first half runs a degree past its end once full, under the seam.
+  // ring past half showed only its second half.) The first half runs past its end once full, under the seam: a fixed
+  // ~4 px in degrees, since on the small inner ring a one-degree lap is sub-pixel and antialiasing leaves a dark slit.
   const half = sweep / 2;
+  const lap = Math.min(20, (4 * 180) / (Math.PI * r));
   const first = (q: number) => {
     "worklet";
-    return { d: arcPath(cx, cy, r, start, start + half * q + (q >= 0.999 ? 1 : 0)), strokeOpacity: q > 0.001 ? 1 : 0 };
+    return { d: arcPath(cx, cy, r, start, start + half * q + (q >= 0.999 ? lap : 0)), strokeOpacity: q > 0.001 ? 1 : 0 };
   };
   const second = (q: number) => {
     "worklet";

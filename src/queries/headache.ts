@@ -7,7 +7,7 @@ import { readWeatherSettings } from "@/state/weather";
 import type { PressureHour } from "@/weather/openMeteo";
 import { RISK, dayRisk, headachePattern, pressureLevels, type DayBody, type DayRisk, type Pattern, type Personal, type RiskFactor } from "@/weather/risk";
 import { readWeather } from "@/weather/sync";
-import { loadDays, nightNeedMin, type QueryCtx, todayOf } from "./common";
+import { loadDays, type QueryCtx, todayOf } from "./common";
 import { minutesText } from "./outlook";
 import { unitsOf } from "./units";
 
@@ -74,23 +74,21 @@ export async function getHeadache(ctx: QueryCtx): Promise<HeadacheVM> {
   }
   const units = unitsOf(ctx);
   const from = addDays(today, -92);
-  const [rows, journal, logged] = await Promise.all([
-    loadDays(ctx, from, today),
+  // Today's full day for the body; only the two body signals (sleep, stress) over the months the pattern spans.
+  const [rows, signals, journal, logged] = await Promise.all([
+    loadDays(ctx, addDays(today, -1), today),
+    ctx.store.bodySignalsIn({ from, to: today }),
     ctx.store.allJournal(),
     ctx.store.loggedEntries(localMidnight(from, ctx.timeZone), 10_000),
   ]);
   const alcoholDays = new Set(journal.filter((e) => e.tag === "alcohol" && e.value > 0).map((e) => e.day));
-  const shortOf = (day: string): number | null => {
-    const r = rows.get(day);
-    const asleep = r?.sleep?.main?.asleepMin ?? null;
-    const need = nightNeedMin(r?.sleep);
-    return asleep != null && need ? need - asleep : null;
-  };
+  const signalOf = new Map(signals.map((s) => [s.day, s]));
   const row = rows.get(today);
+  const todaySignal = signalOf.get(today);
   const body = {
-    sleepShortMin: shortOf(today),
+    sleepShortMin: todaySignal?.shortMin ?? null,
     recoveryRed: row?.recovery?.value != null && recoveryBand(row.recovery.value) === "red",
-    highStressMin: row?.stress?.highMin ?? null,
+    highStressMin: todaySignal?.highStressMin ?? null,
     alcoholYesterday: alcoholDays.has(addDays(today, -1)),
   };
   const withReasons = (r: DayRisk | null): HeadacheRisk | null => (r ? { ...r, reasons: r.factors.map((f) => factorText(f, units)) } : null);
@@ -102,9 +100,8 @@ export async function getHeadache(ctx: QueryCtx): Promise<HeadacheVM> {
   const history = new Map<string, DayBody>();
   for (const d of days) {
     if (d.day > today) continue;
-    const short = shortOf(d.day);
-    const stress = rows.get(d.day)?.stress?.highMin ?? null;
-    history.set(d.day, { shortSleep: short == null ? null : short >= RISK.sleepShortMin, highStress: stress == null ? null : stress >= RISK.stressMin, alcoholBefore: alcoholDays.has(addDays(d.day, -1)) });
+    const s = signalOf.get(d.day);
+    history.set(d.day, { shortSleep: s?.shortMin == null ? null : s.shortMin >= RISK.sleepShortMin, highStress: s?.highStressMin == null ? null : s.highStressMin >= RISK.stressMin, alcoholBefore: alcoholDays.has(addDays(d.day, -1)) });
   }
   const pattern = headachePattern(days, headacheDays, today, history);
   const personal: Personal | undefined =
