@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WeatherDay } from "./openMeteo";
 import { foldDays } from "./openMeteo";
+import { addDays } from "@/lib/time";
 import { bodyFactors, dayRisk, headachePattern } from "./risk";
 
 const w = (day: string, pressure: number, o: Partial<WeatherDay> = {}): WeatherDay => ({ day, pressure, humidity: 60, tempMax: 10, tempMin: 2, windMax: 15, ...o });
@@ -34,24 +35,56 @@ describe("bodyFactors", () => {
 });
 
 describe("headachePattern", () => {
-  // 40 days alternating steady and a 4 hPa fall every 4th day.
-  const days = Array.from({ length: 40 }, (_, i) => {
-    const day = `2026-09-${String(i + 1).padStart(2, "0")}`.replace(/-09-(3[1-9]|4\d)$/, (m, d) => `-10-${String(Number(d) - 30).padStart(2, "0")}`);
-    return w(day, i % 4 === 0 ? 1006 : 1010);
-  });
+  // 40 days: steady at 1010, with a 4 hPa fall every 4th day (and the rise back the day after).
+  const days = Array.from({ length: 40 }, (_, i) => w(addDays("2026-09-01", i), i % 4 === 0 ? 1006 : 1010));
   const dropDays = days.filter((_, i) => i > 0 && i % 4 === 0).map((d) => d.day);
+  const riseDays = days.filter((_, i) => i % 4 === 1).map((d) => d.day);
+  const link = (p: ReturnType<typeof headachePattern>, key: string) => (p.kind === "ready" ? p.links.find((l) => l.key === key) : undefined);
 
   it("needs 5 logged headaches", () => {
     expect(headachePattern(days, new Set(dropDays.slice(0, 3)), "2026-10-31")).toMatchObject({ kind: "not_enough", headacheDays: 3 });
   });
 
-  it("finds headaches clustered on pressure-drop days", () => {
-    expect(headachePattern(days, new Set(dropDays.slice(0, 6)), "2026-10-31").kind).toBe("more");
+  it("finds headaches clustered on pressure-drop days, and ranks that link first", () => {
+    const p = headachePattern(days, new Set(dropDays.slice(0, 6)), "2026-10-31");
+    expect(link(p, "pressure_drop")?.verdict).toBe("more");
+    expect(p.kind === "ready" && p.links[0].key).toBe("pressure_drop");
+    expect(link(p, "pressure_rise")?.verdict).toBe("no_link");
+  });
+
+  it("finds headaches that follow pressure rises", () => {
+    expect(link(headachePattern(days, new Set(riseDays.slice(0, 6)), "2026-10-31"), "pressure_rise")?.verdict).toBe("more");
   });
 
   it("reports no link when headaches ignore the pressure", () => {
     const steady = days.filter((_, i) => i % 4 !== 0 && i % 4 !== 1).map((d) => d.day);
-    expect(headachePattern(days, new Set([...steady.slice(0, 12), dropDays[0]]), "2026-10-31").kind).toBe("no_link");
+    expect(link(headachePattern(days, new Set([...steady.slice(0, 12), dropDays[0]]), "2026-10-31"), "pressure_drop")?.verdict).toBe("no_link");
+  });
+
+  it("checks your own day: headaches after short nights", () => {
+    const short = new Set(days.filter((_, i) => i % 5 === 2).map((d) => d.day));
+    const body = new Map(days.map((d) => [d.day, { shortSleep: short.has(d.day), highStress: null, alcoholBefore: false }]));
+    const p = headachePattern(days, new Set([...short].slice(0, 6)), "2026-10-31", body);
+    expect(link(p, "short_sleep")?.verdict).toBe("more");
+    // Not measured: left out rather than counted as calm.
+    expect(link(p, "stress")).toBeUndefined();
+  });
+
+  it("leaves out a trigger with too few days to compare", () => {
+    expect(link(headachePattern(days, new Set(dropDays.slice(0, 6)), "2026-10-31"), "humidity")).toBeUndefined();
+  });
+});
+
+describe("dayRisk with your pattern", () => {
+  const days = [w("2026-11-02", 1015), w("2026-11-03", 1009)];
+  it("counts a linked trigger a point more", () => {
+    const r = dayRisk(days, "2026-11-03", calm, { linked: new Set(["pressure_rise", "pressure_drop"]), levels: null });
+    expect(r?.factors[0]).toMatchObject({ key: "pressure_drop", points: 3, personal: true });
+  });
+  it("adds high pressure only for someone whose headaches follow it", () => {
+    const hi = [w("2026-11-02", 1015), w("2026-11-03", 1016)];
+    expect(dayRisk(hi, "2026-11-03", calm, { linked: new Set(), levels: { hi: 1014, lo: 1004 } })?.factors).toEqual([]);
+    expect(dayRisk(hi, "2026-11-03", calm, { linked: new Set(["high_pressure"]), levels: { hi: 1014, lo: 1004 } })?.factors).toEqual([{ key: "high_pressure", hPa: 1016, points: 1, personal: true }]);
   });
 });
 
