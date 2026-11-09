@@ -146,22 +146,27 @@ function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track,
   const { list, positions } = geo;
   // Each half is drawn as the arc it shows, rebuilt from the progress every frame. (It was a dashed stroke whose
   // offset and opacity the two halves updated apart: the first half could stay hidden while the second drew, so a
-  // ring past half showed only its second half.) The first half runs past its end once full, under the seam: a fixed
-  // ~4 px in degrees, since on the small inner ring a one-degree lap is sub-pixel and antialiasing leaves a dark slit.
+  // ring past half showed only its second half.) Once the second half is drawing, both halves lap over the seam by
+  // `lap` so the join is buried in a doubly-painted, colour-matched band: the butt caps of a stroke this thick don't
+  // close on a one-degree overlap, and the dim target band showed through the gap. The lap scales with the stroke (a
+  // thick ring needs a wider band) and only kicks in with the second half, so the first half never overshoots the head.
   const half = sweep / 2;
-  const lap = Math.min(20, (4 * 180) / (Math.PI * r));
-  const first = (q: number) => {
+  const lap = Math.min(30, (stroke * 0.75 * 180) / (Math.PI * r));
+  const first = (v: number) => {
     "worklet";
-    return { d: arcPath(cx, cy, r, start, start + half * q + (q >= 0.999 ? lap : 0)), strokeOpacity: q > 0.001 ? 1 : 0 };
+    const q1 = clamp01(v * 2);
+    const over = clamp01(v * 2 - 1) > 0.001 ? lap : 0;
+    return { d: arcPath(cx, cy, r, start, start + half * q1 + over), strokeOpacity: q1 > 0.001 ? 1 : 0 };
   };
-  const second = (q: number) => {
+  const second = (v: number) => {
     "worklet";
-    return { d: arcPath(cx, cy, r, start + half, start + half + half * q), strokeOpacity: q > 0.001 ? 1 : 0 };
+    const q2 = clamp01(v * 2 - 1);
+    return { d: arcPath(cx, cy, r, start + half - (q2 > 0.001 ? lap : 0), start + half + half * q2), strokeOpacity: q2 > 0.001 ? 1 : 0 };
   };
-  const a1 = useAnimatedProps(() => first(clamp01(p.value * 2)));
-  const a2 = useAnimatedProps(() => second(clamp01(p.value * 2 - 1)));
-  const g1 = useAnimatedProps(() => first(clamp01(p.value * 2)));
-  const g2 = useAnimatedProps(() => second(clamp01(p.value * 2 - 1)));
+  const a1 = useAnimatedProps(() => first(p.value));
+  const a2 = useAnimatedProps(() => second(p.value));
+  const g1 = useAnimatedProps(() => first(p.value));
+  const g2 = useAnimatedProps(() => second(p.value));
   const tail = useAnimatedProps(() => ({ fillOpacity: p.value > 0.001 ? 1 : 0 }));
   const head = useAnimatedProps(() => {
     const v = clamp01(p.value);
