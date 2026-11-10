@@ -4,7 +4,9 @@
 // draws nothing and hands its props (state, navigation, descriptors) to FloatingTabBar, drawn as the target's overlay
 // in the tabs layout.
 import * as React from "react";
+import { usePathname, useRouter } from "expo-router";
 import { TabBar, type NavTabBarProps } from "./TabBar";
+import { activeTabName, hrefOf } from "./tabRouting";
 
 type Listener = () => void;
 let current: NavTabBarProps | null = null;
@@ -43,9 +45,20 @@ function useBarProps(): NavTabBarProps | null {
   );
 }
 
-/** The bar itself, over the pages at the screen's foot. Render it as the pages' GlassTarget overlay, so its glass is live. */
+/**
+ * The bar itself, over the pages at the screen's foot. Render it as the pages' GlassTarget overlay, so its glass is
+ * live. The tab list comes from the navigator (via the bridge), but the lit tab and the navigation are driven by the
+ * router's live path: the bridged navigator snapshot can detach and go stale, which once left the wrong tab lit and
+ * taps dead with no way to recover.
+ */
 export function FloatingTabBar({ onAction, actionLabel }: { onAction?: () => void; actionLabel?: string }) {
   const props = useBarProps();
+  const pathname = usePathname();
+  const router = useRouter();
   if (!props) return null;
-  return <TabBar {...props} onAction={onAction} actionLabel={actionLabel} floating />;
+  const name = activeTabName(pathname, props.state.routes.map((r) => r.name));
+  const liveIndex = name ? props.state.routes.findIndex((r) => r.name === name) : -1;
+  const state = liveIndex >= 0 ? { ...props.state, index: liveIndex } : props.state;
+  const navigate = (routeName: string) => router.navigate(hrefOf(routeName));
+  return <TabBar {...props} state={state} navigate={navigate} onAction={onAction} actionLabel={actionLabel} floating />;
 }
