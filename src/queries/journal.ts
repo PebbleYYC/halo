@@ -1,7 +1,7 @@
 // Journal `/journal`, Behaviour insights `/journal/insights` and More › Behaviours, ported from Halo's
 // src/server/queries/journal.ts, with the tag-table helpers of src/server/journalTags.ts. Every Postgres read is a
 // Store read; the VM shapes are the web's (types.ts).
-import type { ImpactMetric, TagImpact } from "@/core/algorithms/journalImpact";
+import { armDiff, type ImpactMetric, type TagImpact } from "@/core/algorithms/journalImpact";
 import type { JournalEntry } from "@/data/types";
 import type { JournalTagRow, Store } from "@/data/store";
 import { isMedicineTag, medicineTag, withMedicineNoDays } from "@/lib/medicine";
@@ -302,4 +302,91 @@ export async function getMedicineTiming(metric: ImpactMetricKey = "recovery", ct
     return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
   };
   return medTiming(doses, outcome, (t) => label.get(t) ?? t);
+}
+
+export type DoseTimingItem = {
+  tag: string;
+  label: string;
+  /** The split, "08:30": earlier days took their first dose before it. */
+  split: string;
+  early: { n: number; avg: number; from: string; to: string };
+  late: { n: number; avg: number; from: string; to: string };
+  /** mean(late) − mean(early) in the metric's unit, with a 90% bootstrap CI. */
+  delta: number;
+  ci: [number, number];
+  effect: "positive" | "negative" | "none";
+};
+/** Why a medicine can't be split by time: too few days with a logged dose time, or doses too close together. */
+export type DoseTimingReason = { tag: string; label: string; reason: "few_timed_days" | "no_spread"; timedDays: number; spreadMin: number };
+export type DoseTimingVM = { metric: ImpactMetricKey; unit: string; items: DoseTimingItem[]; needsMore: DoseTimingReason[] };
+
+/**
+ * Like medTiming, but keeps the medicines it can't split and says why (for the Coach's "when" answer), and adds a
+ * bootstrap CI so the early-vs-late difference carries the same uncertainty as the yes/no impacts. The split is each
+ * day's first dose; a medicine needs enough timed days, enough on each side, and the two halves at least half an hour
+ * apart — doses all around one time have no "when" to compare.
+ */
+export function doseTiming(
+  doses: { tag: string; day: string; minute: number }[],
+  outcome: (day: string) => number | null | undefined,
+  labelOf: (tag: string) => string,
+): { items: DoseTimingItem[]; needsMore: DoseTimingReason[] } {
+  const first = new Map<string, Map<string, number>>();
+  for (const d of doses) {
+    const days = first.get(d.tag) ?? new Map<string, number>();
+    days.set(d.day, Math.min(days.get(d.day) ?? Infinity, d.minute));
+    first.set(d.tag, days);
+  }
+  const items: DoseTimingItem[] = [];
+  const needsMore: DoseTimingReason[] = [];
+  for (const [tag, days] of first) {
+    const label = labelOf(tag);
+    const rows = [...days].map(([day, minute]) => ({ minute, next: outcome(addDays(day, 1)) })).filter((r): r is { minute: number; next: number } => finite(r.next));
+    const spread = rows.length ? Math.max(...rows.map((r) => r.minute)) - Math.min(...rows.map((r) => r.minute)) : 0;
+    if (rows.length < MED_TIMING.minDays) {
+      needsMore.push({ tag, label, reason: "few_timed_days", timedDays: rows.length, spreadMin: spread });
+      continue;
+    }
+    const sorted = [...rows].sort((a, b) => a.minute - b.minute);
+    const mid = sorted[Math.floor(sorted.length / 2)].minute;
+    const early = sorted.filter((r) => r.minute < mid);
+    const late = sorted.filter((r) => r.minute >= mid);
+    const median = (xs: { minute: number }[]) => xs[Math.floor(xs.length / 2)].minute;
+    if (early.length < MED_TIMING.minSide || late.length < MED_TIMING.minSide || median(late) - median(early) < MED_TIMING.minGapMin) {
+      needsMore.push({ tag, label, reason: "no_spread", timedDays: rows.length, spreadMin: spread });
+      continue;
+    }
+    const { delta, ciLow, ciHigh } = armDiff(
+      late.map((r) => r.next),
+      early.map((r) => r.next),
+      `${tag}:timing`,
+    );
+    const side = (xs: { minute: number; next: number }[]) => ({ n: xs.length, avg: meanSd(xs.map((r) => r.next)).mean!, from: hhmm(Math.min(...xs.map((r) => r.minute))), to: hhmm(Math.max(...xs.map((r) => r.minute))) });
+    items.push({ tag, label, split: hhmm(mid), early: side(early), late: side(late), delta, ci: [ciLow, ciHigh], effect: ciLow > 0 ? "positive" : ciHigh < 0 ? "negative" : "none" });
+  }
+  items.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || a.label.localeCompare(b.label));
+  return { items, needsMore };
+}
+
+/** The Coach's dose-timing answer for `metric`: early-vs-late next-day outcome for each timed medicine, over 90 days. */
+export async function getDoseTiming(metric: ImpactMetricKey = "recovery", ctx: QueryCtx): Promise<DoseTimingVM> {
+  const key = METRIC[metric];
+  const unit = metric === "hrv" ? "SD" : "%";
+  const from = addDays(ctx.today, -90);
+  const [entries, tags, rows] = await Promise.all([ctx.store.loggedEntries(ctx.now - 91 * 86_400, 5000), tagsOf(ctx), loadDays(ctx, addDays(from, 1), ctx.today)]);
+  const label = new Map(tags.map((t) => [t.tag, t.label]));
+  const nameByTag = new Map<string, string>();
+  const doses = entries.flatMap((e) => {
+    if (e.type !== "medication" || e.day < from) return [];
+    const name = String((e.data as { name?: unknown } | null)?.name ?? "");
+    const tag = medicineTag(name);
+    if (!tag) return [];
+    if (!nameByTag.has(tag)) nameByTag.set(tag, name);
+    return [{ tag, day: e.day, minute: localMinutes(e.ts, ctx.timeZone) }];
+  });
+  const outcome = (day: string) => {
+    const r = rows.get(day);
+    return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
+  };
+  return { metric, unit, ...doseTiming(doses, outcome, (t) => label.get(t) ?? nameByTag.get(t) ?? t) };
 }

@@ -9,7 +9,7 @@ Today is {{today}} in the user's time zone ({{timeZone}}).
 
 Grounding:
 - Fetch relevant tools before discussing the user's measurements. Never invent readings, baselines, workout details or calculated targets. Saved conversation summaries are historical context, not fresh measurements.
-- Every tool you call shows the user a card, so call only the tools the answer needs. For a readiness or training question, read get_day alone first and add get_sleep, get_activities or get_health only when get_day leaves a gap the answer depends on. A daily brief reads get_day and get_sleep. For a change over time, read get_trend with a date range. For a habit question, read get_journal_impacts. When the question is about one behaviour or medication, pass its name to get_journal_impacts (its behaviours parameter) so the card shows that behaviour and not the person's unrelated or sensitive top habits; a behaviour logged every day has no days without it to compare, so say that rather than falling back to other habits. Fetch get_activity when a particular workout needs intensity or heart-rate detail.
+- Every tool you call shows the user a card, so call only the tools the answer needs. For a readiness or training question, read get_day alone first and add get_sleep, get_activities or get_health only when get_day leaves a gap the answer depends on. A daily brief reads get_day and get_sleep. For a change over time, read get_trend with a date range. For a habit question, read get_journal_impacts. When the question is about one behaviour or medication, pass its name to get_journal_impacts (its behaviours parameter) so the card shows that behaviour and not the person's unrelated or sensitive top habits; a behaviour logged every day has no days without it to compare, so say that rather than falling back to other habits. When the question is about *when* a medication is taken — earlier vs later, dosing time, timing — use get_dose_timing, not get_journal_impacts: it compares early-dose days against late-dose days. Fetch get_activity when a particular workout needs intensity or heart-rate detail.
 - Distinguish observations, plausible explanations and recommendations. Recovery contributors describe the score's inputs, not proof of a physiological cause. Habit associations are not causal; include sample sizes and uncertainty when interpreting them.
 - A null value is missing, never zero. Explain its reason: calibrating means Halo is learning the baseline (nightsLeft when supplied); awaiting_sleep_sync means the night has not synced; band_not_worn means the band was not worn; no_hrv_last_night means no usable nightly HRV; insufficient_hr_data and no_data mean not enough measurements. Provisional values may change.
 - Respect the returned day, date range, coverage, units and provisional flags. Averages describe available observations, not every calendar day. Partial-day strain is not comparable to a completed day's total. No measured future data exists.
@@ -68,6 +68,13 @@ export const TOOL_DOCS: Record<string, ToolDoc> = {
     params: {
       outcome: { type: "one of: recovery, hrv, sleep; default recovery", description: "Outcome to compare. HRV is baseline standard deviations (SD), recovery and sleep are percentage points." },
       behaviours: { type: "array of strings (optional)", description: "Names or keys of the specific behaviours the question is about, e.g. [\"Bupropion XL\", \"Intuniv\"]. Scopes the result and the card to just these; omit only for an open 'what affects my recovery' question." },
+    },
+  },
+  get_dose_timing: {
+    description: "For a 'when' question about medication — whether taking it earlier or later in the day changes next-day recovery, HRV or sleep. Splits each medicine's days at the median time of its first dose and compares the two halves, with sample sizes and a confidence interval. This is the right tool for dosing-time questions; get_journal_impacts only compares days a behaviour was logged against days it wasn't, which says nothing about time of day. Medicines without enough timed days, or whose doses all fall around one time, come back under needsMoreData with the reason.",
+    params: {
+      outcome: { type: "one of: recovery, hrv, sleep; default recovery", description: "Outcome to compare." },
+      behaviours: { type: "array of strings (optional)", description: "Medicine names to scope to, e.g. [\"Bupropion XL\"]. Omit to cover every timed medicine." },
     },
   },
   get_health: {
