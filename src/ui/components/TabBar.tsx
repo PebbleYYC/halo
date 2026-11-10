@@ -205,6 +205,8 @@ export type TabBarOwnProps = {
   actionLabel?: string;
   /** Absolute at the bottom of its parent (default), or in flow. */
   floating?: boolean;
+  /** In navigator mode, switch tabs through this (the live router) instead of the handed-in navigation snapshot. */
+  navigate?: (routeName: string) => void;
 };
 
 /**
@@ -267,16 +269,27 @@ export function TabBar(props: TabBarProps) {
   const active = nav?.state.routes[nav.state.index];
   const host = active ? HOST_TAB[active.name] : undefined;
   const current = nav ? routes.findIndex((r) => (host ? r.name === host : r.key === active?.key)) : (own?.current ?? -1);
+  // A live navigator (expo-router's router), injected by the host. The navigator props the bar is handed can go stale
+  // if their snapshot detaches, which left taps dead and the wrong tab lit; navigating through the live router instead
+  // always works and re-lights the right tab.
+  const navigate = props.navigate;
   const press = (i: number) => {
     perf("tab-press", nav ? routes[i]?.name : i);
     haptic();
     if (nav) {
       const route = routes[i];
+      // The tab you're on: back to the top of its page.
+      if (i === current) {
+        emitTabReselect();
+        return;
+      }
+      if (navigate) {
+        navigate(route.name);
+        return;
+      }
       const e = nav.navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
       if (e.defaultPrevented) return;
-      // The tab you're on: back to the top of its page.
-      if (i === current) emitTabReselect();
-      else nav.navigation.navigate(route.name);
+      nav.navigation.navigate(route.name);
       return;
     }
     own?.onChange(i, tabs[i]);
