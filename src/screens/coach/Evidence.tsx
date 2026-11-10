@@ -295,7 +295,21 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
               )}
             </View>
           ))}
-          {!d.effects?.length && <Note style={{ marginTop: 8 }}>Not enough check-ins to compare habits yet.</Note>}
+          {(d.scoped ? (d.needsMoreData ?? []) : []).slice(0, 3).map((v) => (
+            <KeyStatRow
+              key={v.behaviour}
+              variant="row"
+              label={v.behaviour}
+              metric={metric({ value: null })}
+              unit={d.unit}
+              format="signed1"
+              direction="none"
+              caption={v.noDays === 0 ? "logged every day — no days without to compare" : v.yesDays === 0 ? "not logged in this window" : `only ${v.yesDays} with, ${v.noDays} without — need 5 of each`}
+            />
+          ))}
+          {!d.effects?.length && !(d.scoped && d.needsMoreData?.length) && (
+            <Note style={{ marginTop: 8 }}>Not enough check-ins to compare habits yet.</Note>
+          )}
         </EvidenceCard>
         <BasedOn href="/journal/insights">Behaviour insights</BasedOn>
       </View>
