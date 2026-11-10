@@ -13,7 +13,7 @@ import { getActivity } from "@/queries/activity";
 import { dayStartOf, firstDay, loadDays, maybe, meanSd, todayOf, type QueryCtx } from "@/queries/common";
 import { acwrStatus, getFitness, getHealthHub, getMonitor, getStress } from "@/queries/health";
 import { energyBankVM, latestReport } from "@/queries/home";
-import { getJournalInsights } from "@/queries/journal";
+import { getDoseTiming, getJournalInsights } from "@/queries/journal";
 import { getRecovery } from "@/queries/recovery";
 import { getReport } from "@/queries/reports";
 import { getSleep } from "@/queries/sleep";
@@ -219,6 +219,26 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
           scoped: want != null && want.length > 0,
           effects: j.items.filter((i) => hit(i.key, i.label)).map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith, withoutAvg: i.avgWithout, yesDays: i.yes, noDays: i.no })),
           needsMoreData: j.needsMore.filter((n) => hit(n.key, n.label)).map((n) => ({ behaviour: n.label, yesDays: n.yes, noDays: n.no })),
+        };
+      },
+    }),
+    get_dose_timing: tool({
+      description: t("tool.get_dose_timing"),
+      inputSchema: z.object({
+        outcome: z.enum(["recovery", "hrv", "sleep"]).default("recovery").describe(t("tool.get_journal_impacts.outcome")),
+        behaviours: z.array(z.string()).optional().describe(t("tool.get_dose_timing.behaviours")),
+      }),
+      execute: async ({ outcome, behaviours }) => {
+        const d = await getDoseTiming(outcome, ctx);
+        const want = behaviours?.map((b) => b.trim().toLowerCase()).filter(Boolean);
+        const hit = (key: string, label: string) =>
+          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || w.includes(label.toLowerCase()));
+        return {
+          outcome,
+          unit: d.unit,
+          scoped: want != null && want.length > 0,
+          timings: d.items.filter((i) => hit(i.tag, i.label)).map((i) => ({ medicine: i.label, splitTime: i.split, earlier: { avg: i.early.avg, days: i.early.n, range: [i.early.from, i.early.to] }, later: { avg: i.late.avg, days: i.late.n, range: [i.late.from, i.late.to] }, delta: round(i.delta, 1), confidenceInterval: i.ci.map((n) => round(n, 1)), effect: i.effect })),
+          needsMoreData: d.needsMore.filter((n) => hit(n.tag, n.label)).map((n) => ({ medicine: n.label, reason: n.reason, timedDays: n.timedDays, spreadMinutes: n.spreadMin })),
         };
       },
     }),

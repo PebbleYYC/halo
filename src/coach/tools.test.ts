@@ -6,6 +6,7 @@ import { MemoryStore } from "@/data/memory";
 import { seedDemo } from "@/data/seed";
 import type { ScoreRow } from "@/data/store";
 import type { Metrics, Profile } from "@/data/types";
+import { addDays, fromWall } from "@/lib/time";
 import { runPipeline } from "@/pipeline";
 import type { QueryCtx } from "@/queries/ctx";
 import { coachSuggestions } from "./suggestions";
@@ -156,6 +157,34 @@ describe("coach tools", () => {
     const sparse = await call(coachTools(ctx).get_journal_impacts, { outcome: "recovery", behaviours: ["Travel"] });
     expect(sparse.effects).toEqual([]);
     expect(sparse.needsMoreData.map((n) => n.behaviour)).toEqual(["Travel"]);
+  });
+
+  it("answers a dosing-time question by comparing early vs late dose days, scoped to the medicine", async () => {
+    // A fresh seeded phone, plus 14 days of a medicine dosed alternately at 08:00 and 11:00.
+    const store = new MemoryStore();
+    await seedDemo(store, { today: TODAY, timeZone: TZ, now: NOW });
+    await runPipeline(store, PROFILE, { today: TODAY });
+    const rows = [];
+    for (let i = 0; i < 14; i++) {
+      const day = addDays("2026-09-17", i);
+      const ts = fromWall(`${day}T${i % 2 ? "11" : "08"}:00`, TZ);
+      rows.push({ id: `d${i}`, type: "medication", ts, day, data: { name: "Bupropion XL" }, createdAt: ts, source: "pulse" as const });
+    }
+    await store.addLoggedEntries(rows);
+    const tools = coachTools(await ctxFor(store));
+
+    const all = await call(tools.get_dose_timing, { outcome: "recovery" });
+    expect(all.scoped).toBe(false);
+    expect(all.timings.map((t) => t.medicine)).toContain("Bupropion XL");
+    const bup = all.timings.find((t) => t.medicine === "Bupropion XL")!;
+    expect(bup.earlier.days + bup.later.days).toBe(14);
+    expect(bup.confidenceInterval).toHaveLength(2);
+
+    // Scoped to a name that does not exist: no unrelated medicine comes along.
+    const none = await call(tools.get_dose_timing, { outcome: "recovery", behaviours: ["Melatonin"] });
+    expect(none.scoped).toBe(true);
+    expect(none.timings).toEqual([]);
+    expect(none.needsMoreData).toEqual([]);
   });
 
   it("the latest weekly report is read from this person's reports, none on an empty store", async () => {

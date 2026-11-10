@@ -89,6 +89,12 @@ function bootstrapCI(yes: number[], no: number[], key: string): [number, number]
   return [percentile(diffs, tail), percentile(diffs, 100 - tail)];
 }
 
+/** mean(a) − mean(b) with a seeded 90% bootstrap CI, for a two-arm split (dose-timing's early vs late reuses this). */
+export function armDiff(a: number[], b: number[], key: string): { delta: number; ciLow: number; ciHigh: number } {
+  const [ciLow, ciHigh] = bootstrapCI(a, b, key);
+  return { delta: mean(a) - mean(b), ciLow, ciHigh };
+}
+
 function effect(yes: number[], no: number[], key: string): Effect {
   const n = { nYes: yes.length, nNo: no.length };
   if (yes.length < journalImpactConfig.minDays || no.length < journalImpactConfig.minDays) {

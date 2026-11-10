@@ -315,6 +315,37 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
       </View>
     );
   }
+  if (name === "get_dose_timing") {
+    const d = output as CoachOutputs["get_dose_timing"];
+    const reasonText = (r: { reason: string; timedDays: number; spreadMinutes: number }) =>
+      r.reason === "few_timed_days" ? `only ${r.timedDays} days with a logged dose time — need 10` : "doses are all around the same time — no timing spread to compare";
+    return (
+      <View style={{ gap: 8 }}>
+        <EvidenceCard icon={ListChecks} tint="lavender" title={`Dose timing · ${d.outcome}`}>
+          <Note size={12}>Earlier vs later dosing days, next-day averages — not proof of cause.</Note>
+          {(d.timings ?? []).slice(0, 3).map((v) => (
+            <View key={v.medicine} style={{ gap: 2, paddingBottom: 8 }}>
+              <KeyStatRow variant="row" label={v.medicine} metric={metric({ value: v.delta })} unit={d.unit} format="signed1" direction="none" caption={`later vs earlier, split ${v.splitTime}`} />
+              <Note size={12}>
+                Earlier ({v.earlier.range.join("–")}): {v.earlier.avg.toFixed(0)}
+                {d.unit} · {v.earlier.days}d. Later ({v.later.range.join("–")}): {v.later.avg.toFixed(0)}
+                {d.unit} · {v.later.days}d.
+              </Note>
+              <Note size={12}>
+                90% interval: {v.confidenceInterval.map((n) => n.toFixed(1)).join(" to ")} {d.unit}
+                {v.effect === "none" ? ". No clear association." : "."}
+              </Note>
+            </View>
+          ))}
+          {(d.needsMoreData ?? []).slice(0, 3).map((v) => (
+            <KeyStatRow key={v.medicine} variant="row" label={v.medicine} metric={metric({ value: null })} unit={d.unit} format="signed1" direction="none" caption={reasonText(v)} />
+          ))}
+          {!d.timings?.length && !d.needsMoreData?.length && <Note style={{ marginTop: 8 }}>No timed doses to compare yet.</Note>}
+        </EvidenceCard>
+        <BasedOn href="/journal/insights">Behaviour insights</BasedOn>
+      </View>
+    );
+  }
   if (name === "get_health") {
     const d = output as CoachOutputs["get_health"];
     return (
