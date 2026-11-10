@@ -141,6 +141,23 @@ describe("coach tools", () => {
     expect((await call((await blank()).get_journal_impacts, { outcome: "recovery" })).effects).toEqual([]);
   });
 
+  it("scopes to the behaviours asked about, so the card never surfaces unrelated habits", async () => {
+    const all = await call(coachTools(ctx).get_journal_impacts, { outcome: "recovery" });
+    expect(all.scoped).toBe(false);
+    expect(all.effects.length).toBeGreaterThan(1);
+
+    // A name match either way round ("alcohol" ↔ "Alcohol"), and nothing else comes along.
+    const one = await call(coachTools(ctx).get_journal_impacts, { outcome: "recovery", behaviours: ["alcohol"] });
+    expect(one.scoped).toBe(true);
+    expect(one.effects.map((e) => e.behaviour)).toEqual(["Alcohol"]);
+    expect(one.needsMoreData).toEqual([]);
+
+    // A behaviour that can't be compared comes back under needsMoreData only — not replaced by other habits.
+    const sparse = await call(coachTools(ctx).get_journal_impacts, { outcome: "recovery", behaviours: ["Travel"] });
+    expect(sparse.effects).toEqual([]);
+    expect(sparse.needsMoreData.map((n) => n.behaviour)).toEqual(["Travel"]);
+  });
+
   it("the latest weekly report is read from this person's reports, none on an empty store", async () => {
     const week = await call(coachTools(ctx).get_report, { kind: "week" });
     expect(week).toMatchObject({ period: expect.stringMatching(/^\d{4}-W\d{2}$/), partial: false });

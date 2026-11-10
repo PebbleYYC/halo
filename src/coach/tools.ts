@@ -202,14 +202,23 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
     }),
     get_journal_impacts: tool({
       description: t("tool.get_journal_impacts"),
-      inputSchema: z.object({ outcome: z.enum(["recovery", "hrv", "sleep"]).default("recovery").describe(t("tool.get_journal_impacts.outcome")) }),
-      execute: async ({ outcome }) => {
+      inputSchema: z.object({
+        outcome: z.enum(["recovery", "hrv", "sleep"]).default("recovery").describe(t("tool.get_journal_impacts.outcome")),
+        behaviours: z.array(z.string()).optional().describe(t("tool.get_journal_impacts.behaviours")),
+      }),
+      execute: async ({ outcome, behaviours }) => {
         const j = await getJournalInsights(outcome, ctx);
+        // Scope to the behaviours the person asked about, so the card never surfaces unrelated habits. Match a request
+        // against each behaviour's key and label either way round, so "bupropion" finds "Bupropion XL" and vice versa.
+        const want = behaviours?.map((b) => b.trim().toLowerCase()).filter(Boolean);
+        const hit = (key: string, label: string) =>
+          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || w.includes(label.toLowerCase()));
         return {
           outcome,
           unit: j.unit,
-          effects: j.items.map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith, withoutAvg: i.avgWithout, yesDays: i.yes, noDays: i.no })),
-          needsMoreData: j.needsMore.map((n) => ({ behaviour: n.label, yesDays: n.yes, noDays: n.no })),
+          scoped: want != null && want.length > 0,
+          effects: j.items.filter((i) => hit(i.key, i.label)).map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith, withoutAvg: i.avgWithout, yesDays: i.yes, noDays: i.no })),
+          needsMoreData: j.needsMore.filter((n) => hit(n.key, n.label)).map((n) => ({ behaviour: n.label, yesDays: n.yes, noDays: n.no })),
         };
       },
     }),
