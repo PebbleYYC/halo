@@ -5,6 +5,7 @@
 // stage with its share against its typical range on a slim capsule track that grows in once.
 import * as React from "react";
 import { View } from "react-native";
+import { Moon } from "lucide-react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { DATA_COLORS, deltaTone, GOOD_DIRECTION } from "@/lib/bands";
 import { clock, durationWords, hmm, statSentence } from "@/lib/format";
@@ -12,7 +13,6 @@ import { alpha } from "@/lib/utils";
 import type { SleepVM } from "@/queries";
 import { EmptyState, ReasonPlaceholder, Txt, useTheme } from "@/ui";
 import { useCalm } from "@/ui/calm";
-import { Caption } from "@/ui/components/calmKit";
 import { ExpandButton } from "@/ui/components/ChartFrame";
 import { HypnogramChart, HypnogramSkeleton } from "@/ui/components/Hypnogram";
 import { RollingNumber } from "@/ui/components/Halo";
@@ -21,6 +21,7 @@ import { SkeletonText } from "@/ui/components/Skeleton";
 import { SleepHrChart } from "@/ui/components/SleepHrChart";
 import { font, TABULAR } from "@/ui/fonts";
 import { haptic } from "@/ui/motion/haptics";
+import { HeroHead } from "@/screens/home/controls";
 import { GlowCard, ListGroup, ListRow, useGrowIn } from "./ios";
 import { nightDates } from "./lines";
 
@@ -79,7 +80,10 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
   return (
     <GlowCard color={theme.sleep} padding={18} style={{ alignSelf: "stretch" }}>
     <View accessibilityLabel={sentence} style={{ gap: 2 }}>
-      <Caption numberOfLines={1}>Time asleep</Caption>
+      {/* The head every lead card has (Health's, Activity's, Today's): the glyph and the name in the family's colour. */}
+      <View style={{ marginBottom: 8 }}>
+        <HeroHead icon={Moon} tint="lavender" title="Time asleep" />
+      </View>
       {h ? (
         <>
           <HoursMinutes minutes={h.asleepMin} />
@@ -116,7 +120,10 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
 export function TimeAsleepSkeleton() {
   return (
     <GlowCard color={null} padding={18} gap={4} style={{ alignSelf: "stretch" }}>
-      <Caption numberOfLines={1}>Time asleep</Caption>
+      {/* The head every lead card has (Health's, Activity's, Today's): the glyph and the name in the family's colour. */}
+      <View style={{ marginBottom: 8 }}>
+        <HeroHead icon={Moon} tint="lavender" title="Time asleep" />
+      </View>
       <SkeletonText role="valueHero" size={BIG} lineHeight={BIG_LINE} chars={6} />
       <SkeletonText role="caption" size={15} lineHeight={20} chars={13} />
     </GlowCard>

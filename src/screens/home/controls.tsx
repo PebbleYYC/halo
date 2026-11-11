@@ -111,6 +111,19 @@ function CardHead({ icon: Icon, ink, title, subtitle, subtitleColor, right, chev
 }
 
 /**
+ * The head every tab's lead card wears (Today's scores, Sleep's night, Activity's Strain, Health's cards): the glyph
+ * and the name in the family's colour (`ink` for a card of several families), and on the right a grey note or a link.
+ */
+export function HeroHead({ icon, tint, ink, title, right }: { icon: LucideIcon; tint?: CalmTint; ink?: string; title: string; right?: React.ReactNode }) {
+  const family = useTitleInk(tint ?? "sky");
+  return (
+    <View style={{ alignSelf: "stretch" }}>
+      <CardHead icon={icon} ink={ink ?? family} title={title} right={right} chevron={false} />
+    </View>
+  );
+}
+
+/**
  * A Home card in the Apple Health look: the flat card (20 px corners), Health's category head (the family's glyph and
  * title in its colour, a chevron when the card opens something, or the part on the right), the grey sentence under it,
  * then the body. A tinted card has its family's soft wash behind it. Everything inside knows it sits on a card.

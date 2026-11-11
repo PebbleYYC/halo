@@ -13,7 +13,7 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle, type SharedValu
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Line } from "react-native-svg";
 import { useRouter, type Href } from "expo-router";
-import { ChevronDown, HeartPulse, Moon } from "lucide-react-native";
+import { ChevronDown, HeartPulse, Moon, Target } from "lucide-react-native";
 import { BAND_WORD, recoveryBand } from "@/lib/bands";
 import { DAY, dayLabel, formatDay, formatValue, MISSING } from "@/lib/format";
 import { reasonCopy } from "@/lib/reasons";
@@ -34,7 +34,7 @@ import { usePress, usePressStyle } from "@/ui/components/press";
 import { font } from "@/ui/fonts";
 import { useTheme } from "@/ui/ThemeProvider";
 import { chartHref } from "@/screens/chart/href";
-import { HomeCard, RowRule } from "./controls";
+import { HeroHead, HomeCard } from "./controls";
 import { Grow } from "./miniCharts";
 import { ACTIVITY_TAB, HEALTH_TAB, SLEEP_TAB } from "./tabs";
 
@@ -238,6 +238,8 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
   const target = dials.strainTarget ? `${formatValue("decimal1", dials.strainTarget[0])}–${formatValue("decimal1", dials.strainTarget[1])}` : null;
   return (
     <CalmSurface padding={16} gap={14}>
+      {/* The same head as every lead card; the link to the data sits on its right, where "Details" does elsewhere. */}
+      <HeroHead icon={Target} ink={c.ink} title="Today’s scores" right={<PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
         <Pressable onPress={() => go("/trends")} accessibilityRole="button" accessibilityLabel="Open your data in Trends" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
           <ScoreRings recovery={recovery} sleep={sleep} strain={strain} strainTarget={dials.strainTarget} size={size} delay={RINGS_DELAY} />
@@ -281,12 +283,6 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
           {reasonCopy(dials.reason.reason, dials.reason.nightsLeft).long}
         </Txt>
       )}
-      <View style={{ marginHorizontal: -16, marginBottom: -6 }}>
-        <RowRule inset={16} />
-        <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
-          <PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />
-        </View>
-      </View>
     </CalmSurface>
   );
 }
