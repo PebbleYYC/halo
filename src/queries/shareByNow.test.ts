@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryStore } from "@/data/memory";
+import type { DayRow } from "./common";
 import { addDays, fromWall, localMidnight } from "@/lib/time";
 import { priorStatsByNow, shareByNow } from "./common";
 
@@ -27,7 +28,7 @@ describe("shareByNow", () => {
 
 describe("priorStatsByNow", () => {
   const rows = new Map(Array.from({ length: 30 }, (_, k) => [addDays(TODAY, -k - 1), { day: addDays(TODAY, -k - 1), metrics: { steps: 10_000 } } as never]));
-  const pick = (r: { metrics?: { steps?: number } }) => r.metrics?.steps ?? null;
+  const pick = (r: DayRow) => r.metrics?.steps ?? null;
 
   it("scales each day to this hour when enough days have minute data", () => {
     const share = new Map(Array.from({ length: 10 }, (_, k) => [addDays(TODAY, -k - 1), 0.1]));

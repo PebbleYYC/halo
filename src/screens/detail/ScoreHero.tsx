@@ -40,6 +40,8 @@ export type ScoreHeroProps = {
   variant: "recovery" | "strain" | "sleep";
   /** Under the number in the score's colour, in place of the band word (Sleep: the time asleep). */
   word?: string | null;
+  /** The head's top right, in place of "So far" (Sleep: the night's bed and wake times). */
+  note?: string | null;
   value: number | null;
   reason?: ReasonCode | null;
   nightsLeft?: number;
@@ -57,7 +59,7 @@ export type ScoreHeroProps = {
   children?: React.ReactNode;
 };
 
-export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tags, extraTags, target, label, sentence, loading, word: wordProp, children }: ScoreHeroProps) {
+export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tags, extraTags, target, label, sentence, loading, word: wordProp, note, children }: ScoreHeroProps) {
   const { c } = useTheme();
   const calm = useCalm();
   const strain = variant === "strain";
@@ -103,9 +105,9 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
         ink={inks.ink}
         title={name}
         right={
-          soFar ? (
+          note || soFar ? (
             <Txt size={13} lineHeight={18} style={{ color: calm.sub }}>
-              So far
+              {note ?? "So far"}
             </Txt>
           ) : undefined
         }
