@@ -221,7 +221,7 @@ function MonthPanel({
         <View style={{ flexDirection: "row" }}>
           {weekdayLabels(weekStartsOn).map((w) => (
             <View key={w.short} style={{ flex: 1, alignItems: "center" }} accessibilityLabel={w.long}>
-              <Caption>{w.short}</Caption>
+              <Caption numberOfLines={1}>{w.short}</Caption>
             </View>
           ))}
         </View>

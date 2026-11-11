@@ -113,7 +113,7 @@ function Stat({ value, label, color }: { value: string; label: string; color: st
       <Txt size={28} lineHeight={32} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={[font.numberAt(28, 700), { color }]}>
         {value}
       </Txt>
-      <Caption>{label}</Caption>
+      <Caption numberOfLines={1}>{label}</Caption>
     </View>
   );
 }

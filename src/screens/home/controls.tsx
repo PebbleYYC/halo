@@ -13,7 +13,7 @@ import { formatDay } from "@/lib/format";
 import { alpha, mix } from "@/lib/utils";
 import { InfoDialog, Txt, type InfoContent } from "@/ui";
 import { useCalm, type CalmTint } from "@/ui/calm";
-import { Caption, CHEVRON, ChevronSlot, iconRadius, Num, OnCard, onBand, useSoftFill } from "@/ui/components/calmKit";
+import { Caption, CHEVRON, ChevronSlot, iconRadius, Num, OnCard, onBand, Sentence, useSoftFill } from "@/ui/components/calmKit";
 import { CalmSurface, PillAction } from "@/ui/components/CalmSurface";
 import { usePress, usePressStyle } from "@/ui/components/press";
 import { TileRow } from "@/ui/components/TileRow";
@@ -214,15 +214,8 @@ export function EditLink({ label = "Edit", accessibilityLabel, onPress }: { labe
   );
 }
 
-/** A sentence: 15/20 in the secondary grey (iOS's subhead; at 600 in a colour when it carries a verdict). Inline numbers go in `NumSpan`. */
-export function Sentence({ children, color, size = 15 }: { children: React.ReactNode; color?: string; size?: 13 | 14 | 15 }) {
-  const c = useCalm();
-  return (
-    <Txt size={size} lineHeight={size + 5} weight={color ? 600 : 400} style={{ color: color ?? c.sub }}>
-      {children}
-    </Txt>
-  );
-}
+/** A sentence: the shared kit's (15/20 grey; in a colour of its own it is semibold). */
+export { Sentence };
 
 /** A number inside a sentence: Inter bold with tabular figures in ink (or `color`), so "Started at 85% at 07:10" still reads as numbers. */
 export function NumSpan({ children, color, size = 15 }: { children: React.ReactNode; color?: string; size?: number }) {

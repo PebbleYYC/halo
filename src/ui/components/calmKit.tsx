@@ -102,14 +102,35 @@ export const iconRadius = (size: number) => Math.round(size * 0.24);
  * with the icon in the family's colour instead; without a tint, a quiet grey square with a grey icon. A swatch (not an
  * icon) is drawn as given, centred.
  */
-export function IconTile({ icon, tint, size = 44, radius, iconSize, bg, style }: { icon: React.ReactNode; tint: CalmTint | null; size?: number; radius?: number; iconSize?: number; bg?: string; style?: StyleProp<ViewStyle> }) {
+export function IconTile({
+  icon,
+  tint,
+  size = 44,
+  radius,
+  iconSize,
+  bg,
+  color,
+  style,
+}: {
+  /** The glyph: a lucide component (`Heart`) or an element (`<Heart />`, a swatch). */
+  icon?: IconComponent | React.ReactNode;
+  tint: CalmTint | null;
+  size?: number;
+  radius?: number;
+  iconSize?: number;
+  bg?: string;
+  /** The glyph's colour, when not the square's own (white on a solid square). */
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
   const c = useCalm();
   const solid = !!tint && !bg;
   const fill = bg ?? (tint ? c.tintInk[tint] : softFill(c, "card"));
-  const ink = solid ? "#ffffff" : tint ? c.tintInk[tint] : c.sub;
+  const ink = color ?? (solid ? "#ffffff" : tint ? c.tintInk[tint] : c.sub);
+  const glyph = iconSize ?? Math.round(size * 0.55);
   return (
-    <View style={[{ width: size, height: size, borderRadius: radius ?? iconRadius(size), backgroundColor: fill, alignItems: "center", justifyContent: "center" }, style]}>
-      {recolorIcon(icon, ink, iconSize ?? Math.round(size * 0.55))}
+    <View style={[{ width: size, height: size, borderRadius: radius ?? iconRadius(size), backgroundColor: fill, alignItems: "center", justifyContent: "center", flexShrink: 0 }, style]}>
+      {!React.isValidElement(icon) && isComponent(icon) ? React.createElement(icon, { size: glyph, color: ink, strokeWidth: 2 }) : recolorIcon(icon as React.ReactNode, ink, glyph)}
     </View>
   );
 }
@@ -144,15 +165,34 @@ export const onBand = (band: number, h: number) => Math.max(0, (band - h) / 2);
  * A number with its unit beside it on the baseline, as Apple Health sets "80 BPM": Inter bold (tabular) in the number's
  * colour, the unit half its size, semibold and grey, so "43 ms" reads as a value with a unit, never as a phrase.
  */
-export function Num({ value, unit, size, color, unitColor, style, numberOfLines = 1 }: { value: string; unit?: string; size: number; color?: string; unitColor?: string; style?: StyleProp<TextStyle>; numberOfLines?: number }) {
+export function Num({
+  value,
+  unit,
+  size,
+  color,
+  unitColor,
+  weight = 700,
+  style,
+  numberOfLines = 1,
+}: {
+  value: string;
+  unit?: string;
+  size: number;
+  color?: string;
+  unitColor?: string;
+  weight?: 500 | 600 | 700;
+  /** The row holding the number and its unit. */
+  style?: StyleProp<ViewStyle>;
+  numberOfLines?: number;
+}) {
   const c = useCalm();
   return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", flexShrink: 1 }}>
-      <Txt size={size} lineHeight={Math.round(size * 1.15)} numberOfLines={numberOfLines} style={[font.numberAt(size), { color: color ?? c.ink }, style]}>
+    <View style={[{ flexDirection: "row", alignItems: "baseline", flexShrink: 1 }, style]}>
+      <Txt size={size} lineHeight={Math.round(size * 1.15)} numberOfLines={numberOfLines} style={[font.numberAt(size, weight), { color: color ?? c.ink }]}>
         {value}
       </Txt>
       {unit ? (
-        <Txt size={unitSize(size)} lineHeight={Math.round(unitSize(size) * 1.3)} weight={600} numberOfLines={1} style={{ color: unitColor ?? c.sub, marginLeft: unit === "%" ? 1 : 3 }}>
+        <Txt size={unitSize(size)} lineHeight={Math.round(unitSize(size) * 1.3)} weight={600} style={{ color: unitColor ?? c.sub, marginLeft: unit === "%" ? 1 : 3, flexShrink: 1 }}>
           {unit}
         </Txt>
       ) : null}
@@ -163,14 +203,97 @@ export function Num({ value, unit, size, color, unitColor, style, numberOfLines 
 /** The unit's size beside a number of `size` px: half of it, never under 12 px. */
 export const unitSize = (size: number) => Math.max(12, Math.round(size * 0.5));
 
-/** The small caps caption under a number ("RESTING"): 12 px semibold capitals in the secondary grey. */
-export function Caption({ children, color, numberOfLines = 1, style }: { children: string; color?: string; numberOfLines?: number; style?: StyleProp<TextStyle> }) {
+/**
+ * The small caps caption under a number ("RESTING"): 12 px semibold capitals in the secondary grey. It wraps rather than
+ * clip; a tile with room for one line passes `numberOfLines`.
+ */
+export function Caption({ children, color, align, numberOfLines, style }: { children: string; color?: string; align?: TextStyle["textAlign"]; numberOfLines?: number; style?: StyleProp<TextStyle> }) {
   const c = useCalm();
   return (
-    <Txt size={12} lineHeight={16} weight={600} numberOfLines={numberOfLines} style={[{ color: color ?? c.sub, letterSpacing: 0.4 }, style]}>
+    <Txt size={12} lineHeight={16} weight={600} align={align} numberOfLines={numberOfLines} style={[{ color: color ?? c.sub, letterSpacing: 0.4 }, style]}>
       {children.toUpperCase()}
     </Txt>
   );
+}
+
+/** A card or row title: 17/22 semibold ink (iOS's headline); `size` 15 or 16 for a row inside a list. */
+export function Title({
+  children,
+  size = 17,
+  color,
+  lines,
+  numberOfLines,
+  header = false,
+  style,
+}: {
+  children: React.ReactNode;
+  size?: number;
+  color?: string;
+  /** The most lines it takes (also `numberOfLines`); it wraps freely without. */
+  lines?: number;
+  numberOfLines?: number;
+  /** A heading for screen readers. */
+  header?: boolean;
+  style?: StyleProp<TextStyle>;
+}) {
+  const c = useCalm();
+  return (
+    <Txt size={size} lineHeight={Math.round(size * 1.3)} weight={600} numberOfLines={numberOfLines ?? lines} accessibilityRole={header ? "header" : undefined} style={[{ color: color ?? c.ink, flexShrink: 1 }, style]}>
+      {children}
+    </Txt>
+  );
+}
+
+/**
+ * A sentence: 15/20 in the secondary grey (iOS's subhead), on a line of its own; `size` 13 for a note. In a colour of
+ * its own (a warning in its tint's ink) it is semibold, so coloured words keep their contrast.
+ */
+export function Sentence({
+  children,
+  color,
+  weight,
+  size = 15,
+  align,
+  style,
+  accessibilityRole,
+}: {
+  children: React.ReactNode;
+  color?: string;
+  weight?: 400 | 500 | 600;
+  size?: number;
+  align?: TextStyle["textAlign"];
+  style?: StyleProp<TextStyle>;
+  accessibilityRole?: "alert" | "text";
+}) {
+  const c = useCalm();
+  return (
+    <Txt size={size} lineHeight={size + 5} weight={weight ?? (color && color !== c.sub ? 600 : 400)} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
+      {children}
+    </Txt>
+  );
+}
+
+/** A number with its small capitals label under it (and an optional note), for a row of two or three. */
+export function MiniStat({ value, unit, label, color, size = 24, note, noteColor, align }: { value: string; unit?: string; label: string; color?: string; size?: number; note?: string | null; noteColor?: string; align?: "center" }) {
+  return (
+    <View style={{ flex: 1, minWidth: 0, alignItems: align === "center" ? "center" : "flex-start" }}>
+      <Num value={value} unit={unit} size={size} color={color} />
+      <Caption align={align} style={{ marginTop: 4 }}>
+        {label}
+      </Caption>
+      {note ? (
+        <Sentence size={13} color={noteColor} align={align} style={{ marginTop: 2 }}>
+          {note}
+        </Sentence>
+      ) : null}
+    </View>
+  );
+}
+
+/** The hairline between rows of a grouped card (iOS's separator, half a point), inset past the icon square. */
+export function Hairline({ inset = 0, color }: { inset?: number; color?: string }) {
+  const c = useCalm();
+  return <View style={{ height: 0.5, marginLeft: inset, backgroundColor: color ?? c.line }} />;
 }
 
 /** The kit's text styles, for places that build their own Text (ValueUnit's unit, the chart readouts). */

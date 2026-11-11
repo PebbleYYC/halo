@@ -167,7 +167,7 @@ export function DashboardSkeleton({ stats = DASHBOARD_DEFAULT }: { stats?: Dashb
     <SectionShell
       variant="section"
       title="My Dashboard"
-      aside={<Caption>vs 30-day avg</Caption>}
+      aside={<Caption numberOfLines={1}>vs 30-day avg</Caption>}
       action={
         <Txt size={17} lineHeight={22} style={{ color: c.tertiary }}>
           Edit
