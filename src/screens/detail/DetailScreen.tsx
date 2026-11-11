@@ -156,8 +156,6 @@ export function DetailScreen({
                     <HeroSlot hero={hero} glow={heroGlow ?? null} />
                   </Rise>
                 )}
-                {/* The range switcher sits under the lead card, so that card starts where every tab's does. */}
-                {banner}
                 {side && (
                   <Rise index={1}>
                     {/* Calm: no notch; the hero is a card of its own. */}
@@ -166,6 +164,10 @@ export function DetailScreen({
                 )}
               </View>
             )}
+            {/* The range switcher sits under the lead card, so that card starts where every tab's does — and outside
+                the block above, which a range with no hero (Sleep's weekly) skips: nesting it there left the switcher
+                gone once you picked a week, with no way back to the day. */}
+            {banner}
             {below && (summary || !hero) && insight && <Rise index={2}>{insight}</Rise>}
             {below && primary && <Rise index={2}>{primary}</Rise>}
             {opened && rest.length > 0 && (
