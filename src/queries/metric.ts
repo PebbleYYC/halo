@@ -33,6 +33,10 @@ import {
   none,
   ok,
   priorStats,
+  priorStatsByNow,
+  RUNNING_TOTALS,
+  shareByNow,
+  AVG_BY_NOW,
   type QueryCtx,
   todayOf,
 } from "./common";
@@ -173,6 +177,8 @@ export type MetricDetailVM = {
   soFar: boolean;
   /** Mean over the 30 days before `valueDay`. */
   average: number | null;
+  /** What `average` is, where it isn't the whole-day mean ("avg by now": the same hours of the past 30 days). */
+  averageLabel?: string;
   sd?: number;
   /**
    * 365 days ending on the selected day, oldest first. Today's running total is drawn as a provisional point but stays
@@ -217,7 +223,10 @@ export async function getMetricDetail(key: DetailKey, day: string, ctx: QueryCtx
   let valueDay: string | null = day;
   if (m.reading) valueDay = [...days].reverse().find((d) => raw(d) !== null) ?? null;
   const value = valueDay ? raw(valueDay) : null;
-  const prior = valueDay ? priorStats(rows, valueDay, (r) => m.pick(r)) : { mean: null, sd: undefined };
+  // A running total on today is measured against what the past 30 days had reached by this hour, not their whole days.
+  const running = m.partialToday && isToday && valueDay === today && RUNNING_TOTALS.has(key);
+  const share = running ? await shareByNow(ctx, today) : null;
+  const prior = valueDay ? priorStatsByNow(rows, valueDay, (r) => m.pick(r), share) : { mean: null, sd: undefined, scaled: false };
 
   const shown: Point[] = days.slice(-SPAN).map((d) => {
     const soFar = m.partialToday && d === today && raw(d) !== null;
@@ -245,6 +254,7 @@ export async function getMetricDetail(key: DetailKey, day: string, ctx: QueryCtx
     valueDay: value === null ? null : valueDay,
     soFar: m.partialToday && isToday && valueDay === today && value !== null,
     average: prior.mean,
+    ...(prior.scaled && { averageLabel: AVG_BY_NOW }),
     ...(prior.sd !== undefined && { sd: prior.sd }),
     history: shown.some((p) => p.value !== null) ? ok(shown) : none("no_data"),
     ranges,

@@ -1,9 +1,10 @@
 // Strain `/strain` (spec §7.3). Ported from Halo's src/server/queries/strain.ts.
 import { ZONE_NAMES } from "@/core/scoring/zones";
-import { addDays, localMidnight } from "@/lib/time";
+import { addDays } from "@/lib/time";
 import { type ExtraKey, extraMetric, metricHref } from "./_lib";
 import {
   activityItem,
+  AVG_BY_NOW,
   activityKind,
   type DayRow,
   dayStartOf,
@@ -14,14 +15,15 @@ import {
   loadSeries,
   maxHrOf,
   maybe,
-  meanSd,
   minutePoints,
   ms,
   fromReason,
   daySpansOf,
   none,
   ok,
+  priorStatsByNow,
   type QueryCtx,
+  shareByNow,
   strainMetric,
   todayOf,
   toStrain,
@@ -33,35 +35,6 @@ import { localizeStat, unitsOf } from "./units";
 
 /** The activity roll-ups the Strain summary shows after Steps (spec §11 EX1). */
 export const STRAIN_EXTRAS = ["distance", "floors", "active_minutes", "azm", "active_calories"] as const satisfies readonly ExtraKey[];
-
-/** Fewer past days than this with minute-level steps: the running totals fall back to the whole-day average. */
-const MIN_BY_NOW_DAYS = 5;
-
-/**
- * For each of the 30 days before `day`, the share of that day's steps taken by this time of day (from the minute-level
- * steps). Steps scale by it exactly; the other running totals (calories, distance, floors, active minutes) follow the
- * same daily shape closely enough to compare "so far" with "usual by now". A day with no minute-level steps is left out.
- */
-export async function shareByNow(ctx: QueryCtx, day: string): Promise<Map<string, number>> {
-  const elapsed = ctx.now - localMidnight(day, ctx.timeZone);
-  const out = new Map<string, number>();
-  if (elapsed <= 0) return out;
-  const samples = await ctx.store.readSteps(localMidnight(addDays(day, -30), ctx.timeZone), localMidnight(day, ctx.timeZone));
-  for (let k = 1; k <= 30; k++) {
-    const d = addDays(day, -k);
-    const lo = localMidnight(d, ctx.timeZone);
-    const hi = localMidnight(addDays(d, 1), ctx.timeZone);
-    let total = 0;
-    let sofar = 0;
-    for (const s of samples) {
-      if (s.ts < lo || s.ts >= hi) continue;
-      total += s.v;
-      if (s.ts < lo + elapsed) sofar += s.v;
-    }
-    if (total > 0) out.set(d, sofar / total);
-  }
-  return out;
-}
 
 const isStrength = (e: ExerciseRow) => activityKind(e.type) === "strength";
 
@@ -93,11 +66,8 @@ export async function getStrain(day: string, ctx: QueryCtx): Promise<StrainVM> {
   // not their whole-day totals (148 steps at 8 a.m. is not "15,099 below average").
   const share = isToday ? await shareByNow(ctx, day) : null;
   const stat = (key: string, label: string, pick: (d: string) => number | null, unit: string | undefined, why = reason, running = false): KeyStat => {
-    const days = Array.from({ length: 30 }, (_, k) => addDays(day, -k - 1));
-    const byNow = running && share ? days.map((d) => (share.has(d) && pick(d) !== null ? pick(d)! * share.get(d)! : null)) : null;
-    const usable = byNow && byNow.filter((v) => v !== null).length >= MIN_BY_NOW_DAYS;
-    const prior = meanSd(usable ? byNow : days.map(pick));
-    return { key, label, metric: maybe(pick(day), why), ...(unit && { unit }), average: prior.mean, ...(usable && { averageLabel: "avg by now" }), ...(prior.sd !== undefined && { sd: prior.sd }), direction: "up" };
+    const prior = priorStatsByNow(rows, day, (r) => pick(r.day), running ? share : null);
+    return { key, label, metric: maybe(pick(day), why), ...(unit && { unit }), average: prior.mean, ...(prior.scaled && { averageLabel: AVG_BY_NOW }), ...(prior.sd !== undefined && { sd: prior.sd }), direction: "up" };
   };
   // The source's roll-ups beside Steps: a missing one is the band left off, or a day the account has none.
   const extra = (key: ExtraKey): KeyStat => {
