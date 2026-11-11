@@ -273,6 +273,7 @@ export function ScoreDial(props: ScoreDialProps) {
         </View>
         <View accessible accessibilityRole="image" accessibilityLabel={aria} style={{ alignItems: "center" }}>
           <ActivityRings
+            motionKey={`dial:${variant}`}
             size={HERO_RING}
             stroke={HERO_STROKE}
             arc={gauge ? GAUGE : undefined}

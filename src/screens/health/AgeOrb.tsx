@@ -65,7 +65,7 @@ const wave = (t: number, period: number, lo: number, hi: number) => {
   return lo + (hi - lo) * (0.5 - 0.5 * Math.cos(2 * Math.PI * phase(t, period)));
 };
 /** How long the orb moves after it appears or is let go, before it rests (anti-slop R-39: motion over 5 s needs a pause). */
-const AMBIENT_MS = 5000;
+const AMBIENT_MS = 7000;
 
 /** `k` whole turns per loop, as a rotation. */
 const turns = (t: number, k: number) => {

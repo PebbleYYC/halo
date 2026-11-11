@@ -53,7 +53,7 @@ function Count({ count }: { count: MonitorVM["count"] | undefined }) {
           accessibilityLabel={!count ? "Loading last night's vitals" : v ? `${v.inRange} of ${v.total} metrics within range${chip ? `, ${chip.text}` : ""}` : `Metrics within range unavailable: ${reason!.long}`}
           style={{ flexDirection: "row", alignItems: "center", gap: 18 }}
         >
-          <ActivityRings size={RING} rings={[{ progress: v ? v.inRange / v.total : null, color }]} delay={120}>
+          <ActivityRings motionKey="monitor" size={RING} rings={[{ progress: v ? v.inRange / v.total : null, color }]} delay={120}>
             {!count ? (
               <SkeletonText role="valueXl" size={30} lineHeight={34} chars={2} />
             ) : (

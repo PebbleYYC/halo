@@ -72,7 +72,7 @@ function Hero({ vo2 }: { vo2: FitnessVM["vo2"] }) {
               {categoryWord(v.category)}
             </Txt>
           </View>
-          <ActivityRings size={RING} rings={[{ progress: v.percentile / 100, color: c.system.blue }]} delay={160} accessibilityLabel={`${ordinal(v.percentile)} percentile`}>
+          <ActivityRings motionKey="fitness" size={RING} rings={[{ progress: v.percentile / 100, color: c.system.blue }]} delay={160} accessibilityLabel={`${ordinal(v.percentile)} percentile`}>
             <Txt size={20} lineHeight={24} weight={700} style={{ color: c.ink, fontVariant: ["tabular-nums"] }}>
               {ordinal(v.percentile)}
             </Txt>

@@ -113,7 +113,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
         }
       />
       <View accessible accessibilityRole="image" accessibilityLabel={aria}>
-        <ActivityRings size={RING} stroke={STROKE} rings={[{ progress: frac, color: inks.fill, track: alpha(inks.fill, 0.18), segments, ticks, tickColor: alpha(calm.ink, 0.85) }]}>
+        <ActivityRings size={RING} stroke={STROKE} motionKey={`hero:${variant}`} rings={[{ progress: frac, color: inks.fill, track: alpha(inks.fill, 0.18), segments, ticks, tickColor: alpha(calm.ink, 0.85) }]}>
           {loading ? (
             <SkeletonText role="valueHero" size={NUMBER} lineHeight={NUMBER_LINE} chars={2.4} />
           ) : empty ? (
