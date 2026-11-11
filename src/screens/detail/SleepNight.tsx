@@ -5,24 +5,21 @@
 // stage with its share against its typical range on a slim capsule track that grows in once.
 import * as React from "react";
 import { View } from "react-native";
-import { Moon } from "lucide-react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { DATA_COLORS, deltaTone, GOOD_DIRECTION } from "@/lib/bands";
-import { clock, durationWords, hmm, statSentence } from "@/lib/format";
+import { clock, durationWords, hmm } from "@/lib/format";
 import { alpha } from "@/lib/utils";
 import type { SleepVM } from "@/queries";
 import { EmptyState, ReasonPlaceholder, Txt, useTheme } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { ExpandButton } from "@/ui/components/ChartFrame";
 import { HypnogramChart, HypnogramSkeleton } from "@/ui/components/Hypnogram";
-import { RollingNumber } from "@/ui/components/Halo";
 import { SectionShell } from "@/ui/components/SectionShell";
-import { SkeletonText } from "@/ui/components/Skeleton";
 import { SleepHrChart } from "@/ui/components/SleepHrChart";
 import { font, TABULAR } from "@/ui/fonts";
 import { haptic } from "@/ui/motion/haptics";
-import { HeroHead } from "@/screens/home/controls";
-import { GlowCard, ListGroup, ListRow, useGrowIn } from "./ios";
+import { ListGroup, ListRow, useGrowIn } from "./ios";
+import { ScoreHero } from "./ScoreHero";
 import { nightDates } from "./lines";
 
 const NBSP = "\u00a0";
@@ -37,64 +34,40 @@ const NAME: Record<Stage, string> = { awake: "Awake", rem: "REM", light: "Light"
 const ROW_LABEL: Record<Stage, string> = { awake: "Awake", light: "Light", deep: "SWS (Deep)", rem: "REM" };
 const NO_STAGES = "No stage data for this night. Fitbit only stages sleeps longer than about 3 hours.";
 
-/** The big number's size and line, its units', for the rolling digits to sit on one baseline. */
-const BIG = 34;
-const BIG_LINE = 40;
-
-/** "7 hr 12 min": the digits rolling into place, the units small and grey on their baseline. */
-function HoursMinutes({ minutes }: { minutes: number }) {
-  const c = useCalm();
-  const m = Math.max(0, Math.round(minutes));
-  const h = Math.floor(m / 60);
-  const face = [font.numberAt(BIG, 700), { color: c.ink, letterSpacing: -1 }];
-  const unit = (u: string) => (
-    <Txt size={17} lineHeight={22} weight={600} style={{ color: c.sub, marginLeft: 3, marginRight: 8, marginBottom: 5 }}>
-      {u}
-    </Txt>
-  );
-  return (
-    <View accessible accessibilityLabel={durationWords(m)} style={{ flexDirection: "row", alignItems: "flex-end" }}>
-      {h > 0 && (
-        <>
-          <RollingNumber text={String(h)} lineHeight={BIG_LINE} style={face} />
-          {unit("h")}
-        </>
-      )}
-      <RollingNumber text={String(m % 60)} lineHeight={BIG_LINE} style={face} />
-      {unit("min")}
-    </View>
-  );
-}
 
 /**
- * The night's headline on the ground, as Apple Health opens Sleep: TIME ASLEEP, the hours and minutes, bed and wake,
- * then the prior 30 nights' mean with an arrow in the tone of how tonight compares.
+ * Sleep's lead card, the same shape as Activity's and Recovery's: the head, the score on its ring in Sleep's colour
+ * with the time asleep under the number (as Today's Sleep line reads "76% 6 h 4 min"), then the night's times and how
+ * it compares with the last 30 nights.
  */
-export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"]; stages: SleepVM["stages"]; timeZone: string }) {
+export function TimeAsleep({ hours, stages, performance, timeZone }: { hours: SleepVM["hours"]; stages: SleepVM["stages"]; performance: SleepVM["performance"]; timeZone: string }) {
   const c = useCalm();
-  const { c: theme } = useTheme();
   const h = hours.value;
   const night = stages?.value ?? null;
   const t = h && h.average !== null ? deltaTone(GOOD_DIRECTION.hours, h.asleepMin, h.average, h.sd) : null;
-  const sentence = h ? statSentence({ label: "Hours of sleep", valueText: durationWords(h.asleepMin), averageText: h.average === null ? undefined : durationWords(h.average), dir: t?.dir, tone: t?.tone }) : undefined;
   return (
-    <GlowCard color={theme.sleep} padding={18} style={{ alignSelf: "stretch" }}>
-    <View accessibilityLabel={sentence} style={{ gap: 2 }}>
-      {/* The head every lead card has (Health's, Activity's, Today's): the glyph and the name in the family's colour. */}
-      <View style={{ marginBottom: 8 }}>
-        <HeroHead icon={Moon} tint="lavender" title="Time asleep" />
-      </View>
+    <ScoreHero
+      variant="sleep"
+      value={performance.value ?? null}
+      reason={performance.reason ?? hours.reason}
+      nightsLeft={performance.nightsLeft ?? hours.nightsLeft}
+      word={h ? durationWords(h.asleepMin) : null}
+    >
       {h ? (
-        <>
-          <HoursMinutes minutes={h.asleepMin} />
+        <View style={{ alignItems: "center", gap: 2 }}>
+          {performance.value == null && (
+            <Txt size={17} lineHeight={23} weight={500} align="center" style={{ color: c.ink }}>
+              {`${durationWords(h.asleepMin)} asleep`}
+            </Txt>
+          )}
           {night && (
-            <Txt size={15} lineHeight={20} style={[TABULAR, { color: c.sub }]}>
+            <Txt size={15} lineHeight={20} align="center" style={[TABULAR, { color: c.sub }]}>
               {`${nightDates(night.bed, night.wake, timeZone)}, ${clock(night.bed, timeZone)} – ${clock(night.wake, timeZone)}`}
             </Txt>
           )}
           {h.average !== null && (
             // The same words and colours as Activity's rows ("0:21 above 30-day avg 0:09").
-            <Txt size={13} lineHeight={18} weight={t && t.tone !== "neutral" && t.dir !== "flat" ? 500 : 400} style={{ color: !t || t.dir === "flat" ? c.sub : t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub }}>
+            <Txt size={13} lineHeight={18} align="center" weight={t && t.tone !== "neutral" && t.dir !== "flat" ? 500 : 400} style={{ color: !t || t.dir === "flat" ? c.sub : t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub }}>
               {Math.round(h.asleepMin) === Math.round(h.average)
                 ? `In line with 30-night avg${NBSP}${hmm(h.average)}`
                 : !t || t.dir === "flat"
@@ -102,32 +75,15 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
                   : `${hmm(Math.abs(h.asleepMin - h.average))} ${h.asleepMin > h.average ? "above" : "below"} 30-night${NBSP}avg${NBSP}${hmm(h.average)}`}
             </Txt>
           )}
-        </>
-      ) : (
-        <View style={{ gap: 8 }}>
-          <Txt size={BIG} lineHeight={BIG_LINE} style={[font.numberAt(BIG), { color: c.faint }]}>
-            --
-          </Txt>
-          <ReasonPlaceholder reason={hours.reason} nightsLeft={hours.nightsLeft} size="sm" />
         </View>
-      )}
-    </View>
-    </GlowCard>
+      ) : null}
+    </ScoreHero>
   );
 }
 
-/** The time asleep's loading shape: the caption, then bars for the number and the times. */
+/** The lead card's loading shape: the same card with the ring empty. */
 export function TimeAsleepSkeleton() {
-  return (
-    <GlowCard color={null} padding={18} gap={4} style={{ alignSelf: "stretch" }}>
-      {/* The head every lead card has (Health's, Activity's, Today's): the glyph and the name in the family's colour. */}
-      <View style={{ marginBottom: 8 }}>
-        <HeroHead icon={Moon} tint="lavender" title="Time asleep" />
-      </View>
-      <SkeletonText role="valueHero" size={BIG} lineHeight={BIG_LINE} chars={6} />
-      <SkeletonText role="caption" size={15} lineHeight={20} chars={13} />
-    </GlowCard>
-  );
+  return <ScoreHero variant="sleep" value={null} loading />;
 }
 
 /** A stage's colour (the chart's). */
