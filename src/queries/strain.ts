@@ -135,7 +135,7 @@ export function coachTitle(strain: Metric<number>, target: { low: number; high: 
   if (strain.value == null || !target) return null;
   const red = row?.recovery?.value != null && row.recovery.value < 34;
   const v = strain.value;
-  return red ? "Keep strain light" : v < target.low ? "Room for more strain" : v <= target.high ? "Reaching optimal strain" : "Past your target";
+  return red ? "Keep strain light" : v < target.low ? "Room for more strain" : v <= target.high ? "In your optimal range" : "Past your target";
 }
 
 /** Strain Coach copy (spec §7.3), by position against today's target. */

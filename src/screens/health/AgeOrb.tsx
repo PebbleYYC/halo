@@ -10,7 +10,7 @@ import { reasonCopy, type ReasonCode } from "@/lib/reasons";
 import { uid } from "@/lib/utils";
 import { DARK, MetricTags, ReasonPlaceholder, Txt, useAfterTransition, useTheme } from "@/ui";
 import { REASE } from "@/ui/motion/easing";
-import { reduceMotionNow, useAppActive, useReduceMotion } from "@/ui/motion/system";
+import { entranceStill, useAppActive, useReduceMotion } from "@/ui/motion/system";
 import type { ColorToken } from "@/ui/theme";
 import { ageDelta } from "./format";
 import { blobRadius, hexRGB, mixRGB, ORB, orbColors, particleCount, particleLayer, rgba, rng, shadeRGB, swirlVelocity, type RGB } from "./orb";
@@ -102,8 +102,9 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
   const opened = useAfterTransition();
 
   // Drivers: an entry, one linear clock (seconds) for every ambient loop, and the press swirl (turns, gather).
-  // A bare orb (Calm) skips the spiral-in: it is drawn settled.
-  const [entered] = React.useState(() => bare || reduceMotionNow());
+  // A bare orb (Calm) skips the spiral-in: it is drawn settled. So does every orb while entrances are off app-wide
+  // (src/ui/motion/system.ts): the age shows the moment the orb does, with no fade that could be left unfinished.
+  const [entered] = React.useState(() => bare || entranceStill());
   const enter = useSharedValue(entered ? 1 : 0);
   const clock = useSharedValue(0);
   const spin = useSharedValue(0);

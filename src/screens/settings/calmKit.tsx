@@ -105,7 +105,7 @@ export function Title({ children, size = 17, color, style, numberOfLines, header
 export function Sentence({ children, color, weight = 400, size = 15, align, style, accessibilityRole }: { children: React.ReactNode; color?: string; weight?: 400 | 500 | 600; size?: number; align?: TextStyle["textAlign"]; style?: StyleProp<TextStyle>; accessibilityRole?: "alert" | "text" }) {
   const c = useCalm();
   return (
-    <Txt size={size} lineHeight={Math.round(size * 1.34)} weight={weight} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
+    <Txt size={size} lineHeight={size + 5} weight={weight} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
       {children}
     </Txt>
   );
@@ -122,7 +122,7 @@ export function IconTile({ icon: Icon, tint = "sky", size = 44, color, node }: {
   const ink = color ?? "#ffffff";
   return (
     <View style={{ width: size, height: size, borderRadius: iconRadius(size), backgroundColor: c.tintInk[tint], alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      {node ? recolorIcon(node, ink) : Icon ? <Icon size={Math.round(size * 0.6)} color={ink} strokeWidth={2} /> : null}
+      {node ? recolorIcon(node, ink) : Icon ? <Icon size={Math.round(size * 0.55)} color={ink} strokeWidth={2} /> : null}
     </View>
   );
 }

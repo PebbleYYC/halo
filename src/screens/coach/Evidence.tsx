@@ -175,6 +175,19 @@ function Note({ children, size = 13, style }: { children: React.ReactNode; size?
   );
 }
 
+/** A behaviour or medicine with nothing to compare: its name over the reason (KeyStatRow would print "--" in place of the reason). */
+function ReasonRow({ label, reason }: { label: string; reason: string }) {
+  const c = useCalm();
+  return (
+    <View accessible accessibilityLabel={`${label}: ${reason}`} style={{ paddingVertical: 8, gap: 2 }}>
+      <Txt size={16} lineHeight={21} style={{ color: c.ink }}>
+        {label}
+      </Txt>
+      <Note>{reason}</Note>
+    </View>
+  );
+}
+
 function EvidenceView({ name, output }: { name: string; output: unknown }) {
   const router = useRouter();
   const c = useCalm();
@@ -296,15 +309,10 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
             </View>
           ))}
           {(d.scoped ? (d.needsMoreData ?? []) : []).slice(0, 3).map((v) => (
-            <KeyStatRow
+            <ReasonRow
               key={v.behaviour}
-              variant="row"
               label={v.behaviour}
-              metric={metric({ value: null })}
-              unit={d.unit}
-              format="signed1"
-              direction="none"
-              caption={v.noDays === 0 ? "logged every day — no days without to compare" : v.yesDays === 0 ? "not logged in this window" : `only ${v.yesDays} with, ${v.noDays} without — need 5 of each`}
+              reason={v.noDays === 0 ? "Logged every day, so there are no days without it to compare." : v.yesDays === 0 ? "Not logged in the last 90 days." : `${v.yesDays} days with and ${v.noDays} without so far. It needs 5 of each.`}
             />
           ))}
           {!d.effects?.length && !(d.scoped && d.needsMoreData?.length) && (
@@ -318,18 +326,18 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
   if (name === "get_dose_timing") {
     const d = output as CoachOutputs["get_dose_timing"];
     const reasonText = (r: { reason: string; timedDays: number; spreadMinutes: number }) =>
-      r.reason === "few_timed_days" ? `only ${r.timedDays} days with a logged dose time — need 10` : "doses are all around the same time — no timing spread to compare";
+      r.reason === "few_timed_days" ? `${r.timedDays} days with a logged dose time so far. It needs 10.` : "Your doses are all around the same time, so there is no earlier or later to compare.";
+    // HRV is in baseline SDs (fractions of one), the scores in whole points.
+    const dp = d.unit === "SD" ? 1 : 0;
     return (
       <View style={{ gap: 8 }}>
         <EvidenceCard icon={ListChecks} tint="lavender" title={`Dose timing · ${d.outcome}`}>
-          <Note size={12}>Earlier vs later dosing days, next-day averages — not proof of cause.</Note>
+          <Note size={12}>Next-day averages after earlier and later doses, not proof of cause.</Note>
           {(d.timings ?? []).slice(0, 3).map((v) => (
             <View key={v.medicine} style={{ gap: 2, paddingBottom: 8 }}>
               <KeyStatRow variant="row" label={v.medicine} metric={metric({ value: v.delta })} unit={d.unit} format="signed1" direction="none" caption={`later vs earlier, split ${v.splitTime}`} />
               <Note size={12}>
-                Earlier ({v.earlier.range.join("–")}): {v.earlier.avg.toFixed(0)}
-                {d.unit} · {v.earlier.days}d. Later ({v.later.range.join("–")}): {v.later.avg.toFixed(0)}
-                {d.unit} · {v.later.days}d.
+                Earlier ({v.earlier.range.join("–")}): {v.earlier.avg.toFixed(dp)} {d.unit} over {v.earlier.days} days. Later ({v.later.range.join("–")}): {v.later.avg.toFixed(dp)} {d.unit} over {v.later.days} days.
               </Note>
               <Note size={12}>
                 90% interval: {v.confidenceInterval.map((n) => n.toFixed(1)).join(" to ")} {d.unit}
@@ -338,7 +346,7 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
             </View>
           ))}
           {(d.needsMoreData ?? []).slice(0, 3).map((v) => (
-            <KeyStatRow key={v.medicine} variant="row" label={v.medicine} metric={metric({ value: null })} unit={d.unit} format="signed1" direction="none" caption={reasonText(v)} />
+            <ReasonRow key={v.medicine} label={v.medicine} reason={reasonText(v)} />
           ))}
           {!d.timings?.length && !d.needsMoreData?.length && <Note style={{ marginTop: 8 }}>No timed doses to compare yet.</Note>}
         </EvidenceCard>
