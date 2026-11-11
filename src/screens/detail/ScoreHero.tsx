@@ -5,6 +5,7 @@
 // spring, the digits roll and the glow blooms with them, all on the UI thread; Reduce motion shows the end state.
 import * as React from "react";
 import { View } from "react-native";
+import { Flame, HeartPulse } from "lucide-react-native";
 import { BAND_WORD, DATA_COLORS, recoveryBand } from "@/lib/bands";
 import { dialAriaLabel, formatValue } from "@/lib/format";
 import { reasonCopy, type MetricTag, type ReasonCode } from "@/lib/reasons";
@@ -17,6 +18,7 @@ import { MetricTags, type TagKind } from "@/ui/components/primitives";
 import { REASON_ICON } from "@/ui/components/ReasonPlaceholder";
 import { SkeletonText } from "@/ui/components/Skeleton";
 import type { Tokens } from "@/ui/theme";
+import { HeroHead } from "@/screens/home/controls";
 import { GlowCard } from "./ios";
 import { strainWord } from "./lines";
 
@@ -88,8 +90,23 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
     soFar: extraTags?.includes("so_far"),
   });
   const glow = loading || empty ? null : inks.fill;
+  const soFar = !loading && !!extraTags?.includes("so_far");
+  const otherTags = extraTags?.filter((t) => t !== "so_far");
   return (
-    <GlowCard color={glow} padding={18} gap={14} style={{ alignSelf: "stretch", alignItems: "center", paddingTop: 22 }}>
+    <GlowCard color={glow} padding={18} gap={14} style={{ alignSelf: "stretch", alignItems: "center" }}>
+      {/* The head every lead card has: what the number is, in its colour; "So far" beside it for a day still running. */}
+      <HeroHead
+        icon={strain ? Flame : HeartPulse}
+        ink={inks.ink}
+        title={name}
+        right={
+          soFar ? (
+            <Txt size={13} lineHeight={18} style={{ color: calm.sub }}>
+              So far
+            </Txt>
+          ) : undefined
+        }
+      />
       <View accessible accessibilityRole="image" accessibilityLabel={aria}>
         <ActivityRings size={RING} stroke={STROKE} rings={[{ progress: frac, color: inks.fill, track: alpha(inks.fill, 0.18), segments, ticks, tickColor: alpha(calm.ink, 0.85) }]}>
           {loading ? (
@@ -134,7 +151,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
           {sentence}
         </Txt>
       ) : null}
-      {!loading && (provisional || tags?.length || extraTags?.length) ? <MetricTags provisional={!empty && provisional} tags={empty ? undefined : tags} extra={extraTags} /> : null}
+      {!loading && (provisional || tags?.length || otherTags?.length) ? <MetricTags provisional={!empty && provisional} tags={empty ? undefined : tags} extra={otherTags} /> : null}
       {children}
     </GlowCard>
   );

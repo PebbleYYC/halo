@@ -17,6 +17,7 @@ import { font } from "@/ui/fonts";
 import { AgeOrb } from "./AgeOrb";
 import { AgeRuler } from "./AgeRuler";
 import { ageDelta } from "./format";
+import { PillAction } from "@/ui/components/CalmSurface";
 import { CardHead } from "./kit";
 
 /** Older than your age (after rounding to a tenth) reads in orange; younger or level in green. */
@@ -121,7 +122,7 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
     <Card onPress={onPress} padding={0} accessibilityLabel={onPress ? `${spokenAge}.${spokenExtra ? ` ${spokenExtra}.` : ""} Open Healthspan` : undefined}>
       <Wash tint={tint} />
       <View style={{ paddingHorizontal: 16, paddingTop: onPress ? 14 : 20, paddingBottom: 18, gap: 14 }}>
-        {onPress ? <CardHead tint={tint} icon={Hourglass} title={AGE_LABEL} when="Weekly" chevron /> : null}
+        {onPress ? <CardHead tint={tint} icon={Hourglass} title={AGE_LABEL} action={<View style={{ marginVertical: -6 }}><PillAction label="Details" accessibilityLabel="Healthspan details" onPress={onPress} /></View>} /> : null}
         {/* The orb is Halo Age's focal point and identity (DESIGN.md › Halo Age): the age and its gap inside it. */}
         <View accessible={!onPress} accessibilityLabel={spokenAge} style={{ alignItems: "center", gap: 6 }}>
           <AgeOrb age={has ? age : null} deltaYears={has ? deltaYears : null} provisional={provisional} size={orbSize} reason={reason ?? null} />
@@ -149,7 +150,7 @@ export function HaloAgeHeroSkeleton({ head = false, children }: { head?: boolean
     <Card padding={0}>
       <Wash tint="mint" />
       <View importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: 16, paddingTop: head ? 14 : 20, paddingBottom: 18, gap: 14 }}>
-        {head ? <CardHead tint="mint" icon={Hourglass} title={AGE_LABEL} when="Weekly" chevron /> : null}
+        {head ? <CardHead tint="mint" icon={Hourglass} title={AGE_LABEL} /> : null}
         <View style={{ alignItems: "center" }}>
           <Skeleton radius={orbSize / 2} style={{ width: orbSize, height: orbSize }} />
         </View>

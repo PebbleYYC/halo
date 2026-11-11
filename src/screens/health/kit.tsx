@@ -86,10 +86,11 @@ export function CardHead({ tint, icon: Icon, title, when, chevron, action }: { t
   const c = useCalm();
   const ink = c.tintInk[tint];
   return (
-    <View style={{ minHeight: 22, flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <Icon size={17} color={ink} strokeWidth={2.3} />
+    <View style={{ minHeight: 22, flexDirection: "row", alignItems: "center", gap: 7 }}>
+      {/* The same glyph and title size as every other card head (Today's, Recovery's, Sleep's, Activity's). */}
+      <Icon size={18} color={ink} strokeWidth={2.2} />
       {/* A long name wraps to a second line rather than being cut. */}
-      <Txt size={15} lineHeight={20} weight={600} numberOfLines={2} style={{ color: ink, flex: 1, minWidth: 0 }}>
+      <Txt size={16} lineHeight={21} weight={600} numberOfLines={2} style={{ color: ink, flex: 1, minWidth: 0 }}>
         {title}
       </Txt>
       {typeof when === "string" ? (
