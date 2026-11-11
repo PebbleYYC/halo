@@ -105,7 +105,7 @@ function nightSlots({ vm, day, today, timeZone, anchors, push, open, expandNight
   // Rows lead to their own section (`#need`, an Anchor below) or screen.
   const link = { d: day, today, push, scrollTo: anchors.scrollTo };
   return {
-    hero: <TimeAsleep hours={vm.hours} stages={vm.stages} timeZone={timeZone} />,
+    hero: <TimeAsleep hours={vm.hours} stages={vm.stages} performance={vm.performance} timeZone={timeZone} />,
     summary: <StagesCards stages={vm.stages} timeZone={timeZone} onExpand={expandNight} />,
     insight: vm.insight ? <InsightCard title="Last night’s sleep" body={vm.insight} /> : null,
     primary: <Performance vm={vm} link={link} />,

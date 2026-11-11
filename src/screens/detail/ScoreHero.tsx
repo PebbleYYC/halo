@@ -5,7 +5,7 @@
 // spring, the digits roll and the glow blooms with them, all on the UI thread; Reduce motion shows the end state.
 import * as React from "react";
 import { View } from "react-native";
-import { Flame, HeartPulse } from "lucide-react-native";
+import { Flame, HeartPulse, Moon } from "lucide-react-native";
 import { BAND_WORD, DATA_COLORS, recoveryBand } from "@/lib/bands";
 import { dialAriaLabel, formatValue } from "@/lib/format";
 import { reasonCopy, type MetricTag, type ReasonCode } from "@/lib/reasons";
@@ -37,7 +37,9 @@ export function recoveryInks(c: Tokens, calm: CalmPalette, value: number): { fil
 }
 
 export type ScoreHeroProps = {
-  variant: "recovery" | "strain";
+  variant: "recovery" | "strain" | "sleep";
+  /** Under the number in the score's colour, in place of the band word (Sleep: the time asleep). */
+  word?: string | null;
   value: number | null;
   reason?: ReasonCode | null;
   nightsLeft?: number;
@@ -55,15 +57,16 @@ export type ScoreHeroProps = {
   children?: React.ReactNode;
 };
 
-export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tags, extraTags, target, label, sentence, loading, children }: ScoreHeroProps) {
+export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tags, extraTags, target, label, sentence, loading, word: wordProp, children }: ScoreHeroProps) {
   const { c } = useTheme();
   const calm = useCalm();
   const strain = variant === "strain";
+  const sleep = variant === "sleep";
   const max = strain ? 21 : 100;
   const empty = value === null;
-  const name = label ?? (strain ? "Strain" : "Recovery");
-  const inks = strain ? { fill: c.strain, ink: calm.tintInk.peach } : value === null ? { fill: c.recoveryGreen, ink: calm.tintInk.mint } : recoveryInks(c, calm, value);
-  const word = empty ? null : strain ? strainWord(value) : BAND_WORD[recoveryBand(value)];
+  const name = label ?? (strain ? "Strain" : sleep ? "Sleep" : "Recovery");
+  const inks = strain ? { fill: c.strain, ink: calm.tintInk.peach } : sleep ? { fill: c.sleep, ink: calm.tintInk.lavender } : value === null ? { fill: c.recoveryGreen, ink: calm.tintInk.mint } : recoveryInks(c, calm, value);
+  const word = empty ? null : wordProp !== undefined ? wordProp : strain ? strainWord(value) : sleep ? null : BAND_WORD[recoveryBand(value)];
   const text = formatValue(strain ? "decimal1" : "int", value);
   const why = empty ? reasonCopy(reason, nightsLeft) : null;
   const ReasonIcon = why ? REASON_ICON[why.code] : null;
@@ -85,7 +88,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
     unit: strain ? undefined : "%",
     provisional,
     reasonText: why?.long,
-    bandWord: strain || empty ? undefined : (word ?? undefined),
+    bandWord: strain || sleep || empty ? undefined : (word ?? undefined),
     target: strain ? target : undefined,
     soFar: extraTags?.includes("so_far"),
   });
@@ -96,7 +99,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
     <GlowCard color={glow} padding={18} gap={14} style={{ alignSelf: "stretch", alignItems: "center" }}>
       {/* The head every lead card has: what the number is, in its colour; "So far" beside it for a day still running. */}
       <HeroHead
-        icon={strain ? Flame : HeartPulse}
+        icon={strain ? Flame : sleep ? Moon : HeartPulse}
         ink={inks.ink}
         title={name}
         right={
