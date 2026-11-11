@@ -241,7 +241,34 @@ export type MedTimingRow = {
 /** Days with a timed dose needed, and per side; the earlier and later halves must sit at least this far apart. */
 export const MED_TIMING = { minDays: 10, minSide: 4, minGapMin: 30 } as const;
 
-const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+/** Minutes of the day as "HH:MM"; a late dose counted past midnight (1 470 = 00:30) wraps back onto the clock. */
+const hhmm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+
+/** A dose before this minute of the day belongs to the evening before (a bedtime medicine taken at 00:20 is "late", not "early"). */
+const NIGHT_END_MIN = 4 * 60;
+
+type LoggedDose = { type: string; day: string; ts: number; data: unknown };
+/**
+ * The timed medicine doses in `entries` since `from`, by medicine tag: the local day and the minute of that day. A dose
+ * in the small hours counts as the previous day's, 24 h on, so a bedtime dose just after midnight sorts after 23:30
+ * rather than as the earliest of the next day.
+ */
+export function timedDoses(entries: readonly LoggedDose[], from: string, timeZone: string) {
+  const nameByTag = new Map<string, string>();
+  const doses = entries.flatMap((e) => {
+    if (e.type !== "medication") return [];
+    const name = String((e.data as { name?: unknown } | null)?.name ?? "");
+    const tag = medicineTag(name);
+    if (!tag) return [];
+    const clock = localMinutes(e.ts, timeZone);
+    const late = clock < NIGHT_END_MIN;
+    const day = late ? addDays(e.day, -1) : e.day;
+    if (day < from) return [];
+    if (!nameByTag.has(tag)) nameByTag.set(tag, name);
+    return [{ tag, day, minute: late ? clock + 1440 : clock }];
+  });
+  return { doses, nameByTag };
+}
 
 /**
  * "When you take it" (mobile): for each medicine with at least 10 timed doses in 90 days, the days split at the median
@@ -291,17 +318,12 @@ export async function getMedicineTiming(metric: ImpactMetricKey = "recovery", ct
     loadDays(ctx, addDays(from, 1), ctx.today),
   ]);
   const label = new Map(tags.map((t) => [t.tag, t.label]));
-  const doses = entries.flatMap((e) => {
-    if (e.type !== "medication" || e.day < from) return [];
-    const name = String((e.data as { name?: unknown } | null)?.name ?? "");
-    const tag = medicineTag(name);
-    return tag ? [{ tag, day: e.day, minute: localMinutes(e.ts, ctx.timeZone) }] : [];
-  });
+  const { doses, nameByTag } = timedDoses(entries, from, ctx.timeZone);
   const outcome = (day: string) => {
     const r = rows.get(day);
     return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
   };
-  return medTiming(doses, outcome, (t) => label.get(t) ?? t);
+  return medTiming(doses, outcome, (t) => label.get(t) ?? nameByTag.get(t) ?? t);
 }
 
 export type DoseTimingItem = {
@@ -375,15 +397,7 @@ export async function getDoseTiming(metric: ImpactMetricKey = "recovery", ctx: Q
   const from = addDays(ctx.today, -90);
   const [entries, tags, rows] = await Promise.all([ctx.store.loggedEntries(ctx.now - 91 * 86_400, 5000), tagsOf(ctx), loadDays(ctx, addDays(from, 1), ctx.today)]);
   const label = new Map(tags.map((t) => [t.tag, t.label]));
-  const nameByTag = new Map<string, string>();
-  const doses = entries.flatMap((e) => {
-    if (e.type !== "medication" || e.day < from) return [];
-    const name = String((e.data as { name?: unknown } | null)?.name ?? "");
-    const tag = medicineTag(name);
-    if (!tag) return [];
-    if (!nameByTag.has(tag)) nameByTag.set(tag, name);
-    return [{ tag, day: e.day, minute: localMinutes(e.ts, ctx.timeZone) }];
-  });
+  const { doses, nameByTag } = timedDoses(entries, from, ctx.timeZone);
   const outcome = (day: string) => {
     const r = rows.get(day);
     return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;

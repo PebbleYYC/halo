@@ -212,7 +212,7 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
         // against each behaviour's key and label either way round, so "bupropion" finds "Bupropion XL" and vice versa.
         const want = behaviours?.map((b) => b.trim().toLowerCase()).filter(Boolean);
         const hit = (key: string, label: string) =>
-          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || w.includes(label.toLowerCase()));
+          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || (label.length > 0 && w.includes(label.toLowerCase())));
         return {
           outcome,
           unit: j.unit,
@@ -232,7 +232,7 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
         const d = await getDoseTiming(outcome, ctx);
         const want = behaviours?.map((b) => b.trim().toLowerCase()).filter(Boolean);
         const hit = (key: string, label: string) =>
-          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || w.includes(label.toLowerCase()));
+          !want || want.some((w) => key.toLowerCase().includes(w) || label.toLowerCase().includes(w) || (label.length > 0 && w.includes(label.toLowerCase())));
         return {
           outcome,
           unit: d.unit,

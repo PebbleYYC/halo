@@ -97,6 +97,8 @@ const BUBBLE_IN = iosSpring(0.42, 0.78);
 const MESSAGE_GAP = 24;
 /** Air kept around a message being edited when it is scrolled into view. */
 const EDIT_GAP = 16;
+/** The composer's glass: its tint nearly opaque, so the field stays legible over the chat. */
+const COMPOSER_FROST = 0.88;
 /** The composer capsule's resting height (one line) and corner. */
 const COMPOSER_H = 44;
 /** The round send and stop buttons inside the capsule. */
@@ -443,8 +445,10 @@ export function ChatBar({ onBack, chatCount, chatOpen, onNew, providerLabel }: C
     <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
       <LinearGradient
         pointerEvents="none"
-        colors={[c.ground, alpha(c.ground, 0.94), alpha(c.ground, 0.6), alpha(c.ground, 0)]}
-        locations={[0, insets.top / edge, (insets.top + BAR_ROW * 0.7) / edge, 1]}
+        // Near solid through the buttons' row, as BarEdge is on every other screen: a message passing under no longer
+        // reads through the title (DESIGN.md: no overlapping elements).
+        colors={[c.ground, alpha(c.ground, 0.97), alpha(c.ground, 0.92), alpha(c.ground, 0)]}
+        locations={[0, insets.top / edge, (insets.top + BAR_ROW) / edge, 1]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, height: edge }}
       />
       <View pointerEvents="box-none" style={{ paddingTop: insets.top }}>
@@ -508,7 +512,8 @@ function Composer({ inputRef, value, onChange, onSend, onStop, busy, bottom, onH
     <KeyboardStickyView offset={{ closed: 0, opened: bottom - 8 }} pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
       <LinearGradient pointerEvents="none" colors={[alpha(c.ground, 0), alpha(c.ground, 0.85), c.ground]} locations={[0, 0.55, 1]} style={{ position: "absolute", left: 0, right: 0, top: -12, bottom: 0 }} />
       <View style={{ paddingHorizontal: 12, paddingBottom: bottom }} onLayout={(e) => onHeight(e.nativeEvent.layout.height - bottom)}>
-        <LiquidGlass cornerRadius={COMPOSER_H / 2} style={{ minHeight: COMPOSER_H, flexDirection: "row", alignItems: "flex-end", paddingLeft: 16, paddingRight: 4, paddingVertical: 4, gap: 6 }}>
+        {/* Frosted more than the bars: this glass holds text you type, and an answer scrolling under it must not read through the field. */}
+        <LiquidGlass cornerRadius={COMPOSER_H / 2} frost={COMPOSER_FROST} style={{ minHeight: COMPOSER_H, flexDirection: "row", alignItems: "flex-end", paddingLeft: 16, paddingRight: 4, paddingVertical: 4, gap: 6 }}>
           <StableTextInput
             ref={inputRef}
             value={value}

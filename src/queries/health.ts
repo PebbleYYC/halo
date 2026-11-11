@@ -422,7 +422,7 @@ export const ECG_RESULT: Record<string, EcgCopy> = {
   },
   INCONCLUSIVE_LOW_HEART_RATE: { label: "Inconclusive: low heart rate", tone: "neutral", explanation: "Your heart rate was under 50 bpm, too low to check your rhythm." },
   UNREADABLE: { label: "Poor recording", tone: "neutral", explanation: "The signal was too noisy to read. Try again sitting still with your arm resting on a table." },
-  NOT_ANALYZED: { label: "Not analyzed", tone: "neutral", explanation: "This recording was saved but not classified, so it has no rhythm result." },
+  NOT_ANALYZED: { label: "Not analysed", tone: "neutral", explanation: "This recording was saved but not classified, so it has no rhythm result." },
 };
 export const NO_RESULT: EcgCopy = { label: "No result", tone: "neutral", explanation: "No rhythm result came with this recording." };
 

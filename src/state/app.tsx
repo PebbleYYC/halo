@@ -291,6 +291,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, [store, state.profile, state.source, run]);
 
+  // Midnight with the app open: `today` moves on (the live ticker re-renders this every minute), and the new day has
+  // no scores until something runs. So the day turning over is itself a reason to import and score.
+  const scoredDay = React.useRef(today);
+  React.useEffect(() => {
+    if (scoredDay.current === today) return;
+    scoredDay.current = today;
+    if (store && state.profile && state.source && state.status === "ready") void run(store, state.profile, state.source);
+  }, [today, store, state.profile, state.source, state.status, run]);
+
   /**
    * The live reading: one short Health Connect read (the Store alone in demo), no scoring run. Skipped while a full
    * run is importing (it reads the same days) or while a previous live read is still in flight. Never throws.
