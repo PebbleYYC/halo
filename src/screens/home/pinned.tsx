@@ -174,7 +174,7 @@ const absText = (format: FormatKey, n: number) => formatValue(format, Math.abs(n
  * yellow when not (a dot and the signed difference when it is within the normal spread, "No change" when it rounds
  * away), then the average itself.
  */
-function Compare({ diff, diffText, dir, tone, unit, format, avgText }: { diff: number | null; diffText: string | null; dir?: "up" | "down" | "flat"; tone?: "good" | "bad" | "neutral"; unit?: string; format: FormatKey; avgText: string | null }) {
+function Compare({ diff, diffText, dir, tone, unit, format, avgText, avgLabel }: { diff: number | null; diffText: string | null; dir?: "up" | "down" | "flat"; tone?: "good" | "bad" | "neutral"; unit?: string; format: FormatKey; avgText: string | null; avgLabel?: string }) {
   const c = useCalm();
   if (avgText === null) return null;
   const ink = tone === "good" ? c.tintInk.mint : tone === "bad" ? c.tintInk.sand : c.sub;
@@ -194,7 +194,7 @@ function Compare({ diff, diffText, dir, tone, unit, format, avgText }: { diff: n
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 2 }}>
       {lead}
-      <HealthContext>{`30-day avg ${avgText}${unitText(unit)}`}</HealthContext>
+      <HealthContext>{`${avgLabel ?? "30-day avg"} ${avgText}${unitText(unit)}`}</HealthContext>
     </View>
   );
 }
@@ -254,7 +254,7 @@ export const StatCard = React.memo(function StatCard({ s, series, day, today, op
         reason ? (
           <HealthContext>{reason}</HealthContext>
         ) : (
-          <Compare diff={diff} diffText={diffText} dir={t?.dir} tone={t?.tone} unit={p.unit} format={p.format} avgText={value === null ? null : avgText} />
+          <Compare diff={diff} diffText={diffText} dir={t?.dir} tone={t?.tone} unit={p.unit} format={p.format} avgText={value === null ? null : avgText} avgLabel={p.averageLabel} />
         )
       }
       chart={chart}

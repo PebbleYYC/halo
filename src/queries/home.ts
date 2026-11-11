@@ -33,7 +33,10 @@ import {
   nightReason,
   ok,
   planVM,
-  priorStats,
+  priorStatsByNow,
+  RUNNING_TOTALS,
+  shareByNow,
+  AVG_BY_NOW,
   type QueryCtx,
   recoveryMetric,
   sleepMetric,
@@ -95,6 +98,7 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
   const target = row?.strainTarget?.reason === null ? ([row.strainTarget.low, row.strainTarget.high] as [number, number]) : null;
   const firstReason = [recovery, sleep, strain].find((m) => m.value == null);
 
+  const byNow = isToday ? await shareByNow(ctx, day) : null;
   const timeline = timelineOf(row, day, exs);
   const tonight = planVM(ctx, row, isToday);
   const strip: HomeVM["strip"] = [];
@@ -120,8 +124,8 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
     activities: { title: isToday ? "Today’s activities" : "Activities", items: timeline },
     energyBank: energyBankVM(ctx, row, day, isToday, ebSeries),
     tonight,
-    keyStats: keyStats(rows, day, isToday, keys, units),
-    cardStats: Object.fromEntries(keyStats(rows, day, isToday, CARD_STATS, units).map((s) => [s.key, s])) as HomeVM["cardStats"],
+    keyStats: keyStats(rows, day, isToday, keys, units, byNow),
+    cardStats: Object.fromEntries(keyStats(rows, day, isToday, CARD_STATS, units, byNow).map((s) => [s.key, s])) as HomeVM["cardStats"],
     dashboard: { defaults, empty: emptyKeys(rows, day, isToday) },
     phone: phoneDay(rows, day, isToday, units),
     weeklyTeaser,
@@ -322,12 +326,13 @@ function statSpecs(row: DayRow | undefined, isToday: boolean, units: Units = MET
 }
 
 /** The dashboard rows for `keys`, in that order, each against its mean over the 30 days before `day`. */
-export function keyStats(rows: Map<string, DayRow>, day: string, isToday: boolean, keys: DashboardKey[], units: Units = METRIC): KeyStat[] {
+export function keyStats(rows: Map<string, DayRow>, day: string, isToday: boolean, keys: DashboardKey[], units: Units = METRIC, byNow: ReadonlyMap<string, number> | null = null): KeyStat[] {
   const specs = statSpecs(rows.get(day), isToday, units);
   return keys.map((key) => {
     const { pick, ...s } = specs[key];
-    const { mean, sd } = priorStats(rows, day, pick);
-    return { key, label: DASHBOARD_LABEL[key], ...s, average: mean, ...(sd !== undefined && { sd }) };
+    // Today's running totals (steps, calories…) compare with the same hours of the past 30 days, not their whole days.
+    const { mean, sd, scaled } = priorStatsByNow(rows, day, pick, isToday && RUNNING_TOTALS.has(key) ? byNow : null);
+    return { key, label: DASHBOARD_LABEL[key], ...s, average: mean, ...(scaled && { averageLabel: AVG_BY_NOW }), ...(sd !== undefined && { sd }) };
   });
 }
 

@@ -15,7 +15,7 @@ import { useUnits } from "@/state/units";
 import { ChartLine } from "lucide-react-native";
 import { DeltaMark, EmptyState, KeyStatRowSkeleton, MetricState, MetricTags, ReasonPlaceholder, SectionShell, SkeletonText, TrendChart, TrendChartSkeleton, useTheme, type TrendSeries } from "@/ui";
 import { useCalm, type CalmTint } from "@/ui/calm";
-import { Caption, Num, Sentence, toneInk } from "@/screens/detail/calmKit";
+import { Sentence, toneInk } from "@/screens/detail/calmKit";
 import { Card } from "@/ui/components/Card";
 import { CardHead, RollingValue } from "./kit";
 import { ExpandButton } from "@/ui/components/ChartFrame";
@@ -45,31 +45,31 @@ function Hero({ vm }: { vm: MetricDetailVM }) {
             const t = avg !== null ? deltaTone(vm.direction, value, avg, vm.sd) : null;
             const diff = avg !== null ? value - avg : null;
             const toneColor = t ? toneInk(c, t.tone) : c.sub;
+            const avgName = vm.averageLabel ? `average ${vm.averageLabel.replace(/^avg /, "")}` : "30-day average";
+            const avgText = avg === null ? "" : `${formatValue(vm.format, avg)}${unitText(vm.unit)}`;
+            const compare =
+              avg === null
+                ? ""
+                : !t || t.dir === "flat"
+                  ? `In line with your ${avgName} of ${avgText}`
+                  : `${formatValue(vm.format, Math.abs(diff ?? 0))}${unitText(vm.unit)} ${t.dir === "up" ? "above" : "below"} your ${avgName} of ${avgText}`;
             return (
               <View style={{ gap: 10 }}>
                 <View accessible accessibilityLabel={`${formatValue(vm.format, value)}${unitText(vm.unit)}`}>
                   <RollingValue value={formatValue(vm.format, value)} unit={vm.unit} size={56} />
                 </View>
                 {vm.soFar && <MetricTags extra={["so_far"]} align="flex-start" />}
-                {/* A running total against whole days would always read "below": today shows the average alone. */}
-                {t && diff !== null && !vm.soFar && (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <DeltaMark dir={t.dir} tone={t.tone} color={toneColor} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Sentence color={t.tone === "neutral" ? undefined : toneColor}>
-                        {t.dir === "flat"
-                          ? "In line with your 30-day average"
-                          : `${formatValue(vm.format, Math.abs(diff))}${unitText(vm.unit)} ${t.dir === "up" ? "above" : "below"} your 30-day average`}
-                      </Sentence>
-                    </View>
-                  </View>
-                )}
+                {/* The comparison and the average on one line, as every other row in the app reads them: a second big
+                    number under the value left the card lopsided, and a running total can be compared now that its
+                    average covers the same hours of the past 30 days. */}
                 {avg === null ? (
-                  <Sentence size={13}>No 30-day average yet</Sentence>
+                  <Sentence size={13}>{`No ${avgName} yet`}</Sentence>
                 ) : (
-                  <View accessible accessibilityLabel={`30-day average ${formatValue(vm.format, avg)}${unitText(vm.unit)}`}>
-                    <Num value={formatValue(vm.format, avg)} unit={vm.unit} size={20} />
-                    <Caption style={{ marginTop: 4 }}>30-day average</Caption>
+                  <View accessible accessibilityLabel={compare} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    {t && <DeltaMark dir={t.dir} tone={t.tone} color={toneColor} />}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Sentence color={!t || t.tone === "neutral" ? undefined : toneColor}>{compare}</Sentence>
+                    </View>
                   </View>
                 )}
               </View>

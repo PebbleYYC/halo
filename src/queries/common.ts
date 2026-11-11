@@ -193,6 +193,60 @@ export function priorStats(rows: Map<string, DayRow>, day: string, pick: (r: Day
   return meanSd(xs);
 }
 
+/** What a row says it is comparing against when the average is scaled to this time of day. */
+export const AVG_BY_NOW = "avg by now";
+
+/** The metrics that pile up through the day, so today's number is a running total, not a reading. */
+export const RUNNING_TOTALS: ReadonlySet<string> = new Set(["steps", "calories", "distance", "floors", "active_minutes", "azm", "active_calories"]);
+
+/** Fewer past days than this with minute-level steps: the running totals fall back to the whole-day average. */
+export const MIN_BY_NOW_DAYS = 5;
+
+/**
+ * For each of the 30 days before `day`, the share of that day's steps taken by this time of day (from the minute-level
+ * steps). Steps scale by it exactly; the other running totals (calories, distance, floors, active minutes) follow the
+ * same daily shape closely enough to compare "so far" with "usual by now". A day with no minute-level steps is left out.
+ */
+export async function shareByNow(ctx: QueryCtx, day: string): Promise<Map<string, number>> {
+  const elapsed = ctx.now - localMidnight(day, ctx.timeZone);
+  const out = new Map<string, number>();
+  if (elapsed <= 0) return out;
+  const samples = await ctx.store.readSteps(localMidnight(addDays(day, -30), ctx.timeZone), localMidnight(day, ctx.timeZone));
+  for (let k = 1; k <= 30; k++) {
+    const d = addDays(day, -k);
+    const lo = localMidnight(d, ctx.timeZone);
+    const hi = localMidnight(addDays(d, 1), ctx.timeZone);
+    let total = 0;
+    let sofar = 0;
+    for (const s of samples) {
+      if (s.ts < lo || s.ts >= hi) continue;
+      total += s.v;
+      if (s.ts < lo + elapsed) sofar += s.v;
+    }
+    if (total > 0) out.set(d, sofar / total);
+  }
+  return out;
+}
+
+/**
+ * The prior-30-day mean and SD of `pick`, each day scaled to what it had reached by this time of day. `scaled` is false
+ * when too few days have minute-level steps: then it is the ordinary whole-day mean, and the row says "30-day avg".
+ */
+export function priorStatsByNow(rows: Map<string, DayRow>, day: string, pick: (r: DayRow) => number | null | undefined, byNow: ReadonlyMap<string, number> | null) {
+  if (byNow) {
+    const xs: (number | null)[] = [];
+    for (let k = 1; k <= 30; k++) {
+      const d = addDays(day, -k);
+      const r = rows.get(d);
+      const share = byNow.get(d);
+      const v = r ? pick(r) : null;
+      xs.push(finite(v) && share !== undefined ? v * share : null);
+    }
+    if (xs.filter((v) => v !== null).length >= MIN_BY_NOW_DAYS) return { ...meanSd(xs), scaled: true };
+  }
+  return { ...priorStats(rows, day, pick), scaled: false };
+}
+
 /** `n` days ending on `day`, oldest first. */
 export function trendPoints(rows: Map<string, DayRow>, day: string, pick: (r: DayRow) => number | null | undefined, n = 182, provisional?: (r: DayRow) => boolean): DayPoint[] {
   return Array.from({ length: n }, (_, k) => {
