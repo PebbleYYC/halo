@@ -10,7 +10,7 @@ import { DATA_COLORS, deltaTone, GOOD_DIRECTION } from "@/lib/bands";
 import { clock, durationWords, hmm, statSentence } from "@/lib/format";
 import { alpha } from "@/lib/utils";
 import type { SleepVM } from "@/queries";
-import { DeltaMark, EmptyState, ReasonPlaceholder, Txt, useTheme } from "@/ui";
+import { EmptyState, ReasonPlaceholder, Txt, useTheme } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { Caption } from "@/ui/components/calmKit";
 import { ExpandButton } from "@/ui/components/ChartFrame";
@@ -23,6 +23,8 @@ import { font, TABULAR } from "@/ui/fonts";
 import { haptic } from "@/ui/motion/haptics";
 import { GlowCard, ListGroup, ListRow, useGrowIn } from "./ios";
 import { nightDates } from "./lines";
+
+const NBSP = "\u00a0";
 
 type Stage = "awake" | "rem" | "light" | "deep";
 type Night = NonNullable<NonNullable<SleepVM["stages"]>["value"]>;
@@ -87,12 +89,14 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
             </Txt>
           )}
           {h.average !== null && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {t && <DeltaMark dir={t.dir} tone={t.tone} />}
-              <Txt size={13} lineHeight={18} style={[TABULAR, { color: c.sub }]}>
-                {`30-night average ${hmm(h.average)}`}
-              </Txt>
-            </View>
+            // The same words and colours as Activity's rows ("0:21 above 30-day avg 0:09").
+            <Txt size={13} lineHeight={18} weight={t && t.tone !== "neutral" && t.dir !== "flat" ? 500 : 400} style={{ color: !t || t.dir === "flat" ? c.sub : t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub }}>
+              {Math.round(h.asleepMin) === Math.round(h.average)
+                ? `In line with 30-night avg${NBSP}${hmm(h.average)}`
+                : !t || t.dir === "flat"
+                  ? `Within your usual range (avg${NBSP}${hmm(h.average)})`
+                  : `${hmm(Math.abs(h.asleepMin - h.average))} ${h.asleepMin > h.average ? "above" : "below"} 30-night${NBSP}avg${NBSP}${hmm(h.average)}`}
+            </Txt>
           )}
         </>
       ) : (
@@ -125,18 +129,12 @@ function useStageColor() {
   return React.useCallback((st: Stage) => c[DATA_COLORS[`stage-${st}`].fill], [c]);
 }
 
-/** A stage's total as Apple Health prints it: "1:38" from an hour, "22" with a small "m" under one. */
+/** A stage's total as h:mm ("1:38", "0:44"): the format Activity's rows and the night's average use, never "44m" beside "1:54". */
 function StageTime({ minutes, size = 22 }: { minutes: number; size?: number }) {
   const c = useCalm();
-  const m = Math.max(0, Math.round(minutes));
   return (
     <Txt size={size} lineHeight={size + 4} style={[font.numberAt(size, 700), { color: c.ink }]}>
-      {m >= 60 ? hmm(m) : String(m)}
-      {m < 60 && (
-        <Txt size={13} lineHeight={size + 4} weight={600} style={{ color: c.sub }}>
-          m
-        </Txt>
-      )}
+      {hmm(Math.max(0, Math.round(minutes)))}
     </Txt>
   );
 }
