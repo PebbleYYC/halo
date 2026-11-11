@@ -113,7 +113,14 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
   React.useEffect(() => {
     if (entered || !opened) return;
     enter.set(withTiming(1, { duration: M.enter.duration, easing: REASE.outCubic }));
-    return () => cancelAnimation(enter);
+    // Safety net: the entry fade is fire-once, and it can be dropped if the view is re-attached mid-animation (the
+    // Health tab is prebuilt off-screen, then shown), which left the orb drawn but its number, glow and inner field
+    // stuck invisible at enter = 0 with no way to recover. Land the value regardless, so that can't persist.
+    const t = setTimeout(() => enter.set(1), M.enter.duration + 600);
+    return () => {
+      clearTimeout(t);
+      cancelAnimation(enter);
+    };
   }, [enter, entered, opened]);
 
   const focused = useIsFocused();
