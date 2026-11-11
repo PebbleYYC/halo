@@ -47,10 +47,10 @@ export const ORB = {
     turnsShimmer: -1,
     /** The rim layer's sway, ± degrees: small enough that no rim particle crosses the lobed outline. */
     swayDeg: 2,
-    /** Breathing: the body grows 3 %, the glow 4.5 % and brightens from 85 %. */
-    breathScale: 0.03,
-    glowScale: 0.045,
-    glowDim: 0.85,
+    /** Breathing: the body grows 4.5 %, the glow 7 % and brightens from 78 % — enough to read as alive from a glance. */
+    breathScale: 0.045,
+    glowScale: 0.07,
+    glowDim: 0.78,
     /** Press and hold: the inner field spins up over `ramp` ms to a turn per `period` ms and gathers inward; release coasts it down. */
     swirl: { period: 5000, ramp: 600, rampTurns: 0.06, deceleration: 0.998, gather: 0.86, rimGather: 0.95, bodyGrow: 0.02, glowGrow: 0.03 },
     /** Entry: the inner field spirals in from 130 % and −40° while the body charges from 45 %. */

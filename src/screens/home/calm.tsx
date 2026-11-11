@@ -244,7 +244,7 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
       <HeroHead icon={Target} ink={c.ink} title="Today’s scores" right={<PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
         <Pressable onPress={() => go("/trends")} accessibilityRole="button" accessibilityLabel="Open your data in Trends" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-          <ScoreRings recovery={recovery} sleep={sleep} strain={strain} strainTarget={dials.strainTarget} size={size} delay={RINGS_DELAY} />
+          <ScoreRings motionKey="today" recovery={recovery} sleep={sleep} strain={strain} strainTarget={dials.strainTarget} size={size} delay={RINGS_DELAY} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0, gap: 10 }}>
           <ScoreLine

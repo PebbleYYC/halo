@@ -19,6 +19,7 @@ import Animated, {
 import Svg, { Circle, Defs, G, Line, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useIsFocused } from "expo-router";
+import { freshLook } from "@/ui/motion/freshLook";
 import { DATA_COLORS, recoveryColor, strainRingFill } from "@/lib/bands";
 import { clockArcPath, clockPoint, colorAt, ringHalves, ringShades } from "@/lib/charts";
 import { formatValue } from "@/lib/format";
@@ -55,10 +56,12 @@ const fracOf = (v: number | null | undefined) => (v === null || v === undefined 
  * A ring's progress on the UI thread: from empty on mount (at its value at once when `still`), then from where it is
  * to each new value, on the ring spring after `delay`; at once under reduce motion.
  */
-function useRingProgress(target: number, delay: number, still: boolean): SharedValue<number> {
+function useRingProgress(target: number, delay: number, still: boolean, motionKey?: string): SharedValue<number> {
   const [atRest] = React.useState(() => still || reduceMotionNow());
   const p = useSharedValue(atRest ? target : 0);
   const mounted = React.useRef(false);
+  const focused = useIsFocused();
+  const wasOnScreen = React.useRef(false);
   React.useEffect(() => {
     const first = !mounted.current;
     mounted.current = true;
@@ -66,9 +69,15 @@ function useRingProgress(target: number, delay: number, still: boolean): SharedV
       p.set(target);
       return;
     }
-    p.set(withDelay(delay, withSpring(target, RING_SPRING)));
+    // A ring with a key of its own draws on when you arrive at its screen after a while away. Tabs stay mounted, so
+    // without this it would fill once per launch; drawing it on every glance would be noise, hence the quiet window.
+    const arrived = !!motionKey && focused && !wasOnScreen.current;
+    wasOnScreen.current = focused;
+    if (motionKey && !focused) return;
+    if (arrived && freshLook(`ring:${motionKey}`)) p.set(0);
+    p.set(withDelay(arrived ? delay : 0, withSpring(target, RING_SPRING)));
     return () => cancelAnimation(p);
-  }, [target, delay, atRest, p]);
+  }, [target, delay, atRest, p, focused, motionKey]);
   return p;
 }
 
@@ -315,6 +324,8 @@ export type ActivityRingsProps = {
   delay?: number;
   /** Start at the values (no draw-on on mount); later changes still sweep. */
   still?: boolean;
+  /** Names this set so it draws on again when you come back to its screen after a while; without one it only fills on mount. */
+  motionKey?: string;
   /** The set's spoken description; without one the rings are decoration and the caller speaks for them. */
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
@@ -327,7 +338,7 @@ export type ActivityRingsProps = {
  * single ring (or a gauge's open arc with `arc`) with its content in the middle. Thick round-ended strokes over tracks
  * of their own hue, each coloured along its arc.
  */
-export function ActivityRings({ size, rings, stroke, gap, arc, delay = 0, still, accessibilityLabel, style, children }: ActivityRingsProps) {
+export function ActivityRings({ size, rings, stroke, gap, arc, delay = 0, still, motionKey, accessibilityLabel, style, children }: ActivityRingsProps) {
   const id = React.useId().replace(/:/g, "");
   const sw = stroke ?? Math.round(size * (rings.length > 1 ? 0.115 : 0.105) * 2) / 2;
   const g = gap ?? Math.max(1.5, Math.round(size * 0.012 * 2) / 2);
@@ -337,7 +348,7 @@ export function ActivityRings({ size, rings, stroke, gap, arc, delay = 0, still,
     <View accessible={!!accessibilityLabel} accessibilityRole={accessibilityLabel ? "image" : undefined} accessibilityLabel={accessibilityLabel} style={[{ width: size, height: size }, style]}>
       <Svg width={size} height={size}>
         {rings.map((ring, i) => (
-          <SetRing key={i} id={`${id}r${i}`} ring={ring} cx={size / 2} cy={size / 2} r={size / 2 - overhang - sw / 2 - i * (sw + g)} stroke={sw} arc={arc} delay={delay + i * RING_STAGGER} still={!!still} />
+          <SetRing key={i} id={`${id}r${i}`} ring={ring} cx={size / 2} cy={size / 2} r={size / 2 - overhang - sw / 2 - i * (sw + g)} stroke={sw} arc={arc} delay={delay + i * RING_STAGGER} still={!!still} motionKey={motionKey ? `${motionKey}:${i}` : undefined} />
         ))}
       </Svg>
       {children ? (
@@ -349,8 +360,8 @@ export function ActivityRings({ size, rings, stroke, gap, arc, delay = 0, still,
   );
 }
 
-function SetRing({ id, ring, cx, cy, r, stroke, arc, delay, still }: { id: string; ring: RingSpec; cx: number; cy: number; r: number; stroke: number; arc?: { start: number; sweep: number }; delay: number; still: boolean }) {
-  const p = useRingProgress(fracOf(ring.progress), delay, still);
+function SetRing({ id, ring, cx, cy, r, stroke, arc, delay, still, motionKey }: { id: string; ring: RingSpec; cx: number; cy: number; r: number; stroke: number; arc?: { start: number; sweep: number }; delay: number; still: boolean; motionKey?: string }) {
+  const p = useRingProgress(fracOf(ring.progress), delay, still, motionKey);
   const key = ring.colors?.length ? ring.colors.join("|") : ring.color;
   const stops = React.useMemo<readonly string[]>(() => (ring.colors?.length ? ring.colors : ringShades(ring.color)),
     // Keyed on the colours' content, not the array's identity.
@@ -387,6 +398,7 @@ export function ScoreRings({
   size = 148,
   delay,
   still,
+  motionKey,
   style,
   children,
   strainTarget = null,
@@ -394,6 +406,7 @@ export function ScoreRings({
   recovery: number | null;
   sleep: number | null;
   strain: number | null;
+  motionKey?: string;
   /** Today's Strain target: the ring is full at its middle and falls away past it (strainRingFill). */
   strainTarget?: readonly [number, number] | null;
   size?: number;
@@ -414,7 +427,7 @@ export function ScoreRings({
   const said = (v: number | null, text: string) => (v === null ? "no score" : text);
   const label = `Recovery ${said(recovery, `${formatValue("int", recovery)} percent`)}, Sleep ${said(sleep, `${formatValue("int", sleep)} percent`)}, Strain ${said(strain, strainTarget ? `${formatValue("decimal1", strain)}, target ${formatValue("decimal1", strainTarget[0])} to ${formatValue("decimal1", strainTarget[1])}` : `${formatValue("decimal1", strain)} of 21`)}`;
   return (
-    <ActivityRings size={size} rings={rings} delay={delay} still={still} accessibilityLabel={label} style={style}>
+    <ActivityRings size={size} rings={rings} delay={delay} still={still} accessibilityLabel={label} style={style} motionKey={motionKey}>
       {children}
     </ActivityRings>
   );
