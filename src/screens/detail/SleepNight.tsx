@@ -22,7 +22,6 @@ import { ListGroup, ListRow, useGrowIn } from "./ios";
 import { ScoreHero } from "./ScoreHero";
 import { nightDates } from "./lines";
 
-const NBSP = "\u00a0";
 
 type Stage = "awake" | "rem" | "light" | "deep";
 type Night = NonNullable<NonNullable<SleepVM["stages"]>["value"]>;
@@ -45,34 +44,39 @@ export function TimeAsleep({ hours, stages, performance, timeZone }: { hours: Sl
   const h = hours.value;
   const night = stages?.value ?? null;
   const t = h && h.average !== null ? deltaTone(GOOD_DIRECTION.hours, h.asleepMin, h.average, h.sd) : null;
+  const short = (min: number) => {
+    const m = Math.max(0, Math.round(min));
+    return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+  };
+  // The verdict under the ring, a sentence as Activity's is ("5.2 below today's Strain Target of 5.5 to 8.2.").
+  const verdict = !h
+    ? null
+    : h.average === null
+      ? `${short(h.asleepMin)} asleep.`
+      : Math.round(h.asleepMin) === Math.round(h.average)
+        ? `In line with your 30-night average of ${short(h.average)}.`
+        : !t || t.dir === "flat"
+          ? `Within your usual range. Your 30-night average is ${short(h.average)}.`
+          : `${short(Math.abs(h.asleepMin - h.average))} ${h.asleepMin > h.average ? "above" : "below"} your 30-night average of ${short(h.average)}.`;
   return (
     <ScoreHero
       variant="sleep"
       value={performance.value ?? null}
       reason={performance.reason ?? hours.reason}
       nightsLeft={performance.nightsLeft ?? hours.nightsLeft}
-      word={h ? durationWords(h.asleepMin) : null}
+      word={h ? short(h.asleepMin) : null}
+      sentence={performance.value == null ? null : verdict}
     >
       {h ? (
         <View style={{ alignItems: "center", gap: 2 }}>
-          {performance.value == null && (
+          {performance.value == null && verdict && (
             <Txt size={17} lineHeight={23} weight={500} align="center" style={{ color: c.ink }}>
-              {`${durationWords(h.asleepMin)} asleep`}
+              {verdict}
             </Txt>
           )}
           {night && (
-            <Txt size={15} lineHeight={20} align="center" style={[TABULAR, { color: c.sub }]}>
+            <Txt size={13} lineHeight={18} align="center" style={{ color: c.sub }}>
               {`${nightDates(night.bed, night.wake, timeZone)}, ${clock(night.bed, timeZone)} – ${clock(night.wake, timeZone)}`}
-            </Txt>
-          )}
-          {h.average !== null && (
-            // The same words and colours as Activity's rows ("0:21 above 30-day avg 0:09").
-            <Txt size={13} lineHeight={18} align="center" weight={t && t.tone !== "neutral" && t.dir !== "flat" ? 500 : 400} style={{ color: !t || t.dir === "flat" ? c.sub : t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub }}>
-              {Math.round(h.asleepMin) === Math.round(h.average)
-                ? `In line with 30-night avg${NBSP}${hmm(h.average)}`
-                : !t || t.dir === "flat"
-                  ? `Within your usual range (avg${NBSP}${hmm(h.average)})`
-                  : `${hmm(Math.abs(h.asleepMin - h.average))} ${h.asleepMin > h.average ? "above" : "below"} 30-night${NBSP}avg${NBSP}${hmm(h.average)}`}
             </Txt>
           )}
         </View>

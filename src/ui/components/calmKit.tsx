@@ -267,7 +267,7 @@ export function Sentence({
 }) {
   const c = useCalm();
   return (
-    <Txt size={size} lineHeight={size + 5} weight={weight ?? (color && color !== c.sub ? 600 : 400)} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
+    <Txt size={size} lineHeight={size + 5} weight={weight ?? (color && color !== c.sub && color !== c.ink ? 600 : 400)} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
       {children}
     </Txt>
   );

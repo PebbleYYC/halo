@@ -96,7 +96,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
   const soFar = !loading && !!extraTags?.includes("so_far");
   const otherTags = extraTags?.filter((t) => t !== "so_far");
   return (
-    <GlowCard color={glow} padding={18} gap={14} style={{ alignSelf: "stretch", alignItems: "center" }}>
+    <GlowCard color={glow} padding={16} gap={14} style={{ alignSelf: "stretch", alignItems: "center" }}>
       {/* The head every lead card has: what the number is, in its colour; "So far" beside it for a day still running. */}
       <HeroHead
         icon={strain ? Flame : sleep ? Moon : HeartPulse}

@@ -162,11 +162,11 @@ function MonitorAlert({ alert, onOpen }: { alert: NonNullable<HomeVM["monitorAle
       <HomeCard
         tint={illness ? "rose" : "sand"}
         icon={illness ? CircleAlert : TriangleAlert}
-        title={illness ? "Your body may be fighting something" : `${alert.count} vitals outside your normal range`}
+        title={illness ? "Your body may be fighting something" : `${alert.count} ${alert.count === 1 ? "vital" : "vitals"} outside your normal range`}
         subtitle={
           illness
             ? "Several vitals moved away from your normal range together, a pattern that often comes before feeling unwell. Consider an easier day."
-            : `${names} are outside your usual range. This can be an early sign of illness or heavy strain.`
+            : `${names} ${alert.count === 1 ? "is" : "are"} outside your usual range. This can be an early sign of illness or heavy strain.`
         }
         // A warning's explanation is what to read: full-strength text, not the grey of a card's caption.
         subtitleColor={calm.ink}
