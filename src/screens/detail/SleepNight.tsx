@@ -20,7 +20,6 @@ import { font, TABULAR } from "@/ui/fonts";
 import { haptic } from "@/ui/motion/haptics";
 import { ListGroup, ListRow, useGrowIn } from "./ios";
 import { ScoreHero } from "./ScoreHero";
-import { nightDates } from "./lines";
 
 
 type Stage = "awake" | "rem" | "light" | "deep";
@@ -65,21 +64,16 @@ export function TimeAsleep({ hours, stages, performance, timeZone }: { hours: Sl
       reason={performance.reason ?? hours.reason}
       nightsLeft={performance.nightsLeft ?? hours.nightsLeft}
       word={h ? short(h.asleepMin) : null}
+      note={night ? `${clock(night.bed, timeZone)} – ${clock(night.wake, timeZone)}` : null}
       sentence={performance.value == null ? null : verdict}
     >
       {h ? (
-        <View style={{ alignItems: "center", gap: 2 }}>
-          {performance.value == null && verdict && (
-            <Txt size={17} lineHeight={23} weight={500} align="center" style={{ color: c.ink }}>
-              {verdict}
-            </Txt>
-          )}
-          {night && (
-            <Txt size={13} lineHeight={18} align="center" style={{ color: c.sub }}>
-              {`${nightDates(night.bed, night.wake, timeZone)}, ${clock(night.bed, timeZone)} – ${clock(night.wake, timeZone)}`}
-            </Txt>
-          )}
-        </View>
+        // The night's times sit in the head, as Activity's "So far" does; the score's own sentence says the rest.
+        performance.value == null && verdict ? (
+          <Txt size={17} lineHeight={23} weight={500} align="center" style={{ color: c.ink }}>
+            {verdict}
+          </Txt>
+        ) : null
       ) : null}
     </ScoreHero>
   );

@@ -267,22 +267,14 @@ export function AgeOrb({ age, deltaYears, provisional = false, size = 300, reaso
       {layers}
       {!bare && (
         <Animated.View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={[textStyle, a.text]}>
-          <Txt role="value" size={small ? Math.round(size * 0.25) : Math.round(size * 0.15)} lineHeight={small ? Math.round(size * 0.25) : Math.round(size * 0.16)} tracking={-0.01} color={has ? DARK.orbText : DARK.orbTextMuted} align="center">
+          {/* The age at the scale the other tabs' heroes use (54 px on a 172 px ring); the card's head names it, so the
+              orb carries no label of its own, and the gap under it reads "−2.3 years". */}
+          <Txt role="value" size={small ? Math.round(size * 0.25) : Math.round(size * 0.278)} lineHeight={small ? Math.round(size * 0.25) : Math.round(size * 0.3)} tracking={-0.01} color={has ? DARK.orbText : DARK.orbTextMuted} align="center">
             {formatValue("decimal1", has ? age : null)}
           </Txt>
-          <Txt
-            role="label"
-            size={small ? Math.max(9, Math.round(size * 0.09)) : Math.round(7 + size * 0.023)}
-            lineHeight={small ? Math.max(9, Math.round(size * 0.09)) : Math.round((7 + size * 0.023) * 1.25)}
-            color={DARK.orbTextMuted}
-            align="center"
-            style={{ marginTop: small ? 2 : 6 }}
-          >
-            {AGE_LABEL}
-          </Txt>
           {!small && d && (
-            <Txt role="body" size={Math.round(8 + size * 0.024)} lineHeight={Math.round((8 + size * 0.024) * 1.25)} weight={600} color={deltaColor} align="center" style={{ marginTop: 10, fontVariant: ["tabular-nums"] }}>
-              {d.text}
+            <Txt role="body" size={Math.round(8 + size * 0.024)} lineHeight={Math.round((8 + size * 0.024) * 1.25)} weight={600} color={deltaColor} align="center" style={{ marginTop: 4, fontVariant: ["tabular-nums"] }}>
+              {d.short}
             </Txt>
           )}
           {!small && !has && <ReasonPlaceholder reason={reason} size="sm" style={{ marginTop: 12, justifyContent: "center" }} />}

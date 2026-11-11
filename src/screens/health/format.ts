@@ -17,10 +17,13 @@ export const ordinal = (n: number) => {
 };
 
 /** "2.3 years younger" / "1.0 years older" / "Same as your age" (spec §6), with its tone token. */
-export function ageDelta(delta: number): { text: string; tone: ColorToken } {
+export function ageDelta(delta: number): { text: string; short: string; tone: ColorToken } {
   const v = formatValue("decimal1", Math.abs(delta));
-  if (v === "0.0") return { text: "Same as your age", tone: "foregroundSecondary" };
-  return delta < 0 ? { text: `${v} years younger`, tone: "optimal" } : { text: `${v} years older`, tone: "warning" };
+  // `short` is for inside the orb, where the card's head already says what the number is: "−2.3 years".
+  if (v === "0.0") return { text: "Same as your age", short: "Same as your age", tone: "foregroundSecondary" };
+  return delta < 0
+    ? { text: `${v} years younger`, short: `−${v} years`, tone: "optimal" }
+    : { text: `${v} years older`, short: `+${v} years`, tone: "warning" };
 }
 
 /** The age scale's span: whole fives around both ages, with a few years of air either side, at least ten years wide. */
