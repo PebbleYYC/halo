@@ -139,24 +139,25 @@ export function DetailScreen({
       <RevealScroll.Provider value={keyboardAware ? null : scrollY}>
         <View ref={anchors?.content} collapsable={false}>
           <DetailLargeTitle title={title} subtitle={subtitle} titleIcon={titleIcon} dateTitle={inHeader && !lead ? dateSwitcher : undefined} dayRow={dateSwitcher && lead ? dateSwitcher : undefined} y={scrollY} />
-          {banner && <View style={{ marginBottom: 16 }}>{banner}</View>}
           {dateSwitcher && !inHeader && !lead && (
             <View style={{ marginBottom: 16, alignItems: "center" }}>
               {/* Bare chevrons and the day, no pill: "‹ Mon, Sep 14 ›" (spec §11 F15). */}
               <DateSwitcher {...dateSwitcher} placement="header" />
             </View>
           )}
-          {/* Calm: one column of cards 14 px apart, the hero a pastel card of its own (no glow behind it). */}
-          <View style={{ gap: 14 }}>
+          {/* Calm: one column of cards 12 px apart (as Today and Health), the hero a pastel card of its own (no glow behind it). */}
+          <View style={{ gap: 12 }}>
             {/* Each block rises into place as the screen opens (a tab) or once its push has landed, cascading, and the
                 ones below the fold as they scroll in. A block mounting mid-push slides in with the screen instead. */}
             {(hero || side) && (
-              <View style={{ gap: 14 }}>
+              <View style={{ gap: 12 }}>
                 {hero && (
                   <Rise index={0}>
                     <HeroSlot hero={hero} glow={heroGlow ?? null} />
                   </Rise>
                 )}
+                {/* The range switcher sits under the lead card, so that card starts where every tab's does. */}
+                {banner}
                 {side && (
                   <Rise index={1}>
                     {/* Calm: no notch; the hero is a card of its own. */}
@@ -168,7 +169,7 @@ export function DetailScreen({
             {below && (summary || !hero) && insight && <Rise index={2}>{insight}</Rise>}
             {below && primary && <Rise index={2}>{primary}</Rise>}
             {opened && rest.length > 0 && (
-              <View style={{ gap: 14 }}>
+              <View style={{ gap: 12 }}>
                 {rest.map((s, i) => (
                   <Rise key={i} index={3 + i}>
                     {s}

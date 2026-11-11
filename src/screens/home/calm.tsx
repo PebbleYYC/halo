@@ -24,7 +24,7 @@ import { useMe } from "@/state/me";
 import { SyncStatus, Txt, type SyncShellStatus } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { CalendarSheet } from "@/ui/components/CalendarSheet";
-import { CalmSurface, PillAction } from "@/ui/components/CalmSurface";
+import { PillAction } from "@/ui/components/CalmSurface";
 import { RoundStep, stepDay } from "@/ui/components/DateSwitcher";
 import { BAR_ROW, BarEdge } from "@/ui/components/DetailHeader";
 import { BAR_BUTTON, GlassButton, GlassCapsule } from "@/ui/components/GlassButton";
@@ -32,6 +32,7 @@ import { RING_LAND_MS, RING_STAGGER, RollingNumber, ScoreRings } from "@/ui/comp
 import { StreakFlame, UserAvatar } from "@/ui/components/HomeHeader";
 import { usePress, usePressStyle } from "@/ui/components/press";
 import { font } from "@/ui/fonts";
+import { GlowCard } from "@/screens/detail/ios";
 import { useTheme } from "@/ui/ThemeProvider";
 import { chartHref } from "@/screens/chart/href";
 import { HeroHead, HomeCard } from "./controls";
@@ -231,13 +232,14 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
   const sleep = dials.sleep.value;
   const strain = dials.strain.value;
   const band = recovery === null ? null : recoveryBand(recovery);
+  const { c: theme } = useTheme();
   const recoveryInk = band === "yellow" ? c.tintInk.sand : band === "red" ? c.tintInk.rose : c.tintInk.mint;
   // The rings take a little under half the card, never so small the three read as one.
   const size = Math.round(Math.max(116, Math.min(168, (width - 64) * 0.48)));
   const hours = hmText(asleepMin);
   const target = dials.strainTarget ? `${formatValue("decimal1", dials.strainTarget[0])}–${formatValue("decimal1", dials.strainTarget[1])}` : null;
   return (
-    <CalmSurface padding={16} gap={14}>
+    <GlowCard color={recovery === null ? null : band === "yellow" ? theme.recoveryYellow : band === "red" ? theme.recoveryRed : theme.recoveryGreen} padding={16} gap={14}>
       {/* The same head as every lead card; the link to the data sits on its right, where "Details" does elsewhere. */}
       <HeroHead icon={Target} ink={c.ink} title="Today’s scores" right={<PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
@@ -283,7 +285,7 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
           {reasonCopy(dials.reason.reason, dials.reason.nightsLeft).long}
         </Txt>
       )}
-    </CalmSurface>
+    </GlowCard>
   );
 }
 
