@@ -44,7 +44,6 @@ import type { HrChart, KeyStat, Metric, Trend } from "@/queries";
 import { RANGE_DAYS, Txt, type HrSeries, type KeyStatRowProps, type TrendPoint, type TrendRange } from "@/ui";
 import { useCalm, type CalmPalette } from "@/ui/calm";
 import { tagLabel } from "@/ui/components/primitives";
-import { TABULAR } from "@/ui/fonts";
 import { ListRow } from "./ios";
 
 /** An activity's own screen (the web's `activityHref`). */
@@ -207,14 +206,14 @@ export function StatRow({
         ? `In line with 30-day avg ${avgText}`
         : t.dir === "flat"
           ? `Within your usual range (avg ${avgText})`
-          : `${absText(p.format, diff)}${unitText} ${diff > 0 ? "above" : "below"} 30-day avg ${avgText}`;
+          : `${absText(p.format, diff)}${unitText} ${diff > 0 ? "above" : "below"} 30-day${NBSP}avg${NBSP}${avgText}`;
       parts.push({ text, color: t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub });
     }
     const tags = [...(k.metric.provisional ? ["provisional" as const] : []), ...(k.metric.tags ?? [])];
     if (tags.length) parts.push({ text: tags.map(tagLabel).join(", "), color: c.sub });
   }
   const detail = parts.length ? (
-    <Txt size={13} lineHeight={18} style={TABULAR}>
+    <Txt size={13} lineHeight={18}>
       {parts.map((x, i) => (
         <Txt key={i} size={13} lineHeight={18} weight={x.color === c.sub ? 400 : 500} style={{ color: x.color }}>
           {`${i > 0 ? " · " : ""}${x.text}`}
