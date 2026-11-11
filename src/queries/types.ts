@@ -33,6 +33,8 @@ export type KeyStat = {
   unit?: string;
   /** Mean over the 30 days before the selected day (or the comparison period). */
   average: number | null;
+  /** What `average` is, where it isn't the whole-day 30-day mean ("avg by now": a running total against the same hour). */
+  averageLabel?: string;
   sd?: number;
   direction: GoodDirection | "none";
   status?: SleepStatus;

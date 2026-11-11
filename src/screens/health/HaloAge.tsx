@@ -20,6 +20,10 @@ import { ageDelta } from "./format";
 import { PillAction } from "@/ui/components/CalmSurface";
 import { CardHead } from "./kit";
 
+/** The orb's box for a body about the rings' 172 px across (the body fills ~89 % of its box), and the glow margin around it. */
+const ORB_BOX = 194;
+const ORB_MARGIN = 10;
+
 /** Older than your age (after rounding to a tenth) reads in orange; younger or level in green. */
 function pulseAgeTint(deltaYears: number | null | undefined): CalmTint {
   return deltaYears != null && formatValue("decimal1", Math.abs(deltaYears)) !== "0.0" && deltaYears > 0 ? "peach" : "mint";
@@ -115,16 +119,17 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
   const same = !!d && d.text === "Same as your age";
   const sentence = d ? (same ? d.text : `${d.text} than your age`) : emptyCopy;
   const { width } = useWindowDimensions();
-  // As large as the card allows (16 px page margins and card padding each side), at most 260 px.
-  const orbSize = Math.min(260, width - 64);
+  // The orb's body is the size of Sleep's and Activity's ring (172 px) and sits where theirs does: its box is larger
+  // than the body by the glow around it, so the box overlaps the head's gap by that margin.
+  const orbSize = Math.min(ORB_BOX, width - 64);
   const spokenAge = has ? `${AGE_LABEL} ${formatValue("decimal1", age)} years, ${same ? "same as your age" : `${d!.text} than your age`}${provisional ? ", provisional" : ""}` : `${AGE_LABEL} unavailable. ${emptyCopy}`;
   return (
     <Card onPress={onPress} padding={0} accessibilityLabel={onPress ? `${spokenAge}.${spokenExtra ? ` ${spokenExtra}.` : ""} Open Healthspan` : undefined}>
       <Wash tint={tint} />
-      <View style={{ paddingHorizontal: 16, paddingTop: onPress ? 14 : 20, paddingBottom: 18, gap: 14 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: onPress ? 16 : 20, paddingBottom: 18, gap: 14 }}>
         {onPress ? <CardHead tint={tint} icon={Hourglass} title={AGE_LABEL} action={<View style={{ marginVertical: -6 }}><PillAction label="Details" accessibilityLabel="Healthspan details" onPress={onPress} /></View>} /> : null}
         {/* The orb is Halo Age's focal point and identity (DESIGN.md › Halo Age): the age and its gap inside it. */}
-        <View accessible={!onPress} accessibilityLabel={spokenAge} style={{ alignItems: "center", gap: 6 }}>
+        <View accessible={!onPress} accessibilityLabel={spokenAge} style={{ alignItems: "center", gap: 6, marginVertical: -ORB_MARGIN }}>
           <AgeOrb age={has ? age : null} deltaYears={has ? deltaYears : null} provisional={provisional} size={orbSize} reason={reason ?? null} />
           {!has && (
             <Txt size={15} lineHeight={20} align="center" style={{ color: c.sub }}>
@@ -145,7 +150,7 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
 /** The hero's loading shape: the same card with bars where the age, the sentence, the scale and the pills go. */
 export function HaloAgeHeroSkeleton({ head = false, children }: { head?: boolean; children?: React.ReactNode }) {
   const c = useCalm();
-  const orbSize = Math.min(260, useWindowDimensions().width - 64);
+  const orbSize = Math.min(ORB_BOX, useWindowDimensions().width - 64);
   return (
     <Card padding={0}>
       <Wash tint="mint" />

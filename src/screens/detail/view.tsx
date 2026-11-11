@@ -202,11 +202,12 @@ export function StatRow({
       const same = absText(p.format, diff) === absText(p.format, 0);
       // Equal to the average reads "in line"; a different number inside your day-to-day spread is "usual", not "in line"
       // (18,201 steps beside "In line with 30-day avg 14,953" read as a mistake).
+      const avgLabel = p.averageLabel ? p.averageLabel.replace(/ /g, NBSP) : `30-day${NBSP}avg`;
       const text = same
-        ? `In line with 30-day avg ${avgText}`
+        ? `In line with ${avgLabel}${NBSP}${avgText}`
         : t.dir === "flat"
-          ? `Within your usual range (avg ${avgText})`
-          : `${absText(p.format, diff)}${unitText} ${diff > 0 ? "above" : "below"} 30-day${NBSP}avg${NBSP}${avgText}`;
+          ? `Within your usual range (${p.averageLabel ?? "avg"}${NBSP}${avgText})`
+          : `${absText(p.format, diff)}${unitText} ${diff > 0 ? "above" : "below"} ${avgLabel}${NBSP}${avgText}`;
       parts.push({ text, color: t.tone === "good" ? c.tintInk.mint : t.tone === "bad" ? c.system.orange : c.sub });
     }
     const tags = [...(k.metric.provisional ? ["provisional" as const] : []), ...(k.metric.tags ?? [])];
