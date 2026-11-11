@@ -147,7 +147,7 @@ export function TimelineRow({
           // A duration's own numbers, in the same 26 px line, so every row's caps label sits at one height.
           <View style={{ minHeight: 26, justifyContent: "center" }}>{value}</View>
         )}
-        <Caption style={{ marginTop: 2 }}>{valueLabel}</Caption>
+        <Caption numberOfLines={1} style={{ marginTop: 2 }}>{valueLabel}</Caption>
       </View>
       <ChevronRight size={CHEVRON.size} color={c.tertiary} strokeWidth={CHEVRON.stroke} style={{ marginTop: (TIMELINE_TILE - CHEVRON.size) / 2, marginRight: -4 }} />
     </PressableView>

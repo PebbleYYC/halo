@@ -144,7 +144,7 @@ function NoBandLine({ reason }: { reason: string }) {
 function PhoneActivity({ stats, day, today, open }: { stats: KeyStat[]; day: string; today: string; open: (href: string) => void }) {
   return (
     <View style={{ gap: CARD_GAP }}>
-      <SectionTitle title="From your phone" action={<Caption>vs 30-day avg</Caption>} style={{ marginTop: 6 }} />
+      <SectionTitle title="From your phone" action={<Caption numberOfLines={1}>vs 30-day avg</Caption>} style={{ marginTop: 6 }} />
       {stats.map((s, i) => (
         <StatCard key={s.key} s={s} series={null} day={day} today={today} open={open} order={i} />
       ))}
@@ -382,7 +382,7 @@ export function JournalWeek({ vm, at, go }: SlotProps) {
       {!checkedIn && <CheckInButton label={vm.isToday ? "Check in now" : "Check in"} onPress={() => openCheckIn(vm.day)} />}
       {vm.isToday && (
         <View style={{ gap: 8 }}>
-          <Caption>Quick log</Caption>
+          <Caption numberOfLines={1}>Quick log</Caption>
           {/* Two to a row: every name whole. */}
           {rows.map((row) => (
             <View key={row[0].kind} style={{ flexDirection: "row", gap: 8 }}>
@@ -477,7 +477,7 @@ export function EnergyCard({ vm, timeZone, go }: SlotProps) {
               </View>
               {eb.drains.length > 0 && (
                 <View>
-                  <Caption style={{ marginBottom: 2 }}>Biggest drains</Caption>
+                  <Caption numberOfLines={1} style={{ marginBottom: 2 }}>Biggest drains</Caption>
                   {eb.drains.slice(0, 3).map((dr, i) => (
                     <React.Fragment key={`${dr.label}-${dr.start}`}>
                       {i > 0 && <RowRule inset={29 + 12} />}
@@ -524,7 +524,7 @@ export function MyDashboard({ vm, at, go }: SlotProps) {
   const scored = vm.strainRecovery.filter((p) => p.strain !== null || p.recovery !== null).length;
   const openChart = () => go(chartHref({ metric: "strain", compare: "recovery", r: "w", d: vm.day === vm.today ? undefined : vm.day }));
   return (
-    <SectionShell variant="section" title="My Dashboard" aside={<Caption>vs 30-day avg</Caption>} action={<EditDashboard keys={keys} defaults={vm.dashboard.defaults} empty={vm.dashboard.empty} />}>
+    <SectionShell variant="section" title="My Dashboard" aside={<Caption numberOfLines={1}>vs 30-day avg</Caption>} action={<EditDashboard keys={keys} defaults={vm.dashboard.defaults} empty={vm.dashboard.empty} />}>
       <View style={{ gap: CARD_GAP }}>
         {vm.keyStats.map((s, i) => (
           <StatCard key={s.key} s={s} series={data?.series[s.key] ?? null} day={vm.day} today={vm.today} open={open} order={i} />

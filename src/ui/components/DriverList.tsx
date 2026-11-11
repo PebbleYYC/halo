@@ -75,14 +75,14 @@ function Header({ variant, unit, provisional }: { variant: DriverListProps["vari
     <View style={{ marginBottom: 2, flexDirection: "row", alignItems: "center", gap: 8 }}>
       <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 5 }}>
         <DeltaGlyph dir="down" color={c.system.orange} size={8} />
-        <Caption color={c.system.orange}>{left}</Caption>
+        <Caption numberOfLines={1} color={c.system.orange}>{left}</Caption>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Caption>{mid}</Caption>
+        <Caption numberOfLines={1}>{mid}</Caption>
         {provisional && <MetricTags provisional />}
       </View>
       <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
-        <Caption color={c.tintInk.mint}>{right}</Caption>
+        <Caption numberOfLines={1} color={c.tintInk.mint}>{right}</Caption>
         <DeltaGlyph dir="up" color={c.tintInk.mint} size={8} />
       </View>
     </View>

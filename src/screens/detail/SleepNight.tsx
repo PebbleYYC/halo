@@ -77,7 +77,7 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
   return (
     <GlowCard color={theme.sleep} padding={18} style={{ alignSelf: "stretch" }}>
     <View accessibilityLabel={sentence} style={{ gap: 2 }}>
-      <Caption>Time asleep</Caption>
+      <Caption numberOfLines={1}>Time asleep</Caption>
       {h ? (
         <>
           <HoursMinutes minutes={h.asleepMin} />
@@ -112,7 +112,7 @@ export function TimeAsleep({ hours, stages, timeZone }: { hours: SleepVM["hours"
 export function TimeAsleepSkeleton() {
   return (
     <GlowCard color={null} padding={18} gap={4} style={{ alignSelf: "stretch" }}>
-      <Caption>Time asleep</Caption>
+      <Caption numberOfLines={1}>Time asleep</Caption>
       <SkeletonText role="valueHero" size={BIG} lineHeight={BIG_LINE} chars={6} />
       <SkeletonText role="caption" size={15} lineHeight={20} chars={13} />
     </GlowCard>

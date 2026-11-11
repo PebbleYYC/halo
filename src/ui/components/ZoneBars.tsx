@@ -118,7 +118,7 @@ function Rows({ zones, note }: { zones: ZoneRow[]; note?: string }) {
           </Txt>
         </View>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Caption>Duration</Caption>
+          <Caption numberOfLines={1}>Duration</Caption>
           <Clock seconds={total} size="md" />
         </View>
       </View>

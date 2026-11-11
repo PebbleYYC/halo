@@ -79,7 +79,7 @@ function HoursHero({ h }: { h: SleepHours }) {
   // The caps caption first, then the time in the ink with its arrow, then the 30 nights' mean it is set against.
   return (
     <View accessibilityLabel={sentence}>
-      <Caption>Time asleep</Caption>
+      <Caption numberOfLines={1}>Time asleep</Caption>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 }}>
         <HoursMinutes minutes={h.asleepMin} size={34} color={c.ink} />
         <View style={{ width: 8, alignSelf: "flex-start", marginTop: 10 }}>{t && <DeltaMark dir={t.dir} tone={t.tone} />}</View>
@@ -170,7 +170,7 @@ function Rows({ night, selected, onSelect, timeZone, onExpand }: { night: SleepS
           </Txt>
         )}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Caption>Duration</Caption>
+          <Caption numberOfLines={1}>Duration</Caption>
           <Txt size={18} lineHeight={22} style={[font.numeric(700), { color: calm.ink }]}>
             {hmm(span / 60_000)}
           </Txt>
@@ -183,8 +183,8 @@ function Rows({ night, selected, onSelect, timeZone, onExpand }: { night: SleepS
         <View style={{ gap: 18, paddingTop: 2 }} accessibilityRole="radiogroup" accessibilityLabel="Highlight a sleep stage">
           {/* The columns' names over the numbers, so a time never reads as a share. */}
           <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: -8 }} importantForAccessibility="no-hide-descendants">
-            <Caption style={{ width: TIME_W, textAlign: "right" }}>Time</Caption>
-            <Caption style={{ width: SHARE_W, textAlign: "right" }}>Share</Caption>
+            <Caption numberOfLines={1} style={{ width: TIME_W, textAlign: "right" }}>Time</Caption>
+            <Caption numberOfLines={1} style={{ width: SHARE_W, textAlign: "right" }}>Share</Caption>
           </View>
           {rows.map((r) => {
             const on = r.stage === selected;
@@ -299,7 +299,7 @@ export function SleepStagesSkeleton() {
   return (
     <View style={{ gap: 16 }}>
       <View>
-        <Caption>Time asleep</Caption>
+        <Caption numberOfLines={1}>Time asleep</Caption>
         <SkeletonText role="valueHero" size={34} lineHeight={38} chars={6} style={{ marginTop: 2 }} />
         <SkeletonText role="numericCaption" size={13} lineHeight={18} chars={14} style={{ marginTop: 2 }} />
       </View>

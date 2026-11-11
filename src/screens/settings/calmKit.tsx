@@ -13,7 +13,8 @@ import { ArrowUpRight, ChevronRight, type LucideIcon } from "lucide-react-native
 import { alpha } from "@/lib/utils";
 import { Txt } from "@/ui";
 import { useCalm, type CalmTint } from "@/ui/calm";
-import { CHEVRON, iconRadius, OnCard, recolorIcon, softFill, useSurface } from "@/ui/components/calmKit";
+import { CalmCard, CalmSurface } from "@/ui/components/CalmSurface";
+import { Caption, CHEVRON, Hairline, IconTile as KitIconTile, MiniStat, Num, OnCard, Sentence, softFill, Title, useSurface } from "@/ui/components/calmKit";
 import { usePress, usePressStyle } from "@/ui/components/press";
 import { SegmentedControl } from "@/ui/components/Segmented";
 import { Switch } from "@/ui/components/Switch";
@@ -47,36 +48,9 @@ function useFillOn(on: On): string {
 
 // Type
 
-/**
- * A number with its unit beside it, sharing the baseline: Inter bold (tabular) in the number's colour, the unit half
- * its size, semibold and grey, so "43 ms" reads as a value with a unit, never as a phrase.
- */
-export function Num({ value, unit, size, color, weight = 700, style }: { value: string; unit?: string; size: number; color?: string; weight?: 500 | 600 | 700; style?: StyleProp<ViewStyle> }) {
-  const c = useCalm();
-  const unitPx = Math.max(12, Math.round(size * 0.5));
-  return (
-    <View style={[{ flexDirection: "row", alignItems: "baseline", flexShrink: 1 }, style]}>
-      <Txt size={size} lineHeight={Math.round(size * 1.15)} style={[font.numberAt(size, weight), { color: color ?? c.ink }]} numberOfLines={1}>
-        {value}
-      </Txt>
-      {unit ? (
-        <Txt size={unitPx} lineHeight={Math.max(16, Math.round(unitPx * 1.3))} weight={600} style={{ color: c.sub, marginLeft: 3, flexShrink: 1 }}>
-          {unit}
-        </Txt>
-      ) : null}
-    </View>
-  );
-}
-
-/** The small grey label under a number: 12 px semibold capitals. Wraps rather than cut. */
-export function Caption({ children, color, align, style }: { children: string; color?: string; align?: TextStyle["textAlign"]; style?: StyleProp<TextStyle> }) {
-  const c = useCalm();
-  return (
-    <Txt size={12} lineHeight={16} weight={600} align={align} style={[{ color: color ?? c.sub, letterSpacing: 0.4 }, style]}>
-      {children.toUpperCase()}
-    </Txt>
-  );
-}
+// Numbers, captions, titles, sentences, the icon square, the card and its hairline are the shared kit's
+// (src/ui/components): one definition for every screen, re-exported here under the names these screens import.
+export { Caption, Hairline, MiniStat, Num, Sentence, Title };
 
 /** A grouped list's header, iOS's: 13 px capitals in the secondary grey, inset to the rows' text; a heading for screen readers. */
 export function SectionLabel({ children, right, style }: { children: string; right?: React.ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -91,54 +65,20 @@ export function SectionLabel({ children, right, style }: { children: string; rig
   );
 }
 
-/** A title: 17/22 semibold ink (iOS's headline). */
-export function Title({ children, size = 17, color, style, numberOfLines, header = false }: { children: React.ReactNode; size?: number; color?: string; style?: StyleProp<TextStyle>; numberOfLines?: number; header?: boolean }) {
-  const c = useCalm();
-  return (
-    <Txt size={size} lineHeight={Math.round(size * 1.3)} weight={600} numberOfLines={numberOfLines} accessibilityRole={header ? "header" : undefined} style={[{ color: color ?? c.ink }, style]}>
-      {children}
-    </Txt>
-  );
-}
-
-/** A sentence: 15/20 in the secondary grey (iOS's subhead). */
-export function Sentence({ children, color, weight = 400, size = 15, align, style, accessibilityRole }: { children: React.ReactNode; color?: string; weight?: 400 | 500 | 600; size?: number; align?: TextStyle["textAlign"]; style?: StyleProp<TextStyle>; accessibilityRole?: "alert" | "text" }) {
-  const c = useCalm();
-  return (
-    <Txt size={size} lineHeight={size + 5} weight={weight} align={align} accessibilityRole={accessibilityRole} style={[{ color: color ?? c.sub }, style]}>
-      {children}
-    </Txt>
-  );
-}
-
 // Surfaces
 
 /**
  * The icon square, iOS Settings': the family's system colour with the icon in white (or `color`), its corners a quarter
  * of its size. `on` is kept for API compatibility: the solid square reads on any surface.
  */
-export function IconTile({ icon: Icon, tint = "sky", size = 44, color, node }: { icon?: LucideIcon; tint?: CalmTint; size?: number; on?: On | "tint"; color?: string; node?: React.ReactNode }) {
-  const c = useCalm();
-  const ink = color ?? "#ffffff";
-  return (
-    <View style={{ width: size, height: size, borderRadius: iconRadius(size), backgroundColor: c.tintInk[tint], alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      {node ? recolorIcon(node, ink) : Icon ? <Icon size={Math.round(size * 0.55)} color={ink} strokeWidth={2} /> : null}
-    </View>
-  );
+export function IconTile({ icon, tint = "sky", size = 44, color, node }: { icon?: LucideIcon; tint?: CalmTint; size?: number; on?: On | "tint"; color?: string; node?: React.ReactNode }) {
+  return <KitIconTile icon={node ?? icon} tint={tint} color={color} size={size} />;
 }
 
 /** A card in the card colour (or a family's soft fill with `tint`): 20 px corners, flat. Pressable with `onPress`. */
 export function Surface({
-  tint,
-  padding = 16,
-  gap,
-  radius = CALM_RADIUS,
-  onPress,
-  disabled,
-  accessibilityLabel,
-  accessibilityRole,
-  style,
   children,
+  ...props
 }: {
   tint?: CalmTint;
   padding?: number;
@@ -151,91 +91,15 @@ export function Surface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const c = useCalm();
-  const press = usePress();
-  const pressed = usePressStyle(press, { rest: disabled ? 0.5 : 1, dim: 0.88 });
-  const face: ViewStyle = { borderRadius: radius, backgroundColor: tint ? c.tint[tint] : c.card, padding, gap, overflow: "hidden" };
   // Controls inside know they sit on a card, even on a sheet.
-  if (!onPress)
-    return (
-      <View style={[face, style]}>
-        <OnCard>{children}</OnCard>
-      </View>
-    );
   return (
-    <PressableView
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      disabled={disabled}
-      accessibilityRole={accessibilityRole ?? "button"}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={disabled ? { disabled } : undefined}
-      style={[face, style, pressed]}
-    >
+    <CalmSurface {...props}>
       <OnCard>{children}</OnCard>
-    </PressableView>
+    </CalmSurface>
   );
 }
 
-/** A card with a head: icon square, title and a sentence under it (the whole width), something on the right, then a body. */
-export function CalmCard({
-  tint,
-  icon,
-  iconTint,
-  title,
-  subtitle,
-  subtitleColor,
-  right,
-  onPress,
-  accessibilityLabel,
-  gap = 16,
-  style,
-  children,
-}: {
-  tint?: CalmTint;
-  icon?: LucideIcon;
-  /** The icon's family on a plain card (default: the card's own tint, or sky). */
-  iconTint?: CalmTint;
-  title: string;
-  subtitle?: string;
-  subtitleColor?: string;
-  right?: React.ReactNode;
-  onPress?: () => void;
-  accessibilityLabel?: string;
-  gap?: number;
-  style?: StyleProp<ViewStyle>;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Surface tint={tint} gap={gap} onPress={onPress} accessibilityLabel={accessibilityLabel ?? (subtitle ? `${title}. ${subtitle}` : title)} style={style}>
-      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-        {icon ? <IconTile icon={icon} tint={iconTint ?? tint ?? "sky"} size={36} /> : null}
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          {/* With no sentence the title centres on the square; a long title wraps. */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: icon ? (subtitle ? 22 : 36) : undefined }}>
-            <Title header style={{ flex: 1 }}>
-              {title}
-            </Title>
-            {right}
-          </View>
-          {subtitle ? (
-            <Sentence color={subtitleColor} weight={subtitleColor ? 600 : 400}>
-              {subtitle}
-            </Sentence>
-          ) : null}
-        </View>
-      </View>
-      {children}
-    </Surface>
-  );
-}
-
-/** A hairline between rows of a grouped card (iOS's separator, half a point), inset past the icon square. */
-export function Hairline({ inset = 0, color }: { inset?: number; color?: string }) {
-  const c = useCalm();
-  return <View style={{ height: 0.5, marginLeft: inset, backgroundColor: color ?? c.line }} />;
-}
+export { CalmCard };
 
 /** Children of a card with hairlines between them. */
 export function Rows({ children, inset = 0, style }: { children: React.ReactNode; inset?: number; style?: StyleProp<ViewStyle> }) {
@@ -675,12 +539,3 @@ export function Notice({ tint = "sky", icon: Icon, title, children, action, role
   );
 }
 
-/** Two or more stats side by side: a number with its caption under it (at most two columns of words a row). */
-export function MiniStat({ value, unit, label, color, size = 24 }: { value: string; unit?: string; label: string; color?: string; size?: number }) {
-  return (
-    <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-      <Num value={value} unit={unit} size={size} color={color} />
-      <Caption>{label}</Caption>
-    </View>
-  );
-}
