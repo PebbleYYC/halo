@@ -8,6 +8,7 @@ import { useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Hourglass, Rabbit, Turtle } from "lucide-react-native";
 import { AGE_LABEL, formatValue, MISSING } from "@/lib/format";
+import { REBUILDING_COPY, useRebuilding } from "@/lib/rebuilding";
 import type { Metric, ReasonCode } from "@/lib/reasons";
 import { ReasonPlaceholder, Skeleton, TickScale, Txt } from "@/ui";
 import { useCalm, type CalmPalette, type CalmTint } from "@/ui/calm";
@@ -108,8 +109,10 @@ export type HaloAgeHeroProps = {
   children?: React.ReactNode;
 };
 
-export function HaloAgeHero({ age, deltaYears, provisional = false, reason, yourAge, emptyCopy = "Healthspan needs 20 days of data.", pills = [], onPress, spokenExtra, children }: HaloAgeHeroProps) {
+export function HaloAgeHero({ age, deltaYears, provisional = false, reason, yourAge, emptyCopy: emptyProp = "Healthspan needs 20 days of data.", pills = [], onPress, spokenExtra, children }: HaloAgeHeroProps) {
   const c = useCalm();
+  // A rebuild empties the orb along with everything else; saying how many days Healthspan needs would be a red herring.
+  const emptyCopy = useRebuilding() ? REBUILDING_COPY.long : emptyProp;
   const has = age !== null && deltaYears !== null;
   const tint = pulseAgeTint(has ? deltaYears : null);
   const { ink } = heroInk(c, tint);

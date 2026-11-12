@@ -8,6 +8,7 @@ import { View } from "react-native";
 import { Flame, HeartPulse, Moon } from "lucide-react-native";
 import { BAND_WORD, DATA_COLORS, recoveryBand } from "@/lib/bands";
 import { dialAriaLabel, formatValue } from "@/lib/format";
+import { useRebuilding } from "@/lib/rebuilding";
 import { reasonCopy, type MetricTag, type ReasonCode } from "@/lib/reasons";
 import { alpha } from "@/lib/utils";
 import { Txt, useTheme } from "@/ui";
@@ -15,6 +16,7 @@ import { useCalm, type CalmPalette } from "@/ui/calm";
 import { font } from "@/ui/fonts";
 import { ActivityRings, RING_LAND_MS, RollingNumber, type RingSegment } from "@/ui/components/Halo";
 import { MetricTags, type TagKind } from "@/ui/components/primitives";
+import { HeroField } from "@/ui/motion/HeroField";
 import { REASON_ICON } from "@/ui/components/ReasonPlaceholder";
 import { SkeletonText } from "@/ui/components/Skeleton";
 import type { Tokens } from "@/ui/theme";
@@ -25,6 +27,8 @@ import { strainWord } from "./lines";
 /** The ring and its stroke (Apple's tenth of the diameter), the number in its 136 px hole. */
 const RING = 172;
 const STROKE = 18;
+/** The hole the number and the field (Sleep's sky, Activity's pulses) share. */
+const HOLE = RING - STROKE * 2;
 const NUMBER = 54;
 const NUMBER_LINE = 58;
 
@@ -62,6 +66,8 @@ export type ScoreHeroProps = {
 export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tags, extraTags, target, label, sentence, loading, word: wordProp, note, children }: ScoreHeroProps) {
   const { c } = useTheme();
   const calm = useCalm();
+  // Subscribed so the reason line follows a rebuild in and out, whether or not the day's query has run again.
+  useRebuilding();
   const strain = variant === "strain";
   const sleep = variant === "sleep";
   const max = strain ? 21 : 100;
@@ -114,6 +120,8 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
       />
       <View accessible accessibilityRole="image" accessibilityLabel={aria}>
         <ActivityRings size={RING} stroke={STROKE} motionKey={`hero:${variant}`} rings={[{ progress: frac, color: inks.fill, track: alpha(inks.fill, 0.18), segments, ticks, tickColor: alpha(calm.ink, 0.85) }]}>
+          {/* Sleep's sky and Activity's pulses, under the number: they arrive with the ring and settle (HeroField). */}
+          {!loading && !empty && (sleep || strain) ? <HeroField kind={sleep ? "stars" : "pulse"} size={HOLE} color={sleep ? calm.ink : inks.fill} motionKey={variant} /> : null}
           {loading ? (
             <SkeletonText role="valueHero" size={NUMBER} lineHeight={NUMBER_LINE} chars={2.4} />
           ) : empty ? (

@@ -24,6 +24,7 @@ import {
 } from "@/health/import";
 import type { Store } from "@/data/store";
 import type { DailyValue, HrSample, StepsMinute } from "@/data/types";
+import { setRebuilding } from "@/lib/rebuilding";
 import { addDays, daysBetween, localDay, localMidnight } from "@/lib/time";
 import { slice, sliced } from "@/lib/yield";
 import { resolveMaxHr } from "@/pipeline/index";
@@ -330,7 +331,12 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       // A re-import replaces: what earlier imports wrote for these days goes before the new rows are written, so a day the
       // new mapping or policy leaves without steps, a workout or a derived minute doesn't keep the old one. The first day
       // goes too: the reads' lead (READ_LEAD_S) brings back its night, which began before the window.
-      if (replace) await store.clearImported({ from: fromDay, to: toDay }, windowStart, endTs + 1);
+      // Every screen goes blank from here until the days are written back: the copy says a rebuild is running, so a
+      // half-finished import doesn't read as lost data.
+      if (replace) {
+        setRebuilding(true);
+        await store.clearImported({ from: fromDay, to: toDay }, windowStart, endTs + 1);
+      }
 
       // 2. Per-day heart rate and steps, written as they come. A record comes back with the day its start falls in, so one
       // running over midnight carries its later samples into the next day (`spill`); the first day reads the lead for
@@ -465,6 +471,8 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     const message = e instanceof Error ? e.message : String(e);
     await store.setSyncState({ lastError: message }).catch(() => {});
     throw e;
+  } finally {
+    setRebuilding(false);
   }
 }
 
