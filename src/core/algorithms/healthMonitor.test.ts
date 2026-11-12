@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EFFECTS } from "@/data/seed";
-import { healthMonitor, type HealthMonitorDay } from "./healthMonitor";
+import { healthMonitor, type HealthMonitorDay, isVitalConcern, VITAL_WATCH, type VitalKey } from "./healthMonitor";
 
 const iso = (i: number) => new Date(Date.UTC(2026, 5, 1 + i)).toISOString().slice(0, 10);
 /** Deterministic ±1 wobble. */
@@ -87,5 +87,22 @@ describe("healthMonitor", () => {
     expect(r.inRange).toBeLessThanOrEqual(2);
     expect(r.illness.level).toBe("raised");
     expect(r.illness.baselineTrusted).toBe(true);
+  });
+
+  it("watches each vital on the side that means something", () => {
+    // A cooler night, a quieter heart, a higher HRV and slower breathing are not warnings; the other side is.
+    expect(isVitalConcern("skinTempDev", "low")).toBe(false);
+    expect(isVitalConcern("skinTempDev", "high")).toBe(true);
+    expect(isVitalConcern("restingHr", "low")).toBe(false);
+    expect(isVitalConcern("restingHr", "high")).toBe(true);
+    expect(isVitalConcern("hrv", "high")).toBe(false);
+    expect(isVitalConcern("hrv", "low")).toBe(true);
+    expect(isVitalConcern("resp", "low")).toBe(false);
+    expect(isVitalConcern("resp", "high")).toBe(true);
+    expect(isVitalConcern("spo2", "low")).toBe(true);
+    for (const key of Object.keys(VITAL_WATCH) as VitalKey[]) {
+      expect(isVitalConcern(key, "in_range")).toBe(false);
+      expect(isVitalConcern(key, "no_data")).toBe(false);
+    }
   });
 });
