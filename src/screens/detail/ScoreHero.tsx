@@ -25,7 +25,8 @@ import { GlowCard } from "./ios";
 import { strainWord } from "./lines";
 
 /** The ring and its stroke (Apple's tenth of the diameter), the number in its 136 px hole. */
-const RING = 172;
+export const HERO_RING = 172;
+const RING = HERO_RING;
 const STROKE = 18;
 /** The hole the number and the field (Sleep's sky, Activity's pulses) share. */
 const HOLE = RING - STROKE * 2;
