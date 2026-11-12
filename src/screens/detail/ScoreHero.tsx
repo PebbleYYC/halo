@@ -121,7 +121,7 @@ export function ScoreHero({ variant, value, reason, nightsLeft, provisional, tag
       <View accessible accessibilityRole="image" accessibilityLabel={aria}>
         <ActivityRings size={RING} stroke={STROKE} motionKey={`hero:${variant}`} rings={[{ progress: frac, color: inks.fill, track: alpha(inks.fill, 0.18), segments, ticks, tickColor: alpha(calm.ink, 0.85) }]}>
           {/* Sleep's sky and Activity's pulses, under the number: they arrive with the ring and settle (HeroField). */}
-          {!loading && !empty && (sleep || strain) ? <HeroField kind={sleep ? "stars" : "pulse"} size={HOLE} color={sleep ? calm.ink : inks.fill} motionKey={variant} /> : null}
+          {!loading && !empty && (sleep || strain) ? <HeroField kind={sleep ? "stars" : "wave"} size={HOLE} color={sleep ? calm.ink : inks.fill} /> : null}
           {loading ? (
             <SkeletonText role="valueHero" size={NUMBER} lineHeight={NUMBER_LINE} chars={2.4} />
           ) : empty ? (
