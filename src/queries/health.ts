@@ -1,5 +1,6 @@
 // Health hub and its four detail screens (spec §7.6–7.10). Ported from Halo's src/server/queries/health.ts.
 import { fitnessLevel } from "@/core/algorithms/fitnessLevel";
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import { HEALTHSPAN_TERM_COUNT, healthspanConfig, type HealthspanContribution } from "@/core/algorithms/healthspan";
 import { minuteMeanHr } from "@/core/algorithms/stress";
 import { minAcuteDays, minChronic } from "@/core/scoring/readiness";
@@ -359,10 +360,13 @@ export async function getMonitor(day: string, ctx: QueryCtx, preloaded?: Map<str
       // Ranges always show one decimal, so a whole-number reading never looks equal to its bound.
       const lo = num(range.low, 1, v.signed);
       const hi = num(range.high, 1, v.signed);
+      // Out of range on the harmless side (a cooler night, a higher HRV) is said plainly, in neutral: it is unusual,
+      // not a warning, and dressing it as one is how a cool night came to read as an early sign of illness.
+      const watched = isVitalConcern(v.key, status);
       if (v.key === "spo2" && status === "low" && value < 95) chip = { tone: "warning", text: "Below 95%" };
       else if (status === "in_range") chip = { tone: "optimal", text: v.key === "spo2" ? `Within ${lo} - 100` : `Within ${lo} - ${hi}` };
-      else if (status === "high") chip = { tone: "warning", text: `Elevated, above ${hi}` };
-      else if (status === "low") chip = { tone: "warning", text: `Low, below ${lo}` };
+      else if (status === "high") chip = { tone: watched ? "warning" : "neutral", text: watched ? `Elevated, above ${hi}` : `Above ${hi}, nothing to flag` };
+      else if (status === "low") chip = { tone: watched ? "warning" : "neutral", text: watched ? `Low, below ${lo}` : `Below ${lo}, nothing to flag` };
     }
     const reason = v.key === "skinTempDev" && row?.metrics?.nightlyTempC != null ? "calibrating" : vitalReason(row, isToday, v.key === "hrv");
     const tags = hm && hm.reason === null && hm.stale.includes(v.key === "restingHr" ? "rhr" : v.key === "skinTempDev" ? "skinTemp" : v.key) ? (["stale_baseline"] as const) : [];
@@ -387,7 +391,15 @@ export async function getMonitor(day: string, ctx: QueryCtx, preloaded?: Map<str
   else if (hm.reason !== null) count = none(nightReason(hm.reason, isToday));
   else {
     const raised = illnessRaised(hm);
-    count = ok({ inRange: hm.inRange, total: vitals.filter((v) => v.status !== "no_data").length || VITALS.length, outOfRange: hm.flagged, status: raised ? "illness" : hm.flagged ? "out" : "within" });
+    // Counted here rather than taken from the row, so a night scored before the watch sides existed reads right too.
+    const concerns = vitals.filter((v) => isVitalConcern(v.key, v.status)).length;
+    const unusual = vitals.filter((v) => (v.status === "high" || v.status === "low") && !isVitalConcern(v.key, v.status)).length;
+    count = ok({
+      inRange: hm.inRange,
+      total: vitals.filter((v) => v.status !== "no_data").length || VITALS.length,
+      outOfRange: concerns,
+      status: raised ? "illness" : concerns ? "out" : unusual ? "unusual" : "within",
+    });
   }
   return {
     day,

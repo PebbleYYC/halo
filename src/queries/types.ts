@@ -431,7 +431,8 @@ export type HealthspanVM = {
 export type MonitorVM = {
   day: string;
   isToday: boolean;
-  count: Metric<{ inRange: number; total: number; status: "within" | "out" | "illness"; outOfRange: number }>;
+  /** "unusual": every vital out of range is on its harmless side, so the count is short but there is nothing to raise. */
+  count: Metric<{ inRange: number; total: number; status: "within" | "out" | "unusual" | "illness"; outOfRange: number }>;
   illness: { level: string; score: number } | null;
   vitals: Vital[];
   heartRhythm: HeartRhythm;

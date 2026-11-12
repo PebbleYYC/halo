@@ -28,6 +28,8 @@ import { VitalTiles, VitalTilesSkeleton } from "./VitalTiles";
 // The illness alert below the count names the illness signal.
 const CHIP = {
   within: { tone: "optimal", text: "Within range" },
+  // Outside the range, but only on a side that means nothing: said plainly, and the ring stays green.
+  unusual: { tone: "neutral", text: "Nothing to flag" },
   out: { tone: "warning", text: "Out of range" },
   illness: { tone: "alert", text: "Out of range" },
 } as const;
@@ -43,7 +45,7 @@ function Count({ count }: { count: MonitorVM["count"] | undefined }) {
   const v = count?.value ?? null;
   const reason = count && !v ? reasonCopy(count.reason) : null;
   const chip = v ? CHIP[v.status] : null;
-  const color = !v ? c.system.gray : v.status === "within" ? c.system.green : v.status === "out" ? c.system.orange : c.system.red;
+  const color = !v ? c.system.gray : v.status === "within" || v.status === "unusual" ? c.system.green : v.status === "out" ? c.system.orange : c.system.red;
   return (
     <Card style={{ alignSelf: "stretch" }}>
       <View style={{ gap: 14 }}>

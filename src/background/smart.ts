@@ -3,6 +3,7 @@
 // The gates are ported from noop's notif/StrainTargetNotifier.kt, notif/IllnessAlertNotifier.kt,
 // notif/ScheduledReportNotifier.kt and alarm/WindDownScheduler.kt (© 2026 NoopApp, PolyForm Noncommercial 1.0.0); the
 // copy and the inputs (strain_target, health_monitor, the reports, sleep_planner) are Halo's own.
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import { isoWeek, type Report } from "@/core/algorithms/reports";
 import { toStrainScale } from "@/core/scoring/strain";
 import type { ScoreRow } from "@/data/store";
@@ -22,7 +23,8 @@ export type MonitorState = { level: MonitorLevel; names: string[] };
 /** A night's Health Monitor as Home's card reads it: the illness flag, else vitals out of range, else clear; null with no result. */
 export function monitorState(hm: ScoreRow["health_monitor"] | undefined): MonitorState | null {
   if (!hm || hm.reason !== null) return null;
-  const out = hm.vitals.filter((v) => v.status === "high" || v.status === "low");
+  // Only the side that matters: a night that ran cool or quiet is no reason to send a notification.
+  const out = hm.vitals.filter((v) => isVitalConcern(v.key, v.status));
   return { level: illnessRaised(hm) ? "illness" : out.length ? "flagged" : "clear", names: out.map((v) => VITAL_LABEL[v.key]) };
 }
 

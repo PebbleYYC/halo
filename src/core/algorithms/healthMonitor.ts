@@ -19,6 +19,27 @@ export const healthMonitorConfig = {
 export type VitalKey = "restingHr" | "hrv" | "resp" | "spo2" | "skinTempDev";
 export type VitalStatus = "in_range" | "high" | "low" | "no_data";
 
+/**
+ * The side of each vital worth raising: every one of them means something in one direction only. A night below your
+ * usual resting heart rate, above your usual HRV, breathing slower or running cooler is a good night or a cool room,
+ * not an early sign of illness — so a reading there is reported as unusual and never flagged. SpO2 is already
+ * one-sided in the range itself.
+ */
+export const VITAL_WATCH: Record<VitalKey, "high" | "low"> = {
+  restingHr: "high",
+  hrv: "low",
+  resp: "high",
+  spo2: "low",
+  skinTempDev: "high",
+};
+
+/**
+ * Whether a reading is on the side that matters, as opposed to merely outside the range. Kept out of `flagged`,
+ * which stays the web app's plain count of readings outside the range (the pipeline is pinned to it); what Halo
+ * raises to you is decided from this.
+ */
+export const isVitalConcern = (key: VitalKey, status: VitalStatus): boolean => status === VITAL_WATCH[key];
+
 /** One night, oldest first; the last row is the night being shown. */
 export interface HealthMonitorDay extends IllnessDay {
   /** Nightly SpO2, %. */
@@ -40,7 +61,7 @@ export interface HealthMonitorResult {
   vitals: VitalReading[];
   /** "N of 5 in range". */
   inRange: number;
-  /** Vitals that are high or low. */
+  /** Vitals out of range, either way. What is worth raising is the watch side of it (VITAL_WATCH). */
   flagged: number;
   illness: IllnessResult & { baselineTrusted: boolean };
 }

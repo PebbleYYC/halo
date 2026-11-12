@@ -2,6 +2,7 @@
 import { clock } from "@/lib/format";
 import { addDays, localMinutes } from "@/lib/time";
 import { energyBand } from "@/core/algorithms/energyBank";
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import {
   BODY_METRICS,
   DASHBOARD_DEFAULT,
@@ -226,7 +227,8 @@ export const illnessRaised = (hm: DayRow["healthMonitor"]) =>
 function monitorAlert(row: DayRow | undefined): HomeVM["monitorAlert"] {
   const hm = row?.healthMonitor;
   if (!hm || hm.reason !== null) return null;
-  const flagged = hm.vitals.filter((v) => v.status === "high" || v.status === "low");
+  // Only the side that matters: a cooler night or a higher HRV is unusual, not something to warn about.
+  const flagged = hm.vitals.filter((v) => isVitalConcern(v.key, v.status));
   const illness = illnessRaised(hm);
   if (!illness && !flagged.length) return null;
   return { kind: illness ? "illness" : "flagged", count: flagged.length, names: flagged.map((v) => VITAL_LABEL[v.key]) };

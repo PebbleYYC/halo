@@ -23,7 +23,8 @@ const ICON: Record<VitalKey, LucideIcon> = { resp: Wind, spo2: Droplet, restingH
 /** Each vital's system colour, as Apple colours its vitals: breathing indigo, oxygen and HRV blue, heart pink, skin orange. */
 const TINT: Record<VitalKey, CalmTint> = { resp: "lavender", spo2: "sky", restingHr: "rose", hrv: "sky", skinTempDev: "peach" };
 const FORMAT: Record<VitalKey, FormatKey> = { resp: "decimal1", spo2: "int", restingHr: "int", hrv: "int", skinTempDev: "signed1" };
-const NOTE = "Resting heart rate, HRV and skin temperature use the data’s own personal ranges when it brings them (Health Connect doesn’t); otherwise your range is your baseline ± 2 SD over 60 nights.";
+const NOTE =
+  "Resting heart rate, HRV and skin temperature use the data’s own personal ranges when it brings them (Health Connect doesn’t); otherwise your range is your baseline ± 2 SD over 60 nights. Each vital is only raised on the side that means something: a quieter heart, a higher HRV, slower breathing or a cooler night is shown but not flagged.";
 
 /** A tile's name: the reference app's tiles abbreviate the two heart metrics ("RHR", "HRV"); the sheet keeps the full name. */
 const tileName = (x: { key: VitalKey; short: string; label: string }) => (x.key === "restingHr" || x.key === "hrv" ? x.short : x.label);
