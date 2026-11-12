@@ -350,8 +350,9 @@ function drawOrb(size: number, delta: number | null, small: boolean, rgb: (t: Co
   const seed = 3 + (Math.abs(Math.round((delta ?? 0) * 10)) % 89);
   const t = SETTLED_T;
 
-  // The outline.
-  const rTab = Array.from({ length: STEPS + 1 }, (_, i) => R * blobRadius((i / STEPS) * Math.PI * 2, t, seed, small, 1));
+  // The outline: a circle, the size of Sleep's and Activity's ring, so the three heroes are one shape (no wobble,
+  // hence the zero). Everything inside it still moves, and with no dip in the edge every particle is free to turn.
+  const rTab = Array.from({ length: STEPS + 1 }, (_, i) => R * blobRadius((i / STEPS) * Math.PI * 2, t, seed, small, 0));
   let blob = "";
   for (let i = 0; i < STEPS; i++) {
     const ang = (i / STEPS) * Math.PI * 2;

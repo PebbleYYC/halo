@@ -44,8 +44,11 @@ describe("outlookText, evening", () => {
     );
   });
 
-  it("calls a day stressful at a quarter of still time in high stress, and skips a thin stress record", () => {
-    expect(outlookText({ ...ev, stress: { lowMin: 100, mediumMin: 50, highMin: 60, longestHigh: null } })?.body).toContain("the day has been stressful");
+  it("calls a day stressful only once stress has run as long as calm, and skips a thin stress record", () => {
+    expect(outlookText({ ...ev, stress: { lowMin: 50, mediumMin: 40, highMin: 60, longestHigh: null } })?.body).toContain("the day has been stressful");
+    // More calm than stress is not a stressful day, however the stressed minutes stack up.
+    expect(outlookText({ ...ev, stress: { lowMin: 165, mediumMin: 27, highMin: 73, longestHigh: null } })?.body).toContain("the day has been mostly calm, with stressful stretches");
+    expect(outlookText({ ...ev, stress: { lowMin: 100, mediumMin: 50, highMin: 60, longestHigh: null } })?.body).toContain("the day has been a mix of calm and busy, with stressful stretches");
     expect(outlookText({ ...ev, stress: { lowMin: 10, mediumMin: 5, highMin: 5, longestHigh: null } })).toBeNull();
   });
 });

@@ -77,7 +77,11 @@ function evening(i: OutlookInput): string[] {
   const s = i.stress;
   if (s && s.lowMin + s.mediumMin + s.highMin >= 30) {
     const total = s.lowMin + s.mediumMin + s.highMin;
-    const mood = s.highMin / total >= 0.25 ? "stressful" : s.lowMin / total >= 0.6 ? "mostly calm" : "a mix of calm and busy";
+    // Whichever ran longer gets the verdict: a day with more calm in it than stress is not a stressful day, however
+    // the stressed minutes stack up. Stressful stretches inside a calm day are said as exactly that.
+    const stretches = s.highMin / total >= 0.2;
+    const calm = s.lowMin / total;
+    const mood = s.highMin >= s.lowMin ? "stressful" : stretches ? (calm >= 0.5 ? "mostly calm, with stressful stretches" : "a mix of calm and busy, with stressful stretches") : calm >= 0.6 ? "mostly calm" : "a mix of calm and busy";
     const peak = s.longestHigh && s.longestHigh.minutes >= 15 ? ` Your most stressful stretch was ${minutesText(s.longestHigh.minutes)} around ${s.longestHigh.at}.` : "";
     out.push(`While you were still, the day ${i.isToday ? "has been" : "was"} ${mood}: ${minutesText(s.lowMin)} calm, ${minutesText(s.mediumMin)} focused, ${minutesText(s.highMin)} stressed.${peak}`);
   }

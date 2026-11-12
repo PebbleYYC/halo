@@ -15,15 +15,19 @@ import { useCalm, type CalmPalette, type CalmTint } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { softFill } from "@/ui/components/calmKit";
 import { font } from "@/ui/fonts";
+import { HERO_RING } from "@/screens/detail/ScoreHero";
 import { AgeOrb } from "./AgeOrb";
+import { ORB } from "./orb";
 import { AgeRuler } from "./AgeRuler";
 import { ageDelta } from "./format";
 import { PillAction } from "@/ui/components/CalmSurface";
 import { CardHead } from "./kit";
 
 /** The orb's box for a body about the rings' 172 px across (the body fills ~89 % of its box), and the glow margin around it. */
-const ORB_BOX = 194;
-const ORB_MARGIN = 10;
+// The orb's body is drawn at ORB.shape.radius of its box, so the box is the ring's 172 px grossed up: the body comes
+// out the size of Sleep's and Activity's ring, and the margin is the glow's room around it.
+const ORB_BOX = Math.round(HERO_RING / ORB.shape.radius);
+const ORB_MARGIN = Math.round((ORB_BOX - HERO_RING) / 2);
 
 /** Older than your age (after rounding to a tenth) reads in orange; younger or level in green. */
 function pulseAgeTint(deltaYears: number | null | undefined): CalmTint {
