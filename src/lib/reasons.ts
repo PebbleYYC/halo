@@ -1,4 +1,5 @@
 // Ported from Halo's src/lib/reasons.ts (icons dropped: the mobile app maps a ReasonCode to a lucide icon itself).
+import { isRebuilding, REBUILDING_COPY } from "./rebuilding";
 export const REASON_CODES = [
   "calibrating",
   "no_hrv_last_night",
@@ -42,6 +43,10 @@ export function normalizeReason(code: string | null | undefined): ReasonCode {
 
 export function reasonCopy(code: string | null | undefined, nightsLeft?: number) {
   const key = normalizeReason(code);
+  // A re-import clears each day before writing it back, so while one runs every value is missing at once. Saying the
+  // night has not synced would blame the band for Halo's own housekeeping, and reads as lost data. Calibrating is
+  // about nights of baseline, which a re-import does not change, so it still speaks for itself.
+  if (key !== "calibrating" && isRebuilding()) return { code: key, short: REBUILDING_COPY.short, long: REBUILDING_COPY.long };
   const r = REASONS[key];
   return { code: key, short: r.short, long: r.long(nightsLeft) };
 }
