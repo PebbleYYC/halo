@@ -36,10 +36,13 @@ const DRAW_EASE = Easing.bezier(0.16, 1, 0.3, 1);
 
 /** A ring's draw-on: a spring of about 0.6 s (Reanimated's perceptual 400 ms is 1.5× in real time) with a slight overshoot. */
 export const RING_SPRING = { duration: 400, dampingRatio: 0.74 } as const;
+
+/** Drawing a ring on when you arrive: slow enough to watch, and with the stagger the last ring lands at about 1 s. */
+export const RING_DRAW = { duration: 840, easing: Easing.out(Easing.cubic) } as const;
 /** Rings in a set start this far apart. */
 export const RING_STAGGER = 80;
-/** About when a ring's spring has landed: a number rolling beside it takes this long, so the two arrive together. */
-export const RING_LAND_MS = 650;
+/** About when a ring's draw has landed: a number rolling beside it takes this long, so the two arrive together. */
+export const RING_LAND_MS = 840;
 /** Apple's proportion: a ring's stroke is at least this share of its diameter. */
 export const RING_STROKE = 0.1;
 
@@ -56,12 +59,14 @@ const fracOf = (v: number | null | undefined) => (v === null || v === undefined 
  * A ring's progress on the UI thread: from empty on mount (at its value at once when `still`), then from where it is
  * to each new value, on the ring spring after `delay`; at once under reduce motion.
  */
-function useRingProgress(target: number, delay: number, still: boolean, motionKey?: string): SharedValue<number> {
+function useRingProgress(target: number, delay: number, still: boolean, motionKey?: string, ready = true): SharedValue<number> {
   const [atRest] = React.useState(() => still || reduceMotionNow());
   const p = useSharedValue(atRest ? target : 0);
   const mounted = React.useRef(false);
   const focused = useIsFocused();
-  const wasOnScreen = React.useRef(false);
+  // Whether this ring has already been watched reaching its value on this visit, and whether it is on screen.
+  const drawn = React.useRef(atRest);
+  const onScreen = React.useRef(false);
   React.useEffect(() => {
     const first = !mounted.current;
     mounted.current = true;
@@ -69,15 +74,35 @@ function useRingProgress(target: number, delay: number, still: boolean, motionKe
       p.set(target);
       return;
     }
+    if (!motionKey) {
+      p.set(withDelay(delay, withSpring(target, RING_SPRING)));
+      return () => cancelAnimation(p);
+    }
     // A ring with a key of its own draws on when you arrive at its screen after a while away. Tabs stay mounted, so
     // without this it would fill once per launch; drawing it on every glance would be noise, hence the quiet window.
-    const arrived = !!motionKey && focused && !wasOnScreen.current;
-    wasOnScreen.current = focused;
-    if (motionKey && !focused) return;
-    if (arrived && freshLook(`ring:${motionKey}`)) p.set(0);
-    p.set(withDelay(arrived ? delay : 0, withSpring(target, RING_SPRING)));
+    if (onScreen.current && !focused) {
+      onScreen.current = false;
+      drawn.current = false;
+    }
+    if (!focused) return;
+    // Nothing to draw yet: an empty ring waits rather than filling to zero and jumping when the day's figures land.
+    if (!ready) return;
+    const arriving = !drawn.current;
+    onScreen.current = true;
+    drawn.current = true;
+    if (arriving) {
+      if (freshLook(`ring:${motionKey}`)) {
+        p.set(0);
+        p.set(withDelay(delay, withTiming(target, RING_DRAW)));
+      } else {
+        p.set(target);
+      }
+      return () => cancelAnimation(p);
+    }
+    // A figure that changes while you watch sweeps to its new place.
+    p.set(withSpring(target, RING_SPRING));
     return () => cancelAnimation(p);
-  }, [target, delay, atRest, p, focused, motionKey]);
+  }, [target, delay, atRest, p, focused, motionKey, ready]);
   return p;
 }
 
@@ -361,7 +386,7 @@ export function ActivityRings({ size, rings, stroke, gap, arc, delay = 0, still,
 }
 
 function SetRing({ id, ring, cx, cy, r, stroke, arc, delay, still, motionKey }: { id: string; ring: RingSpec; cx: number; cy: number; r: number; stroke: number; arc?: { start: number; sweep: number }; delay: number; still: boolean; motionKey?: string }) {
-  const p = useRingProgress(fracOf(ring.progress), delay, still, motionKey);
+  const p = useRingProgress(fracOf(ring.progress), delay, still, motionKey, ring.progress !== null && ring.progress !== undefined);
   const key = ring.colors?.length ? ring.colors.join("|") : ring.color;
   const stops = React.useMemo<readonly string[]>(() => (ring.colors?.length ? ring.colors : ringShades(ring.color)),
     // Keyed on the colours' content, not the array's identity.
