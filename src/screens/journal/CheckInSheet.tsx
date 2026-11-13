@@ -11,7 +11,7 @@ import * as React from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useGlobalSearchParams, useRouter, type Href } from "expo-router";
-import { Check, ChevronRight, NotebookPen } from "lucide-react-native";
+import { Check, ChevronRight, Minus, NotebookPen, Plus } from "lucide-react-native";
 import { dayHref } from "@/lib/day";
 import { DAY, dayLabel as dayWord, formatDay } from "@/lib/format";
 import { useApp, useQueryCtx } from "@/state/app";
@@ -29,6 +29,8 @@ import { dosesOn, type Dose } from "@/queries/log";
 import type { ActionCtx } from "./actions";
 import { bumpJournal, openCheckIn, useOpenCheckInListener } from "./state";
 import { TAG_GROUPS, tagIcon } from "./tags";
+import { countedTag, isCountedTag } from "@/lib/behaviours";
+import { font } from "@/ui/fonts";
 
 export { openCheckIn } from "./state";
 
@@ -337,6 +339,9 @@ export function CheckInSheetHost() {
                           </Txt>
                           <YesNo label={t.label} compact value={values[t.tag]} onChange={(v) => setValues((s) => ({ ...s, [t.tag]: v }))} />
                         </View>
+                        {isCountedTag(t.tag) && Number(values[t.tag]) > 0 && (
+                          <CountRow tag={t.tag} value={Number(values[t.tag])} onChange={(n) => setValues((s) => ({ ...s, [t.tag]: n }))} />
+                        )}
                         {g.key === "medicine" && data && (
                           <MedicineDoses
                             tag={t.tag}
@@ -380,6 +385,46 @@ export function CheckInSheetHost() {
         ]}
       />
     </>
+  );
+}
+
+/**
+ * Under a counted behaviour (alcohol) once it is answered Yes: "How many drinks?" with a stepper. Yes is one; − at one
+ * stays at one (No clears it), + counts up to the behaviour's limit. The value is the entry itself, so the count is
+ * what gets saved and what the impact and the badges read.
+ */
+function CountRow({ tag, value, onChange }: { tag: string; value: number; onChange: (n: number) => void }) {
+  const c = useCalm();
+  const spec = countedTag(tag);
+  if (!spec) return null;
+  const set = (n: number) => {
+    haptic();
+    onChange(Math.max(1, Math.min(spec.max, n)));
+  };
+  const round = (icon: typeof Minus, label: string, disabled: boolean, onPress: () => void) => (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      hitSlop={4}
+      style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, backgroundColor: c.card, alignItems: "center", justifyContent: "center", opacity: disabled ? 0.4 : pressed ? 0.6 : 1 })}
+    >
+      {React.createElement(icon, { size: 16, color: c.teal, strokeWidth: 2.6 })}
+    </Pressable>
+  );
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 14 + 30 + 12, paddingRight: 14, paddingBottom: 12, marginTop: -2 }}>
+      <Txt size={15} lineHeight={20} style={{ flex: 1, minWidth: 0, color: c.sub }}>
+        {spec.question}
+      </Txt>
+      {round(Minus, `One fewer ${spec.noun}`, value <= 1, () => set(value - 1))}
+      <Txt size={16} lineHeight={21} accessibilityLabel={`${value} ${value === 1 ? spec.noun : spec.nounPlural}`} style={[font.numeric(600), { minWidth: 56, textAlign: "center", color: c.ink }]}>
+        {`${value} ${value === 1 ? spec.noun : spec.nounPlural}`}
+      </Txt>
+      {round(Plus, `One more ${spec.noun}`, value >= spec.max, () => set(value + 1))}
+    </View>
   );
 }
 

@@ -4,18 +4,20 @@ import { DAY, formatDay } from "@/lib/format";
 import { wall } from "@/lib/time";
 import { fluidFromInput, METRIC, type Units, weightFromInput } from "@/lib/units";
 import type { LogKind, Meal } from "@/queries/log";
+import { isCountedTag } from "@/lib/behaviours";
 import type { FoodItemInput, LogInput } from "./actions";
 
 export type Values = Record<string, number | undefined>;
 
 /**
- * The answers Save writes: each tag whose value differs from the saved one, as yes/no, or null where a
- * saved answer was cleared (it is deleted, so it reads as "not answered", not "no").
+ * The answers Save writes: each tag whose value differs from the saved one. A counted behaviour (alcohol) keeps its
+ * number, so "3 drinks" persists; every other tag is yes/no; null where a saved answer was cleared (it is deleted,
+ * so it reads as "not answered", not "no").
  */
-export function changedEntries(values: Values, saved: Record<string, number>): [string, boolean | null][] {
+export function changedEntries(values: Values, saved: Record<string, number>): [string, boolean | number | null][] {
   return Object.entries(values)
     .filter(([t, v]) => v !== saved[t])
-    .map(([t, v]) => [t, v === undefined ? null : v > 0]);
+    .map(([t, v]) => [t, v === undefined ? null : isCountedTag(t) ? v : v > 0]);
 }
 
 /** The wall clock now in `timeZone`, as `YYYY-MM-DD HH:mm` (the web's datetime-local value, with a space). */

@@ -18,6 +18,16 @@ describe("changedEntries", () => {
   it("an unsaved pick cleared again sends nothing", () => {
     expect(changedEntries({ alcohol: undefined }, {})).toEqual([]);
   });
+
+  it("keeps a counted behaviour's number but collapses the rest to yes/no", () => {
+    expect(changedEntries({ alcohol: 3, sauna: 2 }, {})).toEqual([
+      ["alcohol", 3],
+      ["sauna", true],
+    ]);
+    // A drinks count that changes is a change even though both are "yes".
+    expect(changedEntries({ alcohol: 5 }, { alcohol: 1 })).toEqual([["alcohol", 5]]);
+    expect(changedEntries({ alcohol: 1 }, { alcohol: 1 })).toEqual([]);
+  });
 });
 
 describe("toInput", () => {

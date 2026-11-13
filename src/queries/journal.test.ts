@@ -45,9 +45,9 @@ describe("getJournal", () => {
     expect(vm.strip).toHaveLength(30);
     expect(vm.strip[0].day).toBe(addDays(TODAY, -29));
     expect(vm.strip.filter((s) => s.done).map((s) => s.day)).toEqual(["2026-10-01", TODAY]);
-    expect(vm.checkIn).toEqual({ done: true, entries: { alcohol: 1, sauna: 0 }, yes: [{ tag: "alcohol", label: "Alcohol" }] });
+    expect(vm.checkIn).toEqual({ done: true, entries: { alcohol: 1, sauna: 0 }, yes: [{ tag: "alcohol", label: "Alcohol · 1" }] });
     expect(vm.history).toEqual([
-      { day: TODAY, yes: ["Alcohol"] },
+      { day: TODAY, yes: ["Alcohol · 1"] },
       { day: "2026-10-01", yes: [] },
     ]);
     expect(vm.teaser).toEqual({ ready: false, text: "Insights appear after 5 days with and 5 without a behaviour." });
