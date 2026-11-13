@@ -4,6 +4,7 @@
 import { armDiff, type ImpactMetric, type TagImpact } from "@/core/algorithms/journalImpact";
 import type { JournalEntry } from "@/data/types";
 import type { JournalTagRow, Store } from "@/data/store";
+import { yesLabel } from "@/lib/behaviours";
 import { isMedicineTag, medicineTag, withMedicineNoDays } from "@/lib/medicine";
 import { addDays, localMinutes } from "@/lib/time";
 import type { JournalImpactRow } from "@/pipeline/types";
@@ -148,7 +149,8 @@ export async function getJournal(day: string, ctx: QueryCtx): Promise<JournalVM>
   const strip: JournalVM["strip"] = [];
   for (let d = stripStart; d <= today; d = addDays(d, 1)) strip.push({ day: d, done: byDay.has(d) });
   const mine = byDay.get(day) ?? [];
-  const yesOf = (es: typeof entries) => es.filter((e) => e.value > 0).map((e) => ({ tag: e.tag, label: label.get(e.tag) ?? e.tag }));
+  const yesOf = (es: typeof entries) =>
+    es.filter((e) => e.value > 0).map((e) => ({ tag: e.tag, label: yesLabel(e.tag, label.get(e.tag) ?? e.tag, e.value) }));
 
   const strongest = impact?.impacts.find((t) => t.effects.recovery.label === "positive" || t.effects.recovery.label === "negative");
   const teaser = strongest
