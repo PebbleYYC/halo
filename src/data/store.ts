@@ -89,7 +89,10 @@ export interface Store {
   // `source: "health_connect"`, read-only: Halo never deletes them one by one, and never writes them back.
   addLoggedEntries(rows: LoggedEntryRow[]): Promise<void>;
   /** Entries of every source with ts >= fromTs, newest first (ts, then createdAt, descending), at most `limit`. */
-  loggedEntries(fromTs: number, limit?: number): Promise<LoggedEntryRow[]>;
+  /** Newest first from `fromTs`; `toTs` (exclusive) bounds it above, so one old day reads whole however much came after. */
+  loggedEntries(fromTs: number, limit?: number, toTs?: number): Promise<LoggedEntryRow[]>;
+  /** One logged entry by its id, however old and however many came after it; null when it is gone. */
+  loggedEntry(id: string): Promise<LoggedEntryRow | null>;
   /** Deletes one entry; returns it, or null when there was none. */
   deleteLoggedEntry(id: string): Promise<LoggedEntryRow | null>;
   /**

@@ -258,7 +258,7 @@ function SheetRow({ action, first, onDone }: { action: SheetAction; first: boole
       accessibilityRole="button"
     >
       <Animated.View style={[{ minHeight: 56, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: c.line }, pressed]}>
-        <Txt size={18} lineHeight={23} weight={action.destructive ? 500 : 400} align="center" style={{ color: action.destructive ? c.system.red : c.teal }}>
+        <Txt size={17} lineHeight={22} weight={action.destructive ? 500 : 400} align="center" style={{ color: action.destructive ? c.system.red : c.teal }}>
           {action.label}
         </Txt>
       </Animated.View>
@@ -348,7 +348,7 @@ export function ActionSheet({ open, onClose, title, message, actions, cancelLabe
             ))}
           </View>
           <Pressable onPress={onClose} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 56, borderRadius: SHEET_RADIUS, backgroundColor: face, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.6 : 1 })}>
-            <Txt size={18} lineHeight={23} weight={600} style={{ color: c.teal }}>
+            <Txt size={17} lineHeight={22} weight={600} style={{ color: c.teal }}>
               {cancelLabel}
             </Txt>
           </Pressable>

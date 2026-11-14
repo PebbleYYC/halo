@@ -104,7 +104,7 @@ function InfoCard({ open, onClose, onClosed, title, body, icon, chip, action }: 
               <ScrollView contentContainerStyle={{ padding: 24 }} bounces={false}>
                 {icon && <View style={{ marginBottom: 16 }}>{icon}</View>}
                 <View style={{ marginBottom: 12, gap: 8, paddingRight: 40 }}>
-                  <Txt size={18} lineHeight={24} weight={600} style={{ color: c.ink }}>
+                  <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
                     {title}
                   </Txt>
                   {chip && <StatusChip tone={chip.tone}>{chip.text}</StatusChip>}

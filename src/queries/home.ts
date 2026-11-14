@@ -238,7 +238,7 @@ function monitorSummary(row: DayRow | undefined, isToday: boolean): HomeVM["moni
   const hm = row?.healthMonitor;
   if (!hm) return none(isToday ? "awaiting_sleep_sync" : "band_not_worn");
   if (hm.reason !== null) return none(nightReason(hm.reason, isToday));
-  return ok({ inRange: hm.inRange, total: hm.vitals.length, flagged: hm.flagged });
+  return ok({ inRange: hm.inRange, total: hm.vitals.length, flagged: hm.vitals.filter((v) => isVitalConcern(v.key, v.status)).length });
 }
 
 /** `series` is the day's stored energy_bank minute series (loadSeries), fetched by the caller alongside its other reads. */

@@ -170,7 +170,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const running = React.useRef<Promise<void> | null>(null);
   /** A live refresh in flight: the ticker and a tap never stack reads. */
   const liveBusy = React.useRef(false);
-  const timeZone = React.useMemo(deviceTimeZone, []);
+  // Read again whenever the app comes back to the foreground: after a flight the days, the clock times and "today"
+  // follow the phone without a restart.
+  const [timeZone, setTimeZone] = React.useState(deviceTimeZone);
+  React.useEffect(() => {
+    const sub = RNAppState.addEventListener("change", (next) => {
+      if (next === "active") setTimeZone((tz) => (deviceTimeZone() === tz ? tz : deviceTimeZone()));
+    });
+    return () => sub.remove();
+  }, []);
   const today = localDay(Date.now() / 1000, timeZone);
   // A tapped notification opens its screen once the navigator exists (src/background/links.ts).
   useNotificationDeepLinks();

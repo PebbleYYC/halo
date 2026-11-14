@@ -65,7 +65,7 @@ export function CalorieBreakdown({ total, parts, series, soFar }: CalorieBreakdo
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
         <Num value={formatValue("grouped", total)} unit="kcal" size={30} color={c.tintInk.sky} />
         {soFar && (
-          <Txt size={14} lineHeight={19} weight={500} color={c.sub}>
+          <Txt size={13} lineHeight={18} weight={500} color={c.sub}>
             so far
           </Txt>
         )}

@@ -86,7 +86,12 @@ function useRingProgress(target: number, delay: number, still: boolean, motionKe
     }
     if (!focused) return;
     // Nothing to draw yet: an empty ring waits rather than filling to zero and jumping when the day's figures land.
-    if (!ready) return;
+    // One that was showing a figure and has lost it (a day with no score) empties, rather than keeping the old fill.
+    if (!ready) {
+      if (!drawn.current) return;
+      p.set(withSpring(0, RING_SPRING));
+      return () => cancelAnimation(p);
+    }
     const arriving = !drawn.current;
     onScreen.current = true;
     drawn.current = true;

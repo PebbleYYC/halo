@@ -329,7 +329,7 @@ function RowLink({ label, onPress, accessibilityLabel }: { label: string; onPres
   const c = useCalm();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} hitSlop={{ top: 12, bottom: 12, left: 4, right: 12 }} style={({ pressed }) => ({ alignSelf: "flex-start", marginTop: 4, opacity: pressed ? 0.6 : 1 })}>
-      <Txt size={14} lineHeight={19} weight={500} style={{ color: c.teal }}>
+      <Txt size={13} lineHeight={18} weight={500} style={{ color: c.teal }}>
         {label}
       </Txt>
     </Pressable>
@@ -365,7 +365,7 @@ function FoodRow({ f, today, timeZone, onEdit, onDelete, onSeparate }: { f: Food
           {f.title}
           {f.portion ? <Txt size={15} lineHeight={21} weight={400} style={{ color: c.sub }}>{`  ${f.portion}`}</Txt> : null}
         </Txt>
-        <Txt size={14} lineHeight={19} style={{ color: f.duplicateOf ? c.faint : c.sub, fontVariant: ["tabular-nums"], textDecorationLine: f.duplicateOf ? "line-through" : "none" }}>
+        <Txt size={13} lineHeight={18} style={{ color: f.duplicateOf ? c.faint : c.sub, fontVariant: ["tabular-nums"], textDecorationLine: f.duplicateOf ? "line-through" : "none" }}>
           {numbersOf(f)}
         </Txt>
         <Txt size={13} lineHeight={18} style={{ color: f.duplicateOf ? c.tintInk.sand : c.sub, fontVariant: ["tabular-nums"] }}>
@@ -436,7 +436,7 @@ function MealList({ vm, google, onEdit, onDelete, onSeparate, onAdd }: { vm: Nut
           <Txt size={15} lineHeight={20} weight={600} style={{ color: c.ink }}>
             More from Fitbit’s food log
           </Txt>
-          <Txt size={14} lineHeight={19} style={{ color: c.ink, fontVariant: ["tabular-nums"] }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.ink, fontVariant: ["tabular-nums"] }}>
             {[unlisted.kcal !== null && `${grouped(unlisted.kcal)} kcal`, unlisted.protein !== null && `${grams(unlisted.protein)} g protein`, unlisted.carbs !== null && `${grams(unlisted.carbs)} g carbs`, unlisted.fat !== null && `${grams(unlisted.fat)} g fat`]
               .filter(Boolean)
               .join(" · ")}

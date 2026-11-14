@@ -143,7 +143,7 @@ function Duration({ minutes }: { minutes: number }) {
   const c = useCalm();
   const m = Math.max(0, Math.round(minutes));
   return (
-    <Txt size={18} lineHeight={22} color={c.ink} style={font.numeric(700)}>
+    <Txt size={17} lineHeight={22} color={c.ink} style={font.numeric(700)}>
       {m >= 60 ? hmm(m) : String(m)}
       {m < 60 && (
         <Txt size={12} lineHeight={20} weight={600} color={c.sub}>

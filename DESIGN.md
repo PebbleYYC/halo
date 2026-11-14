@@ -30,6 +30,7 @@ Reading this as: a personal health app for one person checking in a few times a 
 ## Type
 
 - Inter, set to iOS text styles: Large Title 34/41 bold, Title 22/28, Headline 17/22 semibold, Body 17/22, Subhead 15/20, Footnote 13/18, Caption 12/16. Reason: SF Pro is licensed for Apple platforms only, and Inter is the closest open match.
+- Text sits on that ramp and nowhere between: 11, 12, 13, 15, 16, 17, 20, 22, 28, 34. A 14 or an 18 is a 13 or a 17. Only a card's lead number goes larger.
 - Numbers use tabular figures, so values don't jump as they change.
 - Big numbers carry the hierarchy; labels sit quietly beside or under them.
 

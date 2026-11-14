@@ -146,7 +146,7 @@ export function ErrorAlert({ children, action }: { children: string; action?: Re
   const c = useCalm();
   return (
     <View accessibilityRole="alert" style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, borderRadius: 14, backgroundColor: c.tint.rose, paddingHorizontal: 14, paddingVertical: 10 }}>
-      <Txt size={14} lineHeight={19} weight={500} style={{ color: c.tintInk.rose, flexShrink: 1 }}>
+      <Txt size={13} lineHeight={18} weight={500} style={{ color: c.tintInk.rose, flexShrink: 1 }}>
         {children}
       </Txt>
       {action}

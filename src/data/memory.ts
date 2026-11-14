@@ -270,8 +270,12 @@ export class MemoryStore implements Store {
     for (const [id, r] of this.logged) if (r.source === "health_connect" && inRange(r.day, range)) this.logged.delete(id);
     for (const r of rows) this.logged.set(r.id, copy({ ...r, source: "health_connect" }));
   }
-  async loggedEntries(fromTs: number, limit = 50) {
-    const rows = [...this.logged.values()].filter((r) => r.ts >= fromTs).sort((a, b) => b.ts - a.ts || b.createdAt - a.createdAt);
+  async loggedEntry(id: string) {
+    const r = this.logged.get(id);
+    return r ? copy(r) : null;
+  }
+  async loggedEntries(fromTs: number, limit = 50, toTs = Infinity) {
+    const rows = [...this.logged.values()].filter((r) => r.ts >= fromTs && r.ts < toTs).sort((a, b) => b.ts - a.ts || b.createdAt - a.createdAt);
     return copy(rows.slice(0, limit));
   }
   async deleteLoggedEntry(id: string) {

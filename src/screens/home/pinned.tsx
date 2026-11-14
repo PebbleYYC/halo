@@ -73,7 +73,7 @@ export function HealthCard({ icon: Icon, color, title, when, onPress, accessibil
           {title}
         </Txt>
         {when ? (
-          <Txt size={14} lineHeight={19} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
             {when}
           </Txt>
         ) : null}
@@ -136,7 +136,7 @@ export function HealthValue({ text, unit, color, delay = 0 }: { text: string | n
 export function HealthContext({ children, color }: { children: React.ReactNode; color?: string }) {
   const c = useCalm();
   return (
-    <Txt size={14} lineHeight={19} style={{ color: color ?? c.sub, fontVariant: ["tabular-nums"] }}>
+    <Txt size={13} lineHeight={18} style={{ color: color ?? c.sub, fontVariant: ["tabular-nums"] }}>
       {children}
     </Txt>
   );
@@ -180,13 +180,13 @@ function Compare({ diff, diffText, dir, tone, unit, format, avgText, avgLabel }:
   const ink = tone === "good" ? c.tintInk.mint : tone === "bad" ? c.tintInk.sand : c.sub;
   const lead =
     diff === null ? null : !diffText ? (
-      <Txt size={14} lineHeight={19} weight={600} style={{ color: c.sub }}>
+      <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub }}>
         No change
       </Txt>
     ) : (
       <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
         <DeltaGlyph dir={dir === "flat" ? "flat" : diff > 0 ? "up" : "down"} color={dir === "flat" ? c.sub : ink} size={8} />
-        <Txt size={14} lineHeight={19} weight={600} style={[font.numeric(600), { color: dir === "flat" ? c.sub : ink }]}>
+        <Txt size={13} lineHeight={18} weight={600} style={[font.numeric(600), { color: dir === "flat" ? c.sub : ink }]}>
           {`${dir === "flat" ? diffText : absText(format, diff)}${unitText(unit)}`}
         </Txt>
       </View>

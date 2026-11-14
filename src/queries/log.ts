@@ -250,7 +250,7 @@ export async function recentEntries(store: Store, fromTs: number, limit = 50, un
  * added again.
  */
 export async function waterOn(store: Store, day: string, tz: string): Promise<number> {
-  const [values, logged] = await Promise.all([store.dailyValues({ from: day, to: day }), store.loggedEntries(localMidnight(day, tz), 10_000)]);
+  const [values, logged] = await Promise.all([store.dailyValues({ from: day, to: day }), store.loggedEntries(localMidnight(day, tz), 10_000, localMidnight(day, tz) + 2 * 86_400)]);
   const synced = values.find((v) => v.key === "water")?.value ?? 0;
   const pending = logged
     .filter((e) => e.type === "hydration-log" && e.day === day && e.source === "pulse")
@@ -316,7 +316,7 @@ export type Dose = { id: string; ts: number; name: string; dose: string; tag: st
 
 /** The doses logged on `day` (oldest first). */
 export async function dosesOn(store: Store, day: string, timeZone: string): Promise<Dose[]> {
-  const rows = await store.loggedEntries(localMidnight(day, timeZone) - 3600, 5000);
+  const rows = await store.loggedEntries(localMidnight(day, timeZone) - 3600, 5000, localMidnight(day, timeZone) + 2 * 86_400);
   return rows
     .filter((e) => e.type === "medication" && e.day === day)
     .map((e) => {

@@ -2,6 +2,7 @@
 // closure (the model never names a person or a store), each a compact digest of an existing screen query. A metric
 // without a value carries its reason code instead, so the model can say "calibrating" rather than guess. No chart
 // series, ids or raw payloads.
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import { tool, type InferToolOutput } from "ai";
 import { z } from "zod";
 import { trainingGuidance } from "@/core/algorithms/coaching";
@@ -254,7 +255,7 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
           day: d,
           asOf: hub.day,
           trainingLoad: fit.trainingLoad,
-          vitals: mon.vitals.map((v) => ({ vital: v.label, unit: v.unit, ...num(v.metric, 1), status: v.status, range: v.range })),
+          vitals: mon.vitals.map((v) => ({ vital: v.label, unit: v.unit, ...num(v.metric, 1), status: v.status, flagged: isVitalConcern(v.key, v.status), range: v.range })),
           illness: mon.illness,
           pulseAge: { value: hub.healthspan.value ? { years: round(hub.healthspan.value.pulseAge, 1), vsActualAge: round(hub.healthspan.value.deltaYears, 1) } : null, reason: hub.healthspan.reason, provisional: hub.healthspan.provisional },
           vo2max: { value: hub.fitness.value ? { vo2max: round(hub.fitness.value.vo2max, 1), category: hub.fitness.value.category } : null, reason: hub.fitness.reason, provisional: hub.fitness.provisional },

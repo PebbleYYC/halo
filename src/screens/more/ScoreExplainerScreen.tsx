@@ -138,7 +138,7 @@ export default function ScoreExplainerScreen() {
         <Surface tint={look.tint} gap={16} padding={18}>
           <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}>
             <RowIcon icon={look.icon} tint={look.tint} size={44} />
-            <Txt size={18} lineHeight={24} weight={600} style={{ color: c.ink, flex: 1, minWidth: 0 }}>
+            <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink, flex: 1, minWidth: 0 }}>
               {doc.summary}
             </Txt>
           </View>

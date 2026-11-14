@@ -210,7 +210,7 @@ function ScoreLine({ label, value, unit, word, color, order, spoken, onPress }: 
           ) : null}
         </View>
         {word ? (
-          <Txt size={14} lineHeight={20} weight={500} style={{ color: c.sub, marginBottom: 3 }}>
+          <Txt size={13} lineHeight={18} weight={500} style={{ color: c.sub, marginBottom: 3 }}>
             {word}
           </Txt>
         ) : null}
@@ -281,7 +281,7 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
       </View>
       {/* Why a score is missing, as the dials' reason line said it ("Waiting for last night's sleep to sync"). */}
       {dials.reason && (
-        <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+        <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
           {reasonCopy(dials.reason.reason, dials.reason.nightsLeft).long}
         </Txt>
       )}
@@ -463,7 +463,7 @@ function RecoveryWeek({ week, shown }: { week: { day: string; recovery: number |
           </Svg>
         </View>
         {GRID.map((g) => (
-          <Txt key={g} size={10} lineHeight={12} style={[font.numeric(500), { position: "absolute", right: 0, width: AXIS_W - 4, top: H - (g / 100) * H - 6, color: c.sub, textAlign: "right" }]}>
+          <Txt key={g} size={11} lineHeight={13} style={[font.numeric(500), { position: "absolute", right: 0, width: AXIS_W - 4, top: H - (g / 100) * H - 6, color: c.sub, textAlign: "right" }]}>
             {String(g)}
           </Txt>
         ))}

@@ -462,7 +462,7 @@ export function EnergyCard({ vm, timeZone, go }: SlotProps) {
                 <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Num value={formatValue("int", eb.current)} unit="%" size={40} color={ink} />
-                    <Txt size={14} lineHeight={19} style={{ color: c.sub }}>{`${vm.isToday ? "Energy left now" : "Energy left"}, ${ENERGY_WORD[eb.band]}`}</Txt>
+                    <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`${vm.isToday ? "Energy left now" : "Energy left"}, ${ENERGY_WORD[eb.band]}`}</Txt>
                   </View>
                   {meta.provisional && <MetricTags provisional />}
                 </View>

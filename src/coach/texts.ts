@@ -78,7 +78,7 @@ export const TOOL_DOCS: Record<string, ToolDoc> = {
     },
   },
   get_health: {
-    description: "Read dated personal-range vitals and illness signal, Halo Age, VO2 max and training-load status. Use alongside get_day and recent workouts for training advice or conflicting signals. Historical requests must use only measurements on or before that day. No diagnosis; unavailable or provisional signals cannot justify confident advice.",
+    description: "Read dated personal-range vitals and illness signal, Halo Age, VO2 max and training-load status. Use alongside get_day and recent workouts for training advice or conflicting signals. Historical requests must use only measurements on or before that day. A vital outside its range is a concern only when `flagged` is true: a low resting heart rate, a high HRV, slow breathing or a cool skin temperature is unusual, not a warning. No diagnosis; unavailable or provisional signals cannot justify confident advice.",
     params: { day: DAY },
   },
   get_report: {

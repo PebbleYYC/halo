@@ -261,7 +261,7 @@ function BestWorst({ items, open }: { items: NonNullable<ReportVM["bestWorst"]>;
             <Txt size={16} lineHeight={21} weight={600} style={{ color: c.ink }}>
               {b.label}
             </Txt>
-            <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+            <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
               {formatDay(b.day, DAY.short)}
             </Txt>
           </View>

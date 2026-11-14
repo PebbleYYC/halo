@@ -215,7 +215,7 @@ function Note({ icon: Icon, children }: { icon: typeof Info; children: string })
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
       <Icon size={16} color={c.sub} strokeWidth={2} style={{ marginTop: 2 }} />
-      <Txt size={14} lineHeight={19} style={{ flex: 1, color: c.sub }}>
+      <Txt size={13} lineHeight={18} style={{ flex: 1, color: c.sub }}>
         {children}
       </Txt>
     </View>

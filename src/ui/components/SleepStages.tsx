@@ -171,7 +171,7 @@ function Rows({ night, selected, onSelect, timeZone, onExpand }: { night: SleepS
         )}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
           <Caption numberOfLines={1}>Duration</Caption>
-          <Txt size={18} lineHeight={22} style={[font.numeric(700), { color: calm.ink }]}>
+          <Txt size={17} lineHeight={22} style={[font.numeric(700), { color: calm.ink }]}>
             {hmm(span / 60_000)}
           </Txt>
         </View>

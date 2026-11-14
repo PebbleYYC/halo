@@ -263,7 +263,7 @@ export async function updateFoodEntry(c: ActionCtx, input: { id: string; ts: num
   if (problem) return fail(problem);
   const when = momentOf(c, input.at);
   if (!when.ok) return when;
-  const row = (await c.store.loggedEntries(Math.min(input.ts, when.ts) - 1, 5000)).find((r) => r.id === input.id);
+  const row = await c.store.loggedEntry(input.id);
   if (!row || row.type !== "nutrition-log") return fail("This food is no longer in your log.");
   if (row.source !== "pulse") return fail("Food logged in Fitbit is changed in Fitbit.");
   const before = row.data as Partial<FoodData> | null;
@@ -279,7 +279,7 @@ export async function updateFoodEntry(c: ActionCtx, input: { id: string; ts: num
  * counts beside Fitbit's (`separate`). `separate: false` lets Halo match it again.
  */
 export async function setFoodSeparate(c: ActionCtx, input: { id: string; ts: number; separate: boolean }): Promise<ActionResult> {
-  const row = (await c.store.loggedEntries(input.ts - 1, 5000)).find((r) => r.id === input.id);
+  const row = await c.store.loggedEntry(input.id);
   if (!row || row.type !== "nutrition-log") return fail("This food is no longer in your log.");
   if (row.source !== "pulse") return fail("Food logged in Fitbit is changed in Fitbit.");
   const { separate: _old, ...data } = (row.data ?? {}) as FoodData;
@@ -384,7 +384,7 @@ export async function deleteLogEntry(c: ActionCtx, input: { id: string }): Promi
  * day's only if no other dose of it remains). Doses logged in Fitbit are not edited here.
  */
 export async function editDose(c: ActionCtx, input: { id: string; ts: number; name: string; dose?: string; at: string }): Promise<ActionResult<{ demo: boolean }>> {
-  const row = (await c.store.loggedEntries(input.ts - 1, 5000)).find((r) => r.id === input.id);
+  const row = await c.store.loggedEntry(input.id);
   if (!row || row.type !== "medication") return fail("This dose is no longer in your log.");
   if (row.source !== "pulse") return fail("Doses logged in Fitbit are changed in Fitbit.");
   // The journal's actions take "YYYY-MM-DDTHH:mm"; the steppers' "YYYY-MM-DD HH:mm" too.

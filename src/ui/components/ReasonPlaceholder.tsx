@@ -47,7 +47,7 @@ export function ReasonPlaceholder({ reason, nightsLeft, size, copy, style }: Rea
     return (
       <View style={[{ alignItems: "center", gap: 10, paddingVertical: 24 }, style]}>
         {Icon && <IconTile icon={<Icon size={20} color={c.sub} strokeWidth={1.75} />} tint={null} size={40} radius={13} iconSize={20} />}
-        <Txt size={14} lineHeight={19} color={c.sub} align="center" style={{ maxWidth: 300 }}>
+        <Txt size={13} lineHeight={18} color={c.sub} align="center" style={{ maxWidth: 300 }}>
           {long}
         </Txt>
       </View>
