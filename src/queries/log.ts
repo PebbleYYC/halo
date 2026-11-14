@@ -91,6 +91,14 @@ export const MOODS = [
 ] as const;
 export type Mood = (typeof MOODS)[number][0];
 
+/** How bad a headache was, asked when Headache is among the symptoms. */
+export const SEVERITIES = [
+  ["MILD", "Mild"],
+  ["MODERATE", "Moderate"],
+  ["SEVERE", "Severe"],
+] as const;
+export type Severity = (typeof SEVERITIES)[number][0];
+
 /** A short list from Google's symptom enum. `cycle` ones show on female profiles only. */
 export const SYMPTOMS = [
   ["HEADACHE", "Headache", false],
@@ -150,7 +158,8 @@ export type LogData = {
   "body-fat": { pct: number };
   "oxygen-saturation": { pct: number };
   moods: { moods: Mood[]; valence: Valence | null };
-  symptoms: { symptoms: Symptom[] };
+  /** `headache`: how bad, when HEADACHE is among them (entries from before it was asked, or from Fitbit, have none). */
+  symptoms: { symptoms: Symptom[]; headache?: Severity };
   "menstrual-period": { start: string; end: string; flow: Flow | null; spotting?: true };
   "ovulation-test": { result: OvulationResult };
   medication: { name: string; dose?: string };
@@ -181,7 +190,11 @@ export function describeEntry(type: LogType, data: unknown, units: Units = METRI
       return { title: "Mood", detail: [m.valence && labelOf(VALENCES, m.valence), ...m.moods.map((x) => labelOf(MOODS, x))].filter(Boolean).join(", ") };
     }
     case "symptoms":
-      return { title: "Symptoms", detail: (data as LogData[typeof type]).symptoms.map((x) => labelOf(SYMPTOMS, x)).join(", ") };
+    {
+      const s = data as LogData[typeof type];
+      const name = (x: string) => (x === "HEADACHE" && s.headache ? `${labelOf(SEVERITIES, s.headache)} headache` : labelOf(SYMPTOMS, x));
+      return { title: "Symptoms", detail: s.symptoms.map(name).join(", ") };
+    }
     case "menstrual-period": {
       const p = data as LogData[typeof type];
       if (p.spotting) return { title: "Spotting", detail: "between periods" };

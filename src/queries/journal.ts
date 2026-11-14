@@ -4,7 +4,7 @@
 import { armDiff, type ImpactMetric, type TagImpact } from "@/core/algorithms/journalImpact";
 import type { JournalEntry } from "@/data/types";
 import type { JournalTagRow, Store } from "@/data/store";
-import { yesLabel } from "@/lib/behaviours";
+import { amountSplit, COUNTED_TAGS, yesLabel, type AmountSplit } from "@/lib/behaviours";
 import { isMedicineTag, medicineTag, withMedicineNoDays } from "@/lib/medicine";
 import { addDays, localMinutes } from "@/lib/time";
 import type { JournalImpactRow } from "@/pipeline/types";
@@ -179,6 +179,29 @@ export async function getJournal(day: string, ctx: QueryCtx): Promise<JournalVM>
 }
 
 const METRIC: Record<ImpactMetricKey, ImpactMetric> = { recovery: "recovery", hrv: "hrvZ", sleep: "sleepPerf" };
+
+export type AmountImpact = AmountSplit & { label: string };
+
+/**
+ * Counted behaviours (alcohol) by amount: the next day's `metric` after none, a little and a lot, over 90 days. Only
+ * behaviours with at least one counted day are returned.
+ */
+export async function getAmountImpact(metric: ImpactMetricKey = "recovery", ctx: QueryCtx): Promise<AmountImpact[]> {
+  const key = METRIC[metric];
+  const from = addDays(ctx.today, -90);
+  const [tags, entries, rows] = await Promise.all([tagsOf(ctx), entriesBetween(ctx, from, addDays(ctx.today, -1)), loadDays(ctx, from, ctx.today)]);
+  const label = new Map(tags.map((t) => [t.tag, t.label]));
+  const next = (day: string) => {
+    const r = rows.get(addDays(day, 1));
+    return key === "recovery" ? r?.recovery?.value : key === "hrvZ" ? r?.recovery?.hrvZ : r?.sleep?.performance;
+  };
+  const out: AmountImpact[] = [];
+  for (const tag of Object.keys(COUNTED_TAGS)) {
+    const split = amountSplit(tag, entries.filter((e) => e.tag === tag), next);
+    if (split && split.light.n + split.heavy.n > 0) out.push({ ...split, label: label.get(tag) ?? tag });
+  }
+  return out;
+}
 
 /** Journal Insights `/journal/insights?m=` (spec §7.12): effects on next-day Recovery, HRV (SD) or sleep. */
 export async function getJournalInsights(metric: ImpactMetricKey = "recovery", ctx: QueryCtx): Promise<JournalInsightsVM> {

@@ -30,6 +30,15 @@ describe("changedEntries", () => {
   });
 });
 
+describe("toInput: a headache asks how bad", () => {
+  it("needs the severity while Headache is chosen, and drops it otherwise", () => {
+    const at = "2026-10-02 08:00";
+    expect(toInput("symptoms", { symptoms: ["HEADACHE"], headache: "" }, at)).toBe("Choose how bad the headache is.");
+    expect(toInput("symptoms", { symptoms: ["HEADACHE", "NAUSEA"], headache: "SEVERE" }, at)).toEqual({ kind: "symptoms", symptoms: ["HEADACHE", "NAUSEA"], headache: "SEVERE", at: "2026-10-02T08:00" });
+    expect(toInput("symptoms", { symptoms: ["NAUSEA"], headache: "SEVERE" }, at)).toEqual({ kind: "symptoms", symptoms: ["NAUSEA"], at: "2026-10-02T08:00" });
+  });
+});
+
 describe("toInput", () => {
   it("reads the time field and the amounts", () => {
     expect(toInput("water", { ml: "330" }, "2026-10-02 08:00")).toEqual({ kind: "water", ml: 330, at: "2026-10-02T08:00" });
