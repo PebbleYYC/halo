@@ -14,6 +14,8 @@ import {
   type NewEntry,
   OVULATION_RESULTS,
   saveEntries,
+  SEVERITIES,
+  type Severity,
   SYMPTOMS,
   VALENCES,
   type Flow,
@@ -125,7 +127,7 @@ export type LogInput =
   | { kind: "spo2"; pct: number; at?: string }
   | { kind: "medicine"; name: string; dose?: string; at?: string }
   | { kind: "mood"; moods: Mood[]; valence: Valence | null; at?: string }
-  | { kind: "symptoms"; symptoms: Symptom[]; at?: string }
+  | { kind: "symptoms"; symptoms: Symptom[]; headache?: Severity; at?: string }
   | { kind: "period"; start: string; end: string; flow: Flow | null }
   | { kind: "ovulation"; result: OvulationResult; at?: string };
 
@@ -188,6 +190,7 @@ function invalid(v: LogInput, units: Units = METRIC): string | null {
       if (!Array.isArray(v.symptoms) || v.symptoms.length < 1) return "Choose a symptom";
       if (v.symptoms.length > 10) return "Choose up to 10 symptoms";
       if (!v.symptoms.every((s) => SYMPTOM_KEYS.has(s))) return ENUM;
+      if (v.headache !== undefined && !SEVERITIES.some((x) => x[0] === v.headache)) return ENUM;
       return null;
     case "period":
       if (!isDay(v.start) || !isDay(v.end)) return "Choose the first and last day.";
@@ -339,7 +342,7 @@ export async function logEntry(c: ActionCtx, input: LogInput): Promise<ActionRes
       entries = [{ type: "moods", ts, data: { moods: v.moods, valence: v.valence } }];
       break;
     case "symptoms":
-      entries = [{ type: "symptoms", ts, data: { symptoms: v.symptoms } }];
+      entries = [{ type: "symptoms", ts, data: { symptoms: v.symptoms, ...(v.headache && v.symptoms.includes("HEADACHE") && { headache: v.headache }) } }];
       break;
     case "period": {
       if (v.end < v.start) return fail("The last day is before the first");

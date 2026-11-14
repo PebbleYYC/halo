@@ -8,7 +8,8 @@ import { StyleSheet, View } from "react-native";
 import { Lock } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { formatValue } from "@/lib/format";
-import { getJournalInsights, getMedicineTiming, MED_TIMING } from "@/queries/journal";
+import { AMOUNT_MIN_DAYS } from "@/lib/behaviours";
+import { getAmountImpact, getJournalInsights, getMedicineTiming, MED_TIMING } from "@/queries/journal";
 import type { ImpactMetricKey, JournalInsightsVM } from "@/queries/types";
 import { useQuery } from "@/state/app";
 import { BottomSheet, DriverList, DriverListSkeleton, Txt } from "@/ui";
@@ -69,6 +70,8 @@ export default function InsightsScreen() {
       footer={
         <View style={{ gap: 28 }}>
           {vm && vm.needsMore.length > 0 && <Unlock needsMore={vm.needsMore} word={WORD[metric]} />}
+          {/* Mobile: not only whether you drank, but how much. */}
+          <AmountSection metric={metric} version={version} />
           {/* Mobile: not only whether a medicine was taken, but when. */}
           <MedTimingSection metric={metric} version={version} />
           {/* Mobile: workouts are behaviours too; what each kind costs next-day Recovery. */}
@@ -185,6 +188,62 @@ function Unlock({ needsMore, word }: { needsMore: JournalInsightsVM["needsMore"]
           );
         })}
       </View>
+    </View>
+  );
+}
+
+/**
+ * "By amount": a counted behaviour (alcohol) as none, a little and a lot, and the next day's metric after each. The
+ * yes/no impact above averages one drink with dinner and a night out into one number; this is the two apart. An
+ * amount shows its average from AMOUNT_MIN_DAYS nights; before that, how many it has.
+ */
+function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: number }) {
+  const c = useCalm();
+  const q = useQuery((ctx) => getAmountImpact(metric, ctx), [metric, version]);
+  const rows = q.data;
+  if (!rows?.length) return null;
+  const sd = metric === "hrv";
+  const v = (x: number) => (sd ? `${formatValue("signed1", x)} SD` : `${formatValue("int", x)}%`);
+  const word = WORD[metric];
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ gap: 4, paddingHorizontal: 4 }}>
+        <View accessibilityRole="header">
+          <Title>By amount</Title>
+        </View>
+        <Sentence>{`Your next-day ${word} after none, a little and a lot. Each shows from ${AMOUNT_MIN_DAYS} nights logged with a count.`}</Sentence>
+      </View>
+      <Surface padding={16} gap={0}>
+        {rows.map((r, i) => {
+          const arms = [r.none, r.light, r.heavy];
+          // Higher is better for all three outcomes: the best of the amounts that have an average is the green one.
+          const best = Math.max(...arms.map((a) => a.avg ?? -Infinity));
+          const said = arms.map((a) => `${a.label}: ${a.avg === null ? `${a.n} of ${AMOUNT_MIN_DAYS} nights logged` : `${v(a.avg)} over ${a.n} nights`}`).join("; ");
+          return (
+            <View key={r.tag} accessible accessibilityLabel={`${r.label} by amount, next-day ${word}. ${said}.`} style={[{ paddingVertical: 12, gap: 6 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}>
+              <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
+                {r.label}
+              </Txt>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                {arms.map((a) => (
+                  <View key={a.label} style={{ flex: 1, gap: 2 }}>
+                    <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
+                      {a.label}
+                    </Txt>
+                    <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: a.avg === null ? c.faint : a.avg === best && arms.filter((x) => x.avg !== null).length > 1 ? c.tintInk.mint : c.ink }]}>
+                      {a.avg === null ? "--" : v(a.avg)}
+                    </Txt>
+                    <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
+                      {a.avg === null ? `${a.n} of ${AMOUNT_MIN_DAYS} nights` : `${a.n} nights`}
+                    </Txt>
+                  </View>
+                ))}
+              </View>
+              {r.unknown > 0 && <Sentence size={13}>{`${r.unknown} earlier ${r.unknown === 1 ? "night was" : "nights were"} logged as Yes without a count, and ${r.unknown === 1 ? "is" : "are"} left out here.`}</Sentence>}
+            </View>
+          );
+        })}
+      </Surface>
     </View>
   );
 }

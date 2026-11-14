@@ -14,7 +14,7 @@ import { getActivity } from "@/queries/activity";
 import { dayStartOf, firstDay, loadDays, maybe, meanSd, todayOf, type QueryCtx } from "@/queries/common";
 import { acwrStatus, getFitness, getHealthHub, getMonitor, getStress } from "@/queries/health";
 import { energyBankVM, latestReport } from "@/queries/home";
-import { getDoseTiming, getJournalInsights } from "@/queries/journal";
+import { getAmountImpact, getDoseTiming, getJournalInsights } from "@/queries/journal";
 import { getRecovery } from "@/queries/recovery";
 import { getReport } from "@/queries/reports";
 import { getSleep } from "@/queries/sleep";
@@ -208,7 +208,7 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
         behaviours: z.array(z.string()).optional().describe(t("tool.get_journal_impacts.behaviours")),
       }),
       execute: async ({ outcome, behaviours }) => {
-        const j = await getJournalInsights(outcome, ctx);
+        const [j, amounts] = await Promise.all([getJournalInsights(outcome, ctx), getAmountImpact(outcome, ctx)]);
         // Scope to the behaviours the person asked about, so the card never surfaces unrelated habits. Match a request
         // against each behaviour's key and label either way round, so "bupropion" finds "Bupropion XL" and vice versa.
         const want = behaviours?.map((b) => b.trim().toLowerCase()).filter(Boolean);
@@ -220,6 +220,11 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
           scoped: want != null && want.length > 0,
           effects: j.items.filter((i) => hit(i.key, i.label)).map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith, withoutAvg: i.avgWithout, yesDays: i.yes, noDays: i.no })),
           needsMoreData: j.needsMore.filter((n) => hit(n.key, n.label)).map((n) => ({ behaviour: n.label, yesDays: n.yes, noDays: n.no })),
+          // A counted behaviour (alcohol) by how much: the next-day average after none, a little and a lot. An average
+          // of null has too few nights to say.
+          byAmount: amounts
+            .filter((a) => hit(a.tag, a.label))
+            .map((a) => ({ behaviour: a.label, arms: [a.none, a.light, a.heavy].map((x) => ({ amount: x.label, nights: x.n, nextDayAvg: x.avg === null ? null : round(x.avg, 1) })), uncountedNights: a.unknown })),
         };
       },
     }),

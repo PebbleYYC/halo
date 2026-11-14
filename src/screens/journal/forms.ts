@@ -52,7 +52,7 @@ export const EMPTY: Record<LogKind, Form> = {
   spo2: { pct: "" },
   medicine: { name: "", dose: "" },
   mood: { valence: "", moods: [] },
-  symptoms: { symptoms: [] },
+  symptoms: { symptoms: [], headache: "" },
   period: { start: "", end: "", flow: "" },
   ovulation: { result: "" },
 };
@@ -129,7 +129,10 @@ export function toInput(kind: LogKind, f: Form, time: string, units: Units = MET
     case "mood":
       return a("moods").length ? { kind, moods: a("moods") as never, valence: (s("valence") || null) as never, at } : "Choose how you feel.";
     case "symptoms":
-      return a("symptoms").length ? { kind, symptoms: a("symptoms") as never, at } : "Choose a symptom.";
+      if (!a("symptoms").length) return "Choose a symptom.";
+      // A headache is asked how bad it was; the answer is only kept while Headache is still chosen.
+      if (a("symptoms").includes("HEADACHE") && !s("headache")) return "Choose how bad the headache is.";
+      return { kind, symptoms: a("symptoms") as never, ...(a("symptoms").includes("HEADACHE") && { headache: s("headache") as never }), at };
     case "period":
       if (!s("start").trim() || !s("end").trim()) return "Choose the first and last day.";
       return { kind, start: s("start").trim(), end: s("end").trim(), flow: (s("flow") || null) as never };

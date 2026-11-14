@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
 import { FORMATS } from "@/lib/format";
 import { flOzToMl, mlToFlOz } from "@/lib/units";
-import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type Dose, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
+import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SEVERITIES, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type Dose, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
 import { useUnits } from "@/state/units";
 import { BottomSheet, Skeleton, Txt } from "@/ui";
 import { usePress, usePressStyle } from "@/ui/components/press";
@@ -461,6 +461,12 @@ export function Log({ vm }: LogProps) {
                 onChange={set("symptoms")}
               />
             </Section>
+            {/* Asked only for a headache: a dull one and one that stops the day are different things to look back on. */}
+            {(form.symptoms as string[]).includes("HEADACHE") && (
+              <Section title="How bad is the headache?">
+                <Chips label="Headache severity" options={SEVERITIES} value={(form.headache as string) ?? ""} onChange={set("headache")} />
+              </Section>
+            )}
             <Section title="When">{timeField}</Section>
           </>
         )}
