@@ -88,7 +88,7 @@ export function Sparkline({
       </View>
       {caption && (
         // The caption: small grey capitals with air between the letters.
-        <Txt size={10} lineHeight={13} weight={700} uppercase color={calm.faint} align="right" style={{ letterSpacing: 1 }}>
+        <Txt size={11} lineHeight={13} weight={700} uppercase color={calm.faint} align="right" style={{ letterSpacing: 1 }}>
           {caption}
         </Txt>
       )}

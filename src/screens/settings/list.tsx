@@ -659,7 +659,7 @@ export function Step({ n, title, tint = "sky", children }: { n: number; title: s
   return (
     <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }} accessible={typeof children === "string"} accessibilityLabel={typeof children === "string" ? `Step ${n}: ${title}. ${children}` : undefined}>
       <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.tint[tint], alignItems: "center", justifyContent: "center", marginTop: -3 }}>
-        <Txt size={14} lineHeight={18} style={[font.numeric(700), { color: c.tintInk[tint] }]}>
+        <Txt size={13} lineHeight={18} style={[font.numeric(700), { color: c.tintInk[tint] }]}>
           {String(n)}
         </Txt>
       </View>

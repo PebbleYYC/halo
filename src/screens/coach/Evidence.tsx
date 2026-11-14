@@ -79,7 +79,7 @@ function Stat({ variant, label, m, unit }: { variant: MiniRingVariant; label: st
   return (
     <View style={{ flex: 1, minWidth: 0, borderRadius: 16, backgroundColor: c.tint[tint], padding: 12, gap: 4 }}>
       {m.value === null ? (
-        <Txt size={14} lineHeight={19} weight={600} style={{ color: c.sub, minHeight: 28, textAlignVertical: "center" }}>
+        <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, minHeight: 28, textAlignVertical: "center" }}>
           {REASON[m.reason ?? "no_data"] ?? REASON.no_data}
         </Txt>
       ) : (
@@ -231,7 +231,7 @@ function EvidenceView({ name, output }: { name: string; output: unknown }) {
           </Rows>
           <MetricState metric={d.planner} skeleton={null} reasonSize="sm">
             {(p) => (
-              <Txt size={14} lineHeight={19} style={{ color: c.sub, marginTop: 8 }}>
+              <Txt size={13} lineHeight={18} style={{ color: c.sub, marginTop: 8 }}>
                 For {time(p.wakeAt, d.timeZone)} wake-up, {p.plans.map((v) => `${v.label.toLowerCase()}: ${time(v.bedtimeAt, d.timeZone)}`).join("; ")}. These are planned bedtimes.
               </Txt>
             )}

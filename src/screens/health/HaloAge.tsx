@@ -200,14 +200,14 @@ export function PaceScale({ pace }: { pace: Metric<number> }) {
       leading={
         <>
           <Turtle size={18} color={c.sub} strokeWidth={1.75} />
-          <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
             Slow
           </Txt>
         </>
       }
       trailing={
         <>
-          <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
             Fast
           </Txt>
           <Rabbit size={18} color={c.sub} strokeWidth={1.75} />

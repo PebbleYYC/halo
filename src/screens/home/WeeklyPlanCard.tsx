@@ -64,7 +64,7 @@ export function WeeklyPlanRow({ vm, go }: Pick<SlotProps, "vm" | "go">) {
     return (
       <FootRow icon={CalendarCheck} tint="mint" title="Weekly plan" onPress={() => go(PLAN_HREF)} accessibilityLabel="Weekly plan: no weekly targets switched on. Set weekly targets">
         <Sentence size={14}>No weekly targets switched on</Sentence>
-        <Txt size={14} lineHeight={19} weight={500} style={{ color: c.teal }}>
+        <Txt size={13} lineHeight={18} weight={500} style={{ color: c.teal }}>
           Set weekly targets
         </Txt>
       </FootRow>
@@ -301,7 +301,7 @@ function PlanSheet({ open, onClose, data, keys, go }: { open: boolean; onClose: 
           ))}
           <View style={{ marginTop: 20, gap: 8 }}>
             <SheetSection>Why these</SheetSection>
-            <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+            <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
               These are the habits Halo Age scores. The defaults follow the WHO’s 150 moderate or 75 vigorous minutes and two strength days a week, about 8,000 steps a day, and a steady sleep schedule. A tick on a bar marks where an even pace would be by now.
             </Txt>
           </View>

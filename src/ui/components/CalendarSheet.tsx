@@ -259,7 +259,7 @@ function MonthPanel({
             hitSlop={{ top: 6, bottom: 6 }}
             style={({ pressed }) => ({ height: 34, borderRadius: 17, paddingHorizontal: 16, justifyContent: "center", backgroundColor: alpha(calm.teal, 0.15), opacity: pressed ? 0.6 : 1 })}
           >
-            <Txt size={14} lineHeight={18} weight={600} color={calm.teal}>
+            <Txt size={13} lineHeight={18} weight={600} color={calm.teal}>
               Today
             </Txt>
           </Pressable>

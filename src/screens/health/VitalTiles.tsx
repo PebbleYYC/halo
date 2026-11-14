@@ -3,6 +3,7 @@
 // reading large with its unit (its digits rolling in) and its chip ("Within range" in a green capsule). A tile opens the
 // vital's sheet: the reading, the chip, your normal range and the last 30 nights (the web's `?vital=` deep-linked sheet
 // is local state here).
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import * as React from "react";
 import { View } from "react-native";
 import { Activity, Droplet, Heart, Thermometer, Wind, type LucideIcon } from "lucide-react-native";
@@ -85,7 +86,7 @@ export function VitalTiles({ vitals }: { vitals: Vital[] }) {
               value={value}
               unit={x.unit}
               chip={x.chip && value !== null ? <TonePill tone={x.chip.tone}>{x.chip.text}</TonePill> : null}
-              alert={value !== null && (x.status === "high" || x.status === "low")}
+              alert={value !== null && isVitalConcern(x.key, x.status)}
               onPress={() => {
                 setOpen(x.key);
                 setLast(x);

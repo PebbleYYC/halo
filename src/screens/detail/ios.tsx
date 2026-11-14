@@ -97,7 +97,7 @@ export function GlassSegmented<V extends string>({ value, onChange, items, acces
               accessibilityLabel={it.accessibilityLabel ?? it.label}
               style={({ pressed }) => ({ flex: 1, alignItems: "center", justifyContent: "center", opacity: pressed && !on ? 0.5 : 1 })}
             >
-              <Txt size={14} lineHeight={18} weight={on ? 700 : 500} align="center" style={[TABULAR, { color: on ? c.ink : c.sub }]}>
+              <Txt size={13} lineHeight={18} weight={on ? 700 : 500} align="center" style={[TABULAR, { color: on ? c.ink : c.sub }]}>
                 {it.label}
               </Txt>
             </Pressable>

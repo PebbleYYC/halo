@@ -15,6 +15,8 @@ import { KeyStatRow, KeyStatRowSkeleton, SectionShell, Skeleton, SkeletonText, T
 import { useCalm } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { ActivityRings } from "@/ui/components/Halo";
+import { alpha } from "@/lib/utils";
+import { HERO_RING, HERO_RING_STROKE } from "@/screens/detail/ScoreHero";
 import { TonePill } from "@/ui/components/Meter";
 import { CalmCard, Sentence } from "@/screens/detail/calmKit";
 import { HeartRhythm, HeartRhythmSkeleton } from "./HeartRhythm";
@@ -34,11 +36,10 @@ const CHIP = {
   illness: { tone: "alert", text: "Out of range" },
 } as const;
 
-const RING = 112;
-
 /**
- * The hero: last night's vitals as one ring that sweeps to the share in your range (green when all are, orange when one
- * is out, red with the illness signal), the count rolling into place in its middle, and beside it what it means.
+ * The hero: last night's vitals as one ring that sweeps to the share in your range (green when nothing is flagged,
+ * orange when one is, red with the illness signal), the count rolling into place in its middle. The ring is the one
+ * Sleep, Activity and Recovery lead with — the same size, the same stroke, centred — so every lead card is one shape.
  */
 function Count({ count }: { count: MonitorVM["count"] | undefined }) {
   const c = useCalm();
@@ -48,32 +49,34 @@ function Count({ count }: { count: MonitorVM["count"] | undefined }) {
   const color = !v ? c.system.gray : v.status === "within" || v.status === "unusual" ? c.system.green : v.status === "out" ? c.system.orange : c.system.red;
   return (
     <Card style={{ alignSelf: "stretch" }}>
-      <View style={{ gap: 14 }}>
-        <CardHead tint="sand" icon={ShieldCheck} title="Last night’s vitals" />
+      <View style={{ gap: 14, alignItems: "center" }}>
+        <View style={{ alignSelf: "stretch" }}>
+          <CardHead tint="sand" icon={ShieldCheck} title="Last night’s vitals" />
+        </View>
         <View
           accessible
+          accessibilityRole="image"
           accessibilityLabel={!count ? "Loading last night's vitals" : v ? `${v.inRange} of ${v.total} metrics within range${chip ? `, ${chip.text}` : ""}` : `Metrics within range unavailable: ${reason!.long}`}
-          style={{ flexDirection: "row", alignItems: "center", gap: 18 }}
         >
-          <ActivityRings motionKey="monitor" size={RING} rings={[{ progress: v ? v.inRange / v.total : null, color }]} delay={120}>
+          <ActivityRings motionKey="monitor" size={HERO_RING} stroke={HERO_RING_STROKE} rings={[{ progress: v ? v.inRange / v.total : null, color, track: alpha(color, 0.18) }]} delay={120}>
             {!count ? (
-              <SkeletonText role="valueXl" size={30} lineHeight={34} chars={2} />
+              <SkeletonText role="valueHero" size={54} lineHeight={58} chars={2} />
             ) : (
-              <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <RollingValue value={v ? String(v.inRange) : MISSING} size={34} />
-                <Txt size={17} lineHeight={22} weight={600} style={{ color: c.sub }}>
-                  {`/${v?.total ?? 5}`}
+              <View style={{ alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+                  <RollingValue value={v ? String(v.inRange) : MISSING} size={54} />
+                  <Txt size={22} lineHeight={28} weight={700} style={{ color: c.sub, marginLeft: 1, marginBottom: 8 }}>
+                    {`/${v?.total ?? 5}`}
+                  </Txt>
+                </View>
+                <Txt size={15} lineHeight={20} weight={600} align="center" style={{ color: c.sub, marginTop: -2 }}>
+                  within range
                 </Txt>
               </View>
             )}
           </ActivityRings>
-          <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
-            <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
-              Metrics within range
-            </Txt>
-            {!count ? <Skeleton style={{ height: 24, width: 112 }} /> : chip ? <TonePill tone={chip.tone}>{chip.text}</TonePill> : <Sentence size={13}>{reason!.long}</Sentence>}
-          </View>
         </View>
+        {!count ? <Skeleton style={{ height: 24, width: 112 }} /> : chip ? <TonePill tone={chip.tone}>{chip.text}</TonePill> : <Sentence size={13}>{reason!.long}</Sentence>}
       </View>
     </Card>
   );

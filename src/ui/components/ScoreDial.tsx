@@ -315,7 +315,7 @@ export function ScoreDial(props: ScoreDialProps) {
           </Txt>
         )}
         {!loading && empty && reason && reason.long !== headline && (
-          <Txt size={14} lineHeight={19} color={calm.sub} align="center" style={{ marginTop: -8 }}>
+          <Txt size={13} lineHeight={18} color={calm.sub} align="center" style={{ marginTop: -8 }}>
             {reason.long}
           </Txt>
         )}
@@ -362,7 +362,7 @@ export function ScoreDial(props: ScoreDialProps) {
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <IconChip Icon={ICON[variant]} color={calm.tintInk[tint]} bg={calm.tint[tint]} size={32} />
-        <Txt size={14} lineHeight={18} weight={600} color={calm.ink} numberOfLines={2} style={{ flexShrink: 1 }}>
+        <Txt size={13} lineHeight={18} weight={600} color={calm.ink} numberOfLines={2} style={{ flexShrink: 1 }}>
           {r.label}
         </Txt>
         {onPress && (

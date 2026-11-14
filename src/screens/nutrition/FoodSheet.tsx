@@ -242,7 +242,7 @@ function DraftRow({ d, onToggle, onChange, onRemove }: { d: Draft; onToggle: () 
             {name}
             {d.form.portion.trim() ? <Txt size={15} lineHeight={21} weight={400} style={{ color: c.sub }}>{`  ${d.form.portion.trim()}`}</Txt> : null}
           </Txt>
-          <Txt size={14} lineHeight={19} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
             {summaryOf(d.form)}
           </Txt>
           {d.confidence && (
@@ -513,7 +513,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
   const noKey = (
     <Notice tint="sand" icon={KeyRound} title="Photo estimates use your own AI key">
       <View style={{ gap: 8 }}>
-        <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+        <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
           Add a key from Anthropic, OpenAI, Google or another provider in Settings › Coach, and Halo can estimate a meal from a photo or a few words. Until then, enter the food yourself below.
         </Txt>
         <Link label="Open Coach settings" onPress={() => leave(COACH_SETTINGS)} />
@@ -529,7 +529,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     ) : notice === "camera_blocked" ? (
       <Notice tint="sand" icon={TriangleAlert} title="The camera is off for Halo">
         <View style={{ gap: 8 }}>
-          <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+          <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
             Allow it in Android’s settings for Halo, or choose a photo instead.
           </Txt>
           <Link label="Open Android settings" onPress={() => void Linking.openSettings()} />
@@ -580,11 +580,11 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
       <View style={{ gap: 16, paddingTop: 4 }}>
         <Notice tint={problem === "no_food" ? "sand" : "rose"} icon={TriangleAlert} title={copy.title} role="alert">
           <View style={{ gap: 8 }}>
-            <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+            <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
               {copy.body}
             </Txt>
             {problem === "no_food" && note ? (
-              <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+              <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
                 {note}
               </Txt>
             ) : null}

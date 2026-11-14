@@ -140,7 +140,8 @@ export function coachTitle(strain: Metric<number>, target: { low: number; high: 
   if (strain.value == null || !target) return null;
   const red = row?.recovery?.value != null && row.recovery.value < 34;
   const v = strain.value;
-  return red ? "Keep strain light" : v < target.low ? "Room for more strain" : v <= target.high ? "In your optimal range" : "Past your target";
+  // A low-Recovery day asks for a light one only while that is still possible: past the target, say so.
+  return v > target.high ? "Past your target" : red ? "Keep strain light" : v < target.low ? "Room for more strain" : "In your optimal range";
 }
 
 /** Strain Coach copy (spec §7.3), by position against today's target. */
@@ -149,7 +150,12 @@ export function coach(strain: Metric<number>, target: { low: number; high: numbe
   const { low, high } = target;
   // In a sentence a range reads "8.4 to 10.5" (the outlook's wording); "8.4–10.5" is for values beside a label.
   const range = `${fmt1(low)} to ${fmt1(high)}`;
-  if (row?.recovery?.value != null && row.recovery.value < 34) return `Your body needs rest today. Keep strain between ${fmt1(low)} and ${fmt1(high)}.`;
+  if (row?.recovery?.value != null && row.recovery.value < 34) {
+    // "Keep strain between 5.5 and 8.2" is no advice at 8.9: on a rest day the words follow where the day already is.
+    if (strain.value > high) return `Your body needed rest today and you are past the target of ${range}. Prioritise sleep tonight to recover.`;
+    if (strain.value >= low) return `Your body needs rest today, and you are already inside the target of ${range}. Ease off from here.`;
+    return `Your body needs rest today. Keep strain between ${fmt1(low)} and ${fmt1(high)}.`;
+  }
   if (strain.value < low) {
     // ponytail: about 8 minutes of moderate activity per strain point near the target; a rough guide, not a model.
     const minutes = Math.max(10, Math.round(((low - strain.value) * 8) / 5) * 5);
@@ -167,8 +173,12 @@ export const zoneBounds = (lower: number[]): ZoneRow[] =>
   lower.map((min, i) => ({ zone: i + 1, label: ZONE_NAMES[i], min: Math.ceil(min), max: i < lower.length - 1 ? Math.ceil(lower[i + 1]) - 1 : null, seconds: 0 }));
 
 /** How the day's zones are set, under the zone rows. */
-export const zoneNote = (row: DayRow | undefined, ctx: QueryCtx) =>
-  `Zones on your heart-rate reserve: resting ${Math.round(row?.s1?.restingHr ?? 0)} to max ${row?.s1?.maxHr ?? maxHrOf(ctx)} bpm.`;
+export const zoneNote = (row: DayRow | undefined, ctx: QueryCtx) => {
+  const max = row?.s1?.maxHr ?? maxHrOf(ctx);
+  const rest = row?.s1?.restingHr;
+  // Without a resting heart rate for the day there is no "resting 0" to print.
+  return rest != null && Number.isFinite(rest) && rest > 0 ? `Zones on your heart-rate reserve: resting ${Math.round(rest)} to max ${max} bpm.` : `Zones on your heart-rate reserve, up to max ${max} bpm.`;
+};
 
 export function zoneRows(row: DayRow | undefined, seconds = row?.s1?.zoneSeconds, below = row?.s1?.zoneBelowSeconds): Metric<ZoneRow[]> {
   const s1 = row?.s1;

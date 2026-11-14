@@ -4,6 +4,7 @@
 // and a chevron, the value large with a line of context and a small chart): Health Monitor, Stress, HRV Status, Fitness,
 // Heart Rate, Nutrition and Trends, each opening its own screen, then My Dashboard. The cards rise into place in turn
 // as the tab opens; values roll, rings sweep and the small charts grow in once, all on the UI thread.
+import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import { InfoButton } from "@/ui/components/InfoButton";
 import { HEALTH_INFO } from "./info";
 import * as React from "react";
@@ -103,14 +104,17 @@ function VitalDots({ vitals }: { vitals: { key: string; status: string }[] }) {
 function MonitorCard({ m, onPress }: { m: HealthHubVM["monitor"] | undefined; onPress: () => void }) {
   const c = useCalm();
   const v = m?.value ?? null;
-  const out = v ? v.vitals.filter((x) => x.status !== "in_range" && x.status !== "no_data").map((x) => x.short) : [];
+  // Out of range on the side that matters, and apart from it the readings that are merely unusual (a cool night, a
+  // high HRV): named, but not in the warning colour.
+  const out = v ? v.vitals.filter((x) => isVitalConcern(x.key, x.status)).map((x) => x.short) : [];
+  const odd = v ? v.vitals.filter((x) => (x.status === "high" || x.status === "low") && !isVitalConcern(x.key, x.status)).map((x) => x.short) : [];
   const none = v ? v.vitals.filter((x) => x.status === "no_data").map((x) => x.short) : [];
   const all = !!v && v.inRange === v.total;
   const label = !m
     ? "Health Monitor"
     : !v
       ? "Health Monitor: no readings from last night"
-      : `Health Monitor: ${v.inRange} of ${v.total} within range${out.length ? `, out of range: ${out.join(", ")}` : ""}${none.length ? `, no reading: ${none.join(", ")}` : ""}`;
+      : `Health Monitor: ${v.inRange} of ${v.total} within range${out.length ? `, out of range: ${out.join(", ")}` : ""}${odd.length ? `, unusual but nothing to flag: ${odd.join(", ")}` : ""}${none.length ? `, no reading: ${none.join(", ")}` : ""}`;
   return (
     <HealthCard
       tint="sand"
@@ -133,6 +137,11 @@ function MonitorCard({ m, onPress }: { m: HealthHubVM["monitor"] | undefined; on
             {out.length > 0 && (
               <Txt size={15} lineHeight={20} weight={600} style={{ color: c.tintInk.peach }}>
                 {`Out of range: ${out.join(", ")}`}
+              </Txt>
+            )}
+            {odd.length > 0 && (
+              <Txt size={15} lineHeight={20} style={{ color: c.sub }}>
+                {`Nothing to flag: ${odd.join(", ")}`}
               </Txt>
             )}
             {none.length > 0 && (

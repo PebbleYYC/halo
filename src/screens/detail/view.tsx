@@ -203,7 +203,10 @@ export function StatRow({
       // Equal to the average reads "in line"; a different number inside your day-to-day spread is "usual", not "in line"
       // (18,201 steps beside "In line with 30-day avg 14,953" read as a mistake).
       const avgLabel = p.averageLabel ? p.averageLabel.replace(/ /g, NBSP) : `30-day${NBSP}avg`;
-      const text = same
+      // Nothing today against an average of nothing ("0:00, in line with 30-day avg 0:00") is a comparison of blanks.
+      const text = same && v === 0 && k.average === 0
+        ? "None, as usual"
+        : same
         ? `In line with ${avgLabel}${NBSP}${avgText}`
         : t.dir === "flat"
           ? `Within your usual range (${p.averageLabel ?? "avg"}${NBSP}${avgText})`

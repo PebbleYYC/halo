@@ -204,7 +204,7 @@ function HistoryRow({ h, current, today, onPress }: { h: JournalVM["history"][nu
           </View>
         ) : (
           <View style={{ minHeight: BADGE_H, justifyContent: "center" }}>
-            <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+            <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
               No behaviours
             </Txt>
           </View>

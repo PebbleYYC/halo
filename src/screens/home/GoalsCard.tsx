@@ -225,7 +225,7 @@ function ActivityRow({ vm }: Pick<SlotProps, "vm">) {
   const { steps, calories } = vm.cardStats;
   const n = (v: number | null | undefined) => formatValue("grouped", v);
   const line = (value: string, unit: string, avg: string) => (
-    <Txt size={14} lineHeight={19} style={{ color: c.sub }}>
+    <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
       <NumSpan>{value}</NumSpan>
       {`${NBSP}${unit}`}
       <Txt size={13} lineHeight={19} style={{ color: c.faint }}>
@@ -466,7 +466,7 @@ function GoalsSheet({
           {off.length > 0 && (
             <View style={{ marginTop: 20, gap: 8 }}>
               <SheetSection>Off</SheetSection>
-              <Txt size={14} lineHeight={19} style={{ color: c.sub }}>{`${off.map((k) => GOAL_META[k].label).join(", ")}. Switch them on in Settings › Goals.`}</Txt>
+              <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`${off.map((k) => GOAL_META[k].label).join(", ")}. Switch them on in Settings › Goals.`}</Txt>
             </View>
           )}
         </View>

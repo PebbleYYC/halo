@@ -270,6 +270,6 @@ export function dayTotals(values: DailyValue[], rows: LoggedEntryRow[], day: str
 
 /** Today's (or any day's) nutrients from the Store: one roll-up read and that day's log. */
 export async function nutritionOn(store: Store, day: string, tz: string): Promise<Totals> {
-  const [values, rows] = await Promise.all([store.dailyValues({ from: day, to: day }), store.loggedEntries(localMidnight(day, tz), 10_000)]);
+  const [values, rows] = await Promise.all([store.dailyValues({ from: day, to: day }), store.loggedEntries(localMidnight(day, tz), 10_000, localMidnight(day, tz) + 2 * 86_400)]);
   return dayTotals(values, rows, day);
 }

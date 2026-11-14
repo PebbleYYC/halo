@@ -628,12 +628,16 @@ class SqliteStore implements Store {
       ),
     );
   }
-  async loggedEntries(fromTs: number, limit = 50) {
+  async loggedEntries(fromTs: number, limit = 50, toTs?: number) {
     const rows = await this.db.getAllAsync<LoggedRow>(
-      `select ${LOGGED_COLUMNS} from logged_entries where ts >= ? order by ts desc, created_at desc limit ?`,
-      [fromTs, limit],
+      `select ${LOGGED_COLUMNS} from logged_entries where ts >= ? and ts < ? order by ts desc, created_at desc limit ?`,
+      [fromTs, toTs ?? Number.MAX_SAFE_INTEGER, limit],
     );
     return rows.map(loggedOf);
+  }
+  async loggedEntry(id: string) {
+    const r = await this.db.getFirstAsync<LoggedRow>(`select ${LOGGED_COLUMNS} from logged_entries where id = ?`, [id]);
+    return r ? loggedOf(r) : null;
   }
   async deleteLoggedEntry(id: string) {
     return this.tx(async (db) => {

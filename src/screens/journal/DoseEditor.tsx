@@ -76,7 +76,7 @@ export function DoseEditor({
       <CalmInput value={amount} onChangeText={setAmount} placeholder="Dose, e.g. 3 mg (optional)" maxLength={40} accessibilityLabel="Dose" on="card" />
       <TimeStepper value={at} onChange={setAt} timeZone={timeZone} label="Taken" />
       {error && (
-        <Txt size={14} lineHeight={19} style={{ color: c.system.red }}>
+        <Txt size={13} lineHeight={18} style={{ color: c.system.red }}>
           {error}
         </Txt>
       )}

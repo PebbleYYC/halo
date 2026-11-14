@@ -96,7 +96,7 @@ function Rows({ zones, note }: { zones: ZoneRow[]; note?: string }) {
     return (
       <View style={{ justifyContent: "center" }}>
         <View style={{ borderRadius: 14, backgroundColor: soft, paddingHorizontal: 14, paddingVertical: 12 }}>
-          <Txt size={14} lineHeight={19} color={calm.sub}>
+          <Txt size={13} lineHeight={18} color={calm.sub}>
             Heart rate stayed under the {lowest.label} zone ({lowest.min}
             {NBSP}bpm) the whole time.
           </Txt>
@@ -144,14 +144,14 @@ function Rows({ zones, note }: { zones: ZoneRow[]; note?: string }) {
                   <Txt size={15} lineHeight={20} weight={600} color={calm.ink}>
                     {z.label}
                   </Txt>
-                  <Txt size={14} lineHeight={20} color={calm.sub} style={font.numeric(600)}>
+                  <Txt size={13} lineHeight={18} color={calm.sub} style={font.numeric(600)}>
                     {range}
                   </Txt>
-                  <Txt size={14} lineHeight={20} color={color && z.zone > 1 && z.seconds > 0 ? c[color.text] : calm.sub} style={font.numeric(700)}>
+                  <Txt size={13} lineHeight={18} color={color && z.zone > 1 && z.seconds > 0 ? c[color.text] : calm.sub} style={font.numeric(700)}>
                     {sh}
                   </Txt>
                   {z.typical && diffMin !== 0 && (
-                    <Txt size={14} lineHeight={20} color={z.seconds > z.typical.seconds ? calm.ink : calm.sub} style={font.numeric(700)}>
+                    <Txt size={13} lineHeight={18} color={z.seconds > z.typical.seconds ? calm.ink : calm.sub} style={font.numeric(700)}>
                       {z.seconds > z.typical.seconds ? "+" : "−"}
                       {Math.abs(diffMin)}
                       {NBSP}min
@@ -199,7 +199,7 @@ function Stacked({ segments, unit }: { segments: StackedSegment[]; unit: "days" 
             <Txt size={16} lineHeight={20} color={calm.ink} style={[font.numeric(700), { width: 52 }]}>
               {count(s.count)}
             </Txt>
-            <Txt size={14} lineHeight={19} color={calm.sub} style={{ flex: 1 }}>
+            <Txt size={13} lineHeight={18} color={calm.sub} style={{ flex: 1 }}>
               {s.label}
             </Txt>
           </View>

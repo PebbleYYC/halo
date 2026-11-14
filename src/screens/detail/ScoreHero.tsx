@@ -27,7 +27,8 @@ import { strainWord } from "./lines";
 /** The ring and its stroke (Apple's tenth of the diameter), the number in its 136 px hole. */
 export const HERO_RING = 172;
 const RING = HERO_RING;
-const STROKE = 18;
+export const HERO_RING_STROKE = 18;
+const STROKE = HERO_RING_STROKE;
 /** The hole the number and the field (Sleep's sky, Activity's pulses) share. */
 const HOLE = RING - STROKE * 2;
 const NUMBER = 54;

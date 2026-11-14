@@ -43,7 +43,7 @@ function SourceRow({ s, unit, records = true }: { s: SourceLine; unit?: string; 
   const detail = records ? `${s.records} rec · ${s.detail}` : s.detail;
   return (
     <View accessible accessibilityLabel={`${s.fitbit ? "Kept: " : ""}${s.source}: ${value}${unit ? ` ${unit}` : ""}, ${detail}`} style={{ flexDirection: "row", gap: 6 }}>
-      <Txt size={14} lineHeight={20} weight={700} style={{ color: c.system.orange, width: 14 }}>
+      <Txt size={13} lineHeight={18} weight={700} style={{ color: c.system.orange, width: 14 }}>
         {s.fitbit ? "★" : ""}
       </Txt>
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>

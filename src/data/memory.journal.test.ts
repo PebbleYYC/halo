@@ -57,6 +57,15 @@ describe("logged entries", () => {
     expect((await s.loggedEntries(0))[0]).toEqual(entry("c", 200, 300));
   });
 
+  it("bounds a listing above, and finds one entry by id however much came after it", async () => {
+    const s = openMemoryStore();
+    await s.addLoggedEntries([entry("old", 10), entry("b", 200), entry("c", 300)]);
+    // The newest one alone would fill a limit of 1; bounded above, the old day still reads whole.
+    expect((await s.loggedEntries(0, 1, 100)).map((e) => e.id)).toEqual(["old"]);
+    expect((await s.loggedEntry("old"))?.id).toBe("old");
+    expect(await s.loggedEntry("gone")).toBeNull();
+  });
+
   it("deletes one entry and returns it; an unknown id returns null", async () => {
     const s = openMemoryStore();
     await s.addLoggedEntries([entry("a", 100, 100, { type: "moods", data: { moods: ["CALM"], valence: null } })]);

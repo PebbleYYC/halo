@@ -110,7 +110,7 @@ export function HomeSkeleton({ progress, go }: { progress?: string | null; go: (
         </View>
         {progress && (
           <View accessibilityLiveRegion="polite">
-            <Txt size={14} lineHeight={19} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
+            <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
               {progress}
             </Txt>
           </View>

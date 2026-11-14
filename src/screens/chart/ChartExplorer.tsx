@@ -436,7 +436,7 @@ export default function ChartExplorer() {
         onBack={back}
         action={
           <GlassButton wide onPress={() => setSheet("metric")} accessibilityLabel={`Metric: ${def.label}. Change metric`}>
-            <Txt size={14} lineHeight={19} weight={600} style={{ color: k.ink }}>
+            <Txt size={13} lineHeight={18} weight={600} style={{ color: k.ink }}>
               Metric
             </Txt>
             <ChevronsUpDown size={15} color={k.teal} strokeWidth={2.2} />

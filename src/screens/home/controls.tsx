@@ -283,11 +283,11 @@ export function ProgressPill({ done, total, word }: { done: number; total: numbe
     >
       {all && <Check size={14} color={ink} strokeWidth={3} />}
       <Txt size={13} lineHeight={18} weight={600} style={{ color: all ? ink : c.sub }}>
-        <Txt size={14} lineHeight={18} style={[font.numeric(700), { color: ink }]}>
+        <Txt size={13} lineHeight={18} style={[font.numeric(700), { color: ink }]}>
           {String(done)}
         </Txt>
         {" of "}
-        <Txt size={14} lineHeight={18} style={[font.numeric(700), { color: ink }]}>
+        <Txt size={13} lineHeight={18} style={[font.numeric(700), { color: ink }]}>
           {String(total)}
         </Txt>
         {` ${word}`}

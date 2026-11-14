@@ -1,6 +1,6 @@
 {
   "name": "pulse",
-  "version": "1.26.61",
+  "version": "1.26.62",
   "main": "index.ts",
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.71",
