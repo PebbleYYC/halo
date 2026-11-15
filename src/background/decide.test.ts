@@ -160,8 +160,9 @@ describe("lockHolder", () => {
   it("is free with no lock, held while fresh, free again once stale", () => {
     expect(lockHolder(null, now)).toBeNull();
     expect(lockHolder({ owner: "task", ts: now - 60_000 }, now)).toBe("task");
-    expect(lockHolder({ owner: "app", ts: now - 19 * 60_000 }, now)).toBe("app");
-    expect(lockHolder({ owner: "app", ts: now - 20 * 60_000 }, now)).toBeNull();
+    // A run beats its lock as it goes, so three minutes of silence is a dead one: nobody waits on it for longer.
+    expect(lockHolder({ owner: "app", ts: now - 179_000 }, now)).toBe("app");
+    expect(lockHolder({ owner: "app", ts: now - 3 * 60_000 }, now)).toBeNull();
   });
 
   it("ignores a corrupt lock", () => {

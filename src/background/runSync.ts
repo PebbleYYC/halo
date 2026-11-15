@@ -19,7 +19,7 @@ import { runPipeline } from "@/pipeline";
 import { timed } from "@/lib/perf";
 import { setForeground } from "@/lib/yield";
 import { notifyAfterRun } from "./alerts";
-import { releaseLock, takeLock, waitForLock, type RunOwner } from "./lock";
+import { beatLock, LOCK_BEAT_MS, releaseLock, takeLock, waitForLock, type RunOwner } from "./lock";
 
 export type Source = "health_connect" | "google" | "demo";
 
@@ -39,7 +39,10 @@ export type RunSyncResult = {
   warnings: string[];
 };
 
-/** How long the app waits for a background run before giving up and using what is on disk. */
+/**
+ * How long the app waits for a live background run before giving up and using what is on disk. A dead one is not
+ * waited on at all: its lock goes stale (lock.ts) and the wait ends with it.
+ */
 export const WAIT_FOR_TASK_MS = 10 * 60_000;
 
 let inflight: Promise<RunSyncResult> | null = null;
@@ -88,6 +91,17 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
   if (!lock.taken) return { ran: false, skipped: `${lock.holder === "app" ? "the app" : "the background task"} is syncing`, warnings: [] };
   const warnings: string[] = [];
   let scored = false;
+  // Every step of progress restamps the lock (at most every LOCK_BEAT_MS): the heartbeat that tells the other
+  // runtime this run is alive. Timers don't run in a headless task, so progress is the only clock there is.
+  let beat = Date.now();
+  const onProgress = (step: string, done: number, total: number) => {
+    if (Date.now() - beat >= LOCK_BEAT_MS) {
+      beat = Date.now();
+      void beatLock(opts.owner);
+    }
+    opts.onProgress?.(step, done, total);
+  };
+  opts = { ...opts, onProgress };
   try {
     if (source === "health_connect") {
       const r = await timed(`sync-health-connect (${opts.owner})`, () => syncHealthConnect(store, { timeZone: opts.timeZone, onProgress: opts.onProgress }));
@@ -101,12 +115,20 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
       warnings.push(...r.warnings);
     }
     await timed(`pipeline (${opts.owner})`, () => runPipeline(store, profile, { today: localDay(Date.now() / 1000, opts.timeZone), onProgress: opts.onProgress }));
+    scored = true;
+    // The scores are on disk: the lock goes now, before the network extras. A weather request that never answers
+    // (no timer can cut it short in a headless task) used to hold the lock, and the app behind it, until it went stale.
+    await releaseLock(opts.owner);
     // Headache risk's weather: only the app may read a fresh location; the background task reuses the last one.
     if (source !== "demo") {
-      await syncWeather({ place: () => resolvePlace(opts.owner === "app") });
-      await notifyHeadache(opts.timeZone);
+      try {
+        await syncWeather({ place: () => resolvePlace(opts.owner === "app") });
+        await notifyHeadache(opts.timeZone);
+      } catch (e) {
+        // The day is scored and saved; weather is an extra and its failure is not the run's.
+        warnings.push(`weather: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
-    scored = true;
     return { ran: true, warnings };
   } finally {
     await releaseLock(opts.owner);

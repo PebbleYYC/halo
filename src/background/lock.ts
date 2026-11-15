@@ -5,8 +5,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const LOCK_KEY = "pulse.background.lock";
-/** A lock older than this is abandoned: a first 180-day import takes minutes, a killed process never releases. */
-export const LOCK_STALE_MS = 20 * 60_000;
+/**
+ * A lock not refreshed for this long is abandoned. The holder beats it as its run makes progress (beatLock), so a
+ * live run of any length keeps it and a killed one (Android stops a background worker at ten minutes, or the process
+ * dies) loses it within minutes. It used to be a flat 20 minutes from the start, and the app waited on a dead
+ * background run for up to ten of them with yesterday's data on screen.
+ */
+export const LOCK_STALE_MS = 3 * 60_000;
+/** How often, at most, a run refreshes its lock. */
+export const LOCK_BEAT_MS = 20_000;
 
 export type RunOwner = "app" | "task";
 export type RunLock = { owner: RunOwner; ts: number };
@@ -32,6 +39,16 @@ export async function takeLock(owner: RunOwner, now = Date.now()): Promise<{ tak
   if (holder && holder !== owner) return { taken: false, holder };
   await AsyncStorage.setItem(LOCK_KEY, JSON.stringify({ owner, ts: now } satisfies RunLock));
   return { taken: true };
+}
+
+/** The holder's heartbeat: its lock restamped, so it does not go stale while the run is alive. Never throws. */
+export async function beatLock(owner: RunOwner, now = Date.now()): Promise<void> {
+  try {
+    const lock = await readLock();
+    if (lock?.owner === owner) await AsyncStorage.setItem(LOCK_KEY, JSON.stringify({ owner, ts: now } satisfies RunLock));
+  } catch {
+    // A missed beat only shortens the lock.
+  }
 }
 
 /** Releases the lock when `owner` holds it; one the other owner took over after it went stale is left alone. */
