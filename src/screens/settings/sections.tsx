@@ -5,7 +5,7 @@
 // Sync now, which apps' data to use, the permissions per data type, switching or disconnecting), Appearance (System,
 // Light or Dark as three previews, iOS's picker) and Coach (the provider and the ways into the coach).
 import * as React from "react";
-import { AppState, Pressable, View } from "react-native";
+import { AppState, Linking, Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
 import { Check, CircleAlert, HeartPulse, History, MessageCircle, MessagesSquare, Minus, Settings2, TriangleAlert } from "lucide-react-native";
@@ -14,7 +14,9 @@ import { useChatCount, useCoachSetup } from "@/coach/session";
 import { googleSignInAvailable } from "@/google/auth";
 import { GOOGLE_SOURCE_ENABLED } from "@/google/flags";
 import { pickPhoto, removePhoto, setName, useMe } from "@/state/me";
-import { askPermissions, openHealthConnectSettings, permissionState, READ_TYPES, type PermissionState, type ReadType } from "@/health/connect";
+import { readLog, type RunLogEntry } from "@/background/log";
+import { readSettings } from "@/background/settings";
+import { askBackgroundPermission, askPermissions, openHealthConnectSettings, permissionState, READ_TYPES, type PermissionState, type ReadType } from "@/health/connect";
 import { getSourcePolicy, setSourcePolicy, SOURCE_POLICIES, SOURCE_POLICY_LABELS, type SourcePolicy } from "@/health/sourcePolicy";
 import { ago, DAY, formatDay } from "@/lib/format";
 import { wholeYears } from "@/lib/time";
@@ -196,6 +198,25 @@ function usePermissions(enabled: boolean) {
   return { state, read };
 }
 
+/** How long without a completed background run before Data source says so. */
+const BACKGROUND_QUIET_MS = 6 * 3_600_000;
+
+/**
+ * Whether the background sync is on, and its last runs (Settings › Notifications keeps the full list). Read on
+ * arriving and each time the app comes forward, as the permissions are.
+ */
+function useBackgroundRuns(enabled: boolean) {
+  const [state, setState] = React.useState<{ on: boolean; log: RunLogEntry[] } | null>(null);
+  React.useEffect(() => {
+    if (!enabled) return;
+    const read = () => void Promise.all([readSettings(), readLog()]).then(([s, log]) => setState({ on: s.backgroundSync, log }), () => setState(null));
+    read();
+    const sub = AppState.addEventListener("change", (s) => s === "active" && read());
+    return () => sub.remove();
+  }, [enabled]);
+  return state;
+}
+
 /** One data type's row: its name, whether it is allowed (amber when not), and a check or a dash. */
 function TypeRow({ label, ok }: { label: string; ok: boolean }) {
   const c = useCalm();
@@ -290,6 +311,16 @@ function HealthConnectSource() {
   const failed = app.error ?? app.sync.lastError;
   const revoked = hc && !!perms.state && perms.state.granted.length === 0;
   const needsPermissions = hc && !!perms.state && !revoked && (perms.state.missing.length > 0 || !perms.state.history);
+  // The background sync, said here where a stale Halo sends you: on but not allowed to read while closed, or allowed
+  // and still not run by Android for hours (Battery Saver, or Halo's battery use set to Restricted).
+  const bg = useBackgroundRuns(hc);
+  const lastOk = bg?.log.find((r) => r.result === "ok")?.at ?? null;
+  const bgBlocked = hc && !!bg?.on && !!perms.state && !revoked && !perms.state.background;
+  const bgQuiet = hc && !!bg?.on && !!perms.state?.background && !syncing && now - Math.max(lastOk ?? 0, last ?? 0) > BACKGROUND_QUIET_MS;
+  const allowBackground = async () => {
+    await askBackgroundPermission().catch(() => null);
+    await perms.read();
+  };
   const hcReady = app.availability === "available";
 
   const label = demo ? "Demo data" : hc ? "Health Connect" : "Not connected";
@@ -323,13 +354,24 @@ function HealthConnectSource() {
           statusColor={status.tone ? toneOf(c, status.tone) : undefined}
           body={status.body}
         />
-        {(!!failed && !syncing) || (hc && app.syncWarnings.includes("no_fitbit_records") && !syncing) || needsPermissions ? (
+        {(!!failed && !syncing) || (hc && app.syncWarnings.includes("no_fitbit_records") && !syncing) || needsPermissions || bgBlocked || bgQuiet ? (
           <InsetGroup title="Needs attention">
             {!!failed && !syncing && <WarningRow red title="Last run failed" body={failed} />}
             {hc && app.syncWarnings.includes("no_fitbit_records") && !syncing && <NoFitbitRecords />}
             {needsPermissions && <WarningRow title="Halo needs more permissions" body="Allow every data type, including past data, so Halo can read all of what your Fitbit writes. Sync keeps working until then." />}
             {needsPermissions && <ButtonRow label="Allow" onPress={() => void allow()} />}
             {needsPermissions && <ButtonRow label="Open Health Connect settings" onPress={() => openHealthConnectSettings()} />}
+            {bgBlocked && (
+              <WarningRow title="Background sync can’t run" body="Halo isn’t allowed to read Health Connect while it is closed, so it only syncs when you open it. That is why it opens to old data." />
+            )}
+            {bgBlocked && <ButtonRow label="Allow background access" onPress={() => void allowBackground()} />}
+            {bgQuiet && (
+              <WarningRow
+                title="Background sync hasn’t run lately"
+                body={`${lastOk ? `Android last let it finish ${ago(lastOk, Math.max(now, lastOk))}.` : "Android hasn’t let it finish a run yet."} Battery Saver, or Halo’s battery use set to Restricted or Optimised, holds it back. Set Halo’s battery use to Unrestricted.`}
+              />
+            )}
+            {bgQuiet && <ButtonRow label="Open Halo’s app settings" onPress={() => void Linking.openSettings()} />}
           </InsetGroup>
         ) : null}
         <InsetGroup title="Sync" footer={hc || demo ? `${status.line}. Halo also syncs on its own when it opens and, with background sync on, while it is closed.` : undefined}>

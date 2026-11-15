@@ -4,6 +4,8 @@
 import { clearWeather } from "@/weather/sync";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { perf } from "@/lib/perf";
+import { setSyncing } from "@/lib/rebuilding";
+import { rearmBackgroundSync } from "@/background/task";
 import * as React from "react";
 import { AppState as RNAppState, InteractionManager } from "react-native";
 // Background sync and notifications (src/background): the run body shared with the WorkManager task, the task's
@@ -190,6 +192,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (st: Store, profile: Profile, source: Source) => {
       if (running.current) return running.current;
       const job = (async () => {
+        setSyncing(true);
         patch({ status: "syncing", error: null });
         try {
           // The sync + pipeline body is src/background/runSync.ts, shared with the background task. It takes the
@@ -204,6 +207,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (r.warnings.length) console.log("[sync]", r.warnings.join("; "));
           if (!r.ran) console.log("[run] skipped:", r.skipped);
           const sync = await st.getSyncState();
+          setSyncing(false);
           // A transition: the new scoring run re-renders every open screen, and React now does that in slices with
           // taps let in between instead of one long block.
           React.startTransition(() => {
@@ -213,9 +217,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const message = e instanceof Error ? e.message : String(e);
           console.warn("[run]", message);
           const sync = await st.getSyncState().catch(() => EMPTY_SYNC);
+          setSyncing(false);
           // Scores from the last good run are still on disk, so stay usable and show the error.
           set((s) => ({ ...s, status: s.dataVersion > 0 || sync.lastSyncTs ? "ready" : "error", error: message, progress: null, sync }));
         } finally {
+          setSyncing(false);
           running.current = null;
         }
       })();
@@ -289,6 +295,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let backgroundAt: number | null = null;
     const sub = RNAppState.addEventListener("change", (next) => {
       if (next !== "active") {
+        // Leaving the screen: the background worker goes back on Android's schedule, so a chain that a killed or
+        // failed run broke is mended every time Halo is put away, not only when its process next starts.
+        if (next === "background" && backgroundAt === null) void rearmBackgroundSync();
         backgroundAt ??= Date.now();
         return;
       }

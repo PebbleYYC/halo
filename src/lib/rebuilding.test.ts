@@ -31,3 +31,18 @@ describe("rebuilding", () => {
     expect(n).toBe(2);
   });
 });
+
+describe("syncing", () => {
+  it("says a missing value is still being read while a run is in flight, and a rebuild outranks it", async () => {
+    const { setSyncing } = await import("./rebuilding");
+    setSyncing(true);
+    expect(reasonCopy("awaiting_sleep_sync").long).toBe("Syncing your latest data");
+    expect(reasonCopy("no_data").short).toBe("Syncing");
+    expect(reasonCopy("calibrating", 2).long).toBe("Calibrating: 2 nights left");
+    setRebuilding(true);
+    expect(reasonCopy("no_data").long).toBe(REBUILDING_COPY.long);
+    setRebuilding(false);
+    setSyncing(false);
+    expect(reasonCopy("no_data").short).not.toBe("Syncing");
+  });
+});

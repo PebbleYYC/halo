@@ -18,6 +18,20 @@ export function setRebuilding(v: boolean): void {
 
 export const isRebuilding = (): boolean => rebuilding;
 
+/**
+ * A run is in flight in the app. Until it lands, a missing value is "not read yet", not "no data": opening Halo in
+ * the morning showed an empty day and "Waiting for last night's sleep to sync" for the seconds the launch sync took,
+ * which read as the background sync having failed.
+ */
+let syncing = false;
+export const SYNCING_COPY = { short: "Syncing", long: "Syncing your latest data" } as const;
+export function setSyncing(v: boolean): void {
+  if (v === syncing) return;
+  syncing = v;
+  subs.forEach((fn) => fn());
+}
+export const isSyncing = (): boolean => syncing;
+
 export function subscribeRebuilding(fn: () => void): () => void {
   subs.add(fn);
   return () => {
@@ -27,5 +41,6 @@ export function subscribeRebuilding(fn: () => void): () => void {
 
 /** True while the rebuild runs: a card reading this re-renders when it starts and when it ends. */
 export function useRebuilding(): boolean {
+  React.useSyncExternalStore(subscribeRebuilding, isSyncing, isSyncing);
   return React.useSyncExternalStore(subscribeRebuilding, isRebuilding, isRebuilding);
 }

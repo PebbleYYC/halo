@@ -28,11 +28,12 @@ const SOURCE_KEY = "pulse.source";
 export async function runBackgroundTask(): Promise<BackgroundTask.BackgroundTaskResult> {
   const t0 = Date.now();
   try {
-    // "Halo x.y.z is available" (never throws).
-    await checkAndNotify();
     const settings = await readSettings();
     // Registered for the update check alone: nothing to sync, alert or log.
-    if (!settings.backgroundSync) return BackgroundTask.BackgroundTaskResult.Success;
+    if (!settings.backgroundSync) {
+      await checkAndNotify();
+      return BackgroundTask.BackgroundTaskResult.Success;
+    }
     const store = await backgroundStore();
     const [profile, rawSource] = await Promise.all([store.getProfile(), AsyncStorage.getItem(SOURCE_KEY).catch(() => null)]);
     const source: AlertSource = rawSource === "health_connect" || rawSource === "google" || rawSource === "demo" ? rawSource : null;
@@ -52,6 +53,9 @@ export async function runBackgroundTask(): Promise<BackgroundTask.BackgroundTask
       ms: Date.now() - t0,
       note: r.ran ? (r.warnings.length ? r.warnings.join("; ") : undefined) : r.skipped,
     });
+    // "Halo x.y.z is available" (never throws). Last: it is a request to GitHub, and in a headless task nothing can
+    // time a stalled request out, so it must not stand between Android's ten minutes and the sync.
+    await checkAndNotify();
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
@@ -88,6 +92,22 @@ export async function syncRegistration(enabled: boolean): Promise<void> {
     else if (!enabled && registered) await BackgroundTask.unregisterTaskAsync(TASK_NAME);
   } catch (e) {
     console.warn("[background] register", e instanceof Error ? e.message : String(e));
+  }
+}
+
+/**
+ * Puts the worker back on Android's schedule, a fresh one fifteen minutes out. Called each time the app leaves the
+ * screen. The library chains each run to the next, so one run that Android kills or that fails ends the chain, and
+ * nothing restarts it until the app's process does, which for an app kept in memory can be days. Never throws.
+ */
+export async function rearmBackgroundSync(): Promise<void> {
+  try {
+    const s = await readSettings();
+    if (!(s.backgroundSync || s.updates)) return;
+    if (await isBackgroundSyncRegistered()) await BackgroundTask.unregisterTaskAsync(TASK_NAME);
+    await BackgroundTask.registerTaskAsync(TASK_NAME, { minimumInterval: MIN_INTERVAL_MIN });
+  } catch (e) {
+    console.warn("[background] rearm", e instanceof Error ? e.message : String(e));
   }
 }
 
