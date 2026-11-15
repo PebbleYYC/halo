@@ -103,3 +103,15 @@ describe("logged entries", () => {
     ]);
   });
 });
+
+describe("clearImported", () => {
+  it("drops what the importer wrote but leaves the days' scores for the scoring run to replace", async () => {
+    const s = openMemoryStore();
+    await s.addLoggedEntries([entry("hc", 100, 100, { source: "health_connect" }), entry("mine", 110)]);
+    await s.putScores({ day: "2026-10-02" } as never);
+    await s.clearImported({ from: "2026-10-01", to: "2026-10-03" }, 0, 1_000);
+    // A screen read in the middle of a re-import still has the day's numbers to show.
+    expect((await s.scoresIn({ from: "2026-10-02", to: "2026-10-02" })).length).toBe(1);
+    expect((await s.loggedEntries(0)).map((e) => e.id)).toEqual(["mine"]);
+  });
+});
