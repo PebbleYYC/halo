@@ -51,6 +51,24 @@ export async function beatLock(owner: RunOwner, now = Date.now()): Promise<void>
   }
 }
 
+export type Progress = (step: string, done: number, total: number) => void;
+
+/**
+ * A run's progress listener with the heartbeat in it: every step restamps the lock (at most every LOCK_BEAT_MS), then
+ * goes on to `report`, the caller's own listener. Timers don't run in a headless task, so progress is the only clock
+ * a run has. `beat` and `now` are injectable for the test.
+ */
+export function beatingProgress(owner: RunOwner, report: Progress | undefined, beat: (owner: RunOwner) => unknown = beatLock, now: () => number = Date.now): Progress {
+  let last = now();
+  return (step, done, total) => {
+    if (now() - last >= LOCK_BEAT_MS) {
+      last = now();
+      void beat(owner);
+    }
+    report?.(step, done, total);
+  };
+}
+
 /** Releases the lock when `owner` holds it; one the other owner took over after it went stale is left alone. */
 export async function releaseLock(owner: RunOwner): Promise<void> {
   const lock = await readLock();
