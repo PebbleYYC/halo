@@ -29,8 +29,9 @@ export interface Store {
   /**
    * Drops what an importer wrote for the days in `range` (daily metrics, sleep sessions and their segments, workouts,
    * daily values and health records, by their `day`), the Health Connect log entries there (`source:
-   * "health_connect"`), the heart-rate and step samples with fromTs <= ts < toTs, and those days' scores and series,
-   * before a re-import (or the other source) writes them afresh. Halo's own logs, the journal and the profile stay.
+   * "health_connect"`) and the heart-rate and step samples with fromTs <= ts < toTs, before a re-import writes them
+   * afresh. Those days' scores and series stay, so the screens keep showing them until the scoring run that follows
+   * the import replaces each one. Halo's own logs, the journal and the profile stay.
    */
   clearImported(range: DayRange, fromTs: number, toTs: number): Promise<void>;
   /** Removes sleep sessions and their segments by id: nights the source no longer has (deleted in Fitbit). */

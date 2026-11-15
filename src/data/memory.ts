@@ -137,8 +137,7 @@ export class MemoryStore implements Store {
     for (const [k, v] of this.values) if (inRange(v.day, range)) this.values.delete(k);
     for (const [id, r] of this.records) if (inRange(r.day, range)) this.records.delete(id);
     for (const [id, r] of this.logged) if (r.source === "health_connect" && inRange(r.day, range)) this.logged.delete(id);
-    for (const [d] of this.scores) if (inRange(d, range)) this.scores.delete(d);
-    for (const k of [...this.series.keys()]) if (inRange(k.split("\u0000")[0], range)) this.series.delete(k);
+    // The scores and series stay until the scoring run after the import rewrites them (see db.ts).
     this.hr.drop(fromTs, toTs);
     this.steps.drop(fromTs, toTs);
   }

@@ -381,8 +381,10 @@ class SqliteStore implements Store {
       await db.runAsync("delete from daily_values where day >= ? and day <= ?", days);
       await db.runAsync("delete from health_records where day >= ? and day <= ?", days);
       await db.runAsync("delete from logged_entries where source = 'health_connect' and day >= ? and day <= ?", days);
-      await db.runAsync("delete from daily_scores where day >= ? and day <= ?", days);
-      await db.runAsync("delete from intraday_series where day >= ? and day <= ?", days);
+      // The scores and series of those days stay: they are derived, and the scoring run that follows every import
+      // rewrites each one from what was read (a day whose inputs changed has a new memo key; samples mark it dirty).
+      // Deleting them here left every screen empty from this line until that run ended, on any sync that found an
+      // edit at the source, which Fitbit makes to last night's sleep most days.
       if (toTs > fromTs) for (const table of ["hr_days", "steps_days"] as const) await this.dropSamples(db, table, fromTs, toTs);
     });
   }
