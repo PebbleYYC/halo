@@ -19,7 +19,7 @@ import { runPipeline } from "@/pipeline";
 import { timed } from "@/lib/perf";
 import { setForeground } from "@/lib/yield";
 import { notifyAfterRun } from "./alerts";
-import { beatLock, LOCK_BEAT_MS, releaseLock, takeLock, waitForLock, type RunOwner } from "./lock";
+import { beatingProgress, releaseLock, takeLock, waitForLock, type RunOwner } from "./lock";
 
 export type Source = "health_connect" | "google" | "demo";
 
@@ -91,16 +91,9 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
   if (!lock.taken) return { ran: false, skipped: `${lock.holder === "app" ? "the app" : "the background task"} is syncing`, warnings: [] };
   const warnings: string[] = [];
   let scored = false;
-  // Every step of progress restamps the lock (at most every LOCK_BEAT_MS): the heartbeat that tells the other
-  // runtime this run is alive. Timers don't run in a headless task, so progress is the only clock there is.
-  let beat = Date.now();
-  const onProgress = (step: string, done: number, total: number) => {
-    if (Date.now() - beat >= LOCK_BEAT_MS) {
-      beat = Date.now();
-      void beatLock(opts.owner);
-    }
-    opts.onProgress?.(step, done, total);
-  };
+  // The caller's own listener is handed over before `opts` is replaced: read off `opts` inside the wrapper it would
+  // be the wrapper itself, calling itself until the stack ran out (v1.26.67 failed every sync that way).
+  const onProgress = beatingProgress(opts.owner, opts.onProgress);
   opts = { ...opts, onProgress };
   try {
     if (source === "health_connect") {

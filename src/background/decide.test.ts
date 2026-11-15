@@ -1,7 +1,7 @@
 // The notification and task-gate decisions (decide.ts) are pure: no expo module is imported here.
 import { describe, expect, it } from "vitest";
 import { CANT_SYNC_AFTER_S, DEEP_LINK, EMPTY_MARKERS, decide, formatTime, markSent, parseTime, recoveryBody, sinceWords, taskSkipReason, type DecideInput } from "./decide";
-import { lockHolder } from "./lock";
+import { beatingProgress, LOCK_BEAT_MS, lockHolder } from "./lock";
 
 const TZ = "Europe/Amsterdam";
 /** 2026-10-07 08:30 Amsterdam (CEST, UTC+2). */
@@ -183,5 +183,27 @@ describe("a Google account as the source", () => {
     expect(taskSkipReason(ok)).toBeNull();
     expect(taskSkipReason({ ...ok, background: false })).toBe("no Google account connected");
     expect(taskSkipReason({ ...ok, enabled: false })).toBe("background sync is off");
+  });
+});
+
+describe("beatingProgress", () => {
+  it("passes every step on to the caller's listener exactly once, and beats the lock no more than every LOCK_BEAT_MS", () => {
+    let t = 0;
+    const seen: string[] = [];
+    const beats: string[] = [];
+    const progress = beatingProgress("task", (step) => seen.push(step), (o) => beats.push(o), () => t);
+    progress("a", 0, 2);
+    t += LOCK_BEAT_MS - 1;
+    progress("b", 1, 2);
+    expect(beats).toEqual([]);
+    t += 1;
+    progress("c", 2, 2);
+    progress("d", 2, 2);
+    expect(seen).toEqual(["a", "b", "c", "d"]);
+    expect(beats).toEqual(["task"]);
+  });
+
+  it("works with no listener behind it", () => {
+    expect(() => beatingProgress("app", undefined, () => {}, () => 0)("a", 0, 1)).not.toThrow();
   });
 });
