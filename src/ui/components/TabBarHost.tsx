@@ -12,24 +12,32 @@ type Listener = () => void;
 let current: NavTabBarProps | null = null;
 const listeners = new Set<Listener>();
 
-function publish(props: NavTabBarProps) {
+/** Which bridge published last: only it may clear the bar when it goes. */
+let owner: object | null = null;
+function publish(props: NavTabBarProps, by: object) {
   current = props;
+  owner = by;
   listeners.forEach((l) => l());
 }
 
 /** The navigator's `tabBar`: passes the bar's props on and draws nothing in the navigator. */
 export function TabBarBridge(props: NavTabBarProps) {
   // Before paint, so a tab press lights its tab in the same frame.
+  const [me] = React.useState(() => ({}));
   React.useLayoutEffect(() => {
-    publish(props);
+    publish(props, me);
   });
-  // Gone with the tabs (onboarding, a reset): no stale bar on the way back.
+  // Gone with the tabs (onboarding, a reset): no stale bar on the way back. Only when this bridge is still the one
+  // that published: when the tabs remount, the old bridge's cleanup runs after the new one has published, and
+  // clearing then took the bar (and every tap on it) away until the navigator next rendered.
   React.useEffect(
     () => () => {
+      if (owner !== me) return;
       current = null;
+      owner = null;
       listeners.forEach((l) => l());
     },
-    [],
+    [me],
   );
   return null;
 }

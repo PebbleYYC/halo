@@ -326,6 +326,44 @@ describe("syncHealthConnect edits at the source", () => {
     expect(r.from).toBe("2026-10-04");
     expect((await store.allExercises()).map((e) => e.id)).toEqual([]);
   });
+
+  it("writes a new night in without clearing the window, and clears for one it already holds", async () => {
+    const store = await synced();
+    const cleared = vi.spyOn(store, "clearImported");
+    const fresh = { metadata: meta("s-new", FITBIT, 6), startTime: "2026-10-06T23:00:00Z", endTime: "2026-10-07T05:30:00Z", stages: [] };
+    const data = fixture();
+    data.SleepSession.push(fresh);
+    hc.readAll.mockImplementation(startTimeRead(data));
+    changes.mockResolvedValueOnce({ nextChangesToken: "t1", upsertionChanges: [{ record: fresh as never }], deletionChanges: [], hasMore: false, changesTokenExpired: false });
+    await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+    // Fitbit writes last night's sleep every morning: that alone must not clear and re-read the window.
+    expect(cleared).not.toHaveBeenCalled();
+    expect((await store.allSessions()).some((x) => x.id === "s-new")).toBe(true);
+
+    // The same night changed at the source afterwards: Halo holds it, so its days are cleared before the rewrite.
+    await store.setSyncState({ lastSyncTs: sec("2026-10-07T06:00:00Z"), firstDay: "2026-09-01", lastError: null });
+    changes.mockResolvedValueOnce({ nextChangesToken: "t2", upsertionChanges: [{ record: fresh as never }], deletionChanges: [], hasMore: false, changesTokenExpired: false });
+    await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+    expect(cleared).toHaveBeenCalled();
+  });
+
+  it("keeps its token and reads the ordinary window when the changes call fails, until it has failed three times", async () => {
+    const store = await synced();
+    hc.readAll.mockImplementation(startTimeRead(fixture()));
+    for (let i = 1; i <= 2; i++) {
+      changes.mockRejectedValueOnce(new Error("Health Connect is busy"));
+      const r = await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+      expect(r.from).toBe("2026-10-04");
+      expect(r.counts.changesFailed).toBe(1);
+      // Not moved on: what the failed call would have reported is asked for again next time.
+      expect(storage.get("pulse.hc.changesToken")).toBe("old");
+      await store.setSyncState({ lastSyncTs: sec("2026-10-07T06:00:00Z"), firstDay: "2026-09-01", lastError: null });
+    }
+    changes.mockRejectedValueOnce(new Error("Health Connect is busy"));
+    await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 30 });
+    // Three in a row: the token is given up, so the next sync reads the whole history instead of staying short.
+    expect(storage.has("pulse.hc.changesToken")).toBe(false);
+  });
 });
 
 describe("dayRuns", () => {

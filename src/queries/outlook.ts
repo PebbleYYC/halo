@@ -17,6 +17,8 @@ export type OutlookInput = {
   stress: { lowMin: number; mediumMin: number; highMin: number; longestHigh: { at: string; minutes: number } | null } | null;
   /** Tonight's "Perform" bedtime, "22:40". */
   bedtime: string | null;
+  /** That bedtime has already gone by: "aim to be asleep by 22:40" is no advice at 23:30. */
+  bedtimePassed?: boolean;
 };
 
 const f1 = (x: number) => x.toFixed(1);
@@ -57,7 +59,11 @@ function morning(i: OutlookInput): string[] {
   }
   if (i.recovery != null && i.target) {
     const band = recoveryBand(i.recovery);
-    if (band === "green") out.push(`A good day for a harder session: aim for a Strain of ${range(i.target)}.`);
+    // The outlook runs until the evening, so the day may already have done what it would advise: the words follow
+    // where Strain stands, rather than set a target the day has passed.
+    if (i.strain != null && i.strain > i.target[1]) out.push(`You are already past today’s Strain target of ${range(i.target)}, at ${f1(i.strain)}${band === "red" ? ": rest from here" : ": ease off from here"}.`);
+    else if (i.strain != null && i.strain >= i.target[0]) out.push(`You are already in today’s Strain target of ${range(i.target)}, at ${f1(i.strain)}.`);
+    else if (band === "green") out.push(`A good day for a harder session: aim for a Strain of ${range(i.target)}.`);
     else if (band === "yellow") out.push(`Moderate effort suits today, a Strain of ${range(i.target)}.`);
     else out.push(`Keep it light, under a Strain of ${f1(i.target[1])}${i.bedtime ? `, and be asleep by ${i.bedtime}` : ""}.`);
   }
@@ -81,11 +87,26 @@ function evening(i: OutlookInput): string[] {
     // the stressed minutes stack up. Stressful stretches inside a calm day are said as exactly that.
     const stretches = s.highMin / total >= 0.2;
     const calm = s.lowMin / total;
-    const mood = s.highMin >= s.lowMin ? "stressful" : stretches ? (calm >= 0.5 ? "mostly calm, with stressful stretches" : "a mix of calm and busy, with stressful stretches") : calm >= 0.6 ? "mostly calm" : "a mix of calm and busy";
+    const focused = s.mediumMin / total;
+    // Stressful only when stress outran both of the others; a day that was mostly focused is that, not stressful.
+    const mood =
+      s.highMin > 0 && s.highMin >= s.lowMin && s.highMin >= s.mediumMin
+        ? "stressful"
+        : focused >= 0.6
+          ? stretches
+            ? "mostly focused, with stressful stretches"
+            : "mostly focused"
+          : stretches
+            ? calm >= 0.5
+              ? "mostly calm, with stressful stretches"
+              : "a mix of calm and busy, with stressful stretches"
+            : calm >= 0.6
+              ? "mostly calm"
+              : "a mix of calm and busy";
     const peak = s.longestHigh && s.longestHigh.minutes >= 15 ? ` Your most stressful stretch was ${minutesText(s.longestHigh.minutes)} around ${s.longestHigh.at}.` : "";
     out.push(`While you were still, the day ${i.isToday ? "has been" : "was"} ${mood}: ${minutesText(s.lowMin)} calm, ${minutesText(s.mediumMin)} focused, ${minutesText(s.highMin)} stressed.${peak}`);
   }
-  if (i.isToday && i.bedtime) out.push(`To recover for tomorrow, aim to be asleep by ${i.bedtime}.`);
+  if (i.isToday && i.bedtime) out.push(i.bedtimePassed ? "To recover for tomorrow, get to sleep as soon as you can." : `To recover for tomorrow, aim to be asleep by ${i.bedtime}.`);
   return out;
 }
 

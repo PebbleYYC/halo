@@ -70,3 +70,12 @@ describe("a logged headache", () => {
     expect(describeEntry("symptoms", { symptoms: ["HEADACHE"] }).detail).toBe("Headache");
   });
 });
+
+describe("yesLabel by day", () => {
+  it("shows no count for a Yes from before counting began, and the count after", () => {
+    expect(yesLabel("alcohol", "Alcohol", 1, "2026-11-01")).toBe("Alcohol");
+    expect(yesLabel("alcohol", "Alcohol", 1, "2026-11-12")).toBe("Alcohol · 1");
+    // A number above one could only have been counted.
+    expect(yesLabel("alcohol", "Alcohol", 3, "2026-11-01")).toBe("Alcohol · 3");
+  });
+});

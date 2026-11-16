@@ -17,7 +17,7 @@ import { Txt } from "./Text";
 
 export type StrainRecoveryPoint = { day: string; strain: number | null; recovery: number | null };
 
-const RIGHT_TICKS = [0, 33, 66, 100];
+const RIGHT_TICKS = [0, 33, 67, 100];
 const LEFT_TICKS = [0, 7, 14, 21];
 const H = 232;
 /** Under the plot: the weekday over the day of the month. */

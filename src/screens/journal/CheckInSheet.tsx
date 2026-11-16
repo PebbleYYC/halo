@@ -263,7 +263,8 @@ export function CheckInSheetHost() {
       }
       haptic();
       finish();
-      toast("Check-in saved");
+      // Nothing changed, nothing written: no "saved" for a Done on an untouched sheet.
+      if (changes.length) toast("Check-in saved");
     } catch {
       setSaveError(true);
     } finally {
@@ -337,7 +338,16 @@ export function CheckInSheetHost() {
                           <Txt size={16} lineHeight={21} style={{ flex: 1, minWidth: 0, color: c.ink }}>
                             {t.label}
                           </Txt>
-                          <YesNo label={t.label} compact value={values[t.tag]} onChange={(v) => setValues((s) => ({ ...s, [t.tag]: v }))} />
+                          <YesNo
+                            label={t.label}
+                            compact
+                            value={values[t.tag]}
+                            onChange={(v) =>
+                              // Yes on a counted row that already says Yes is a confirmation, not a toggle: it used to
+                              // clear "3 drinks" to unanswered. No is what clears it.
+                              setValues((s) => ({ ...s, [t.tag]: isCountedTag(t.tag) && (v === undefined || v === 1) && Number(s[t.tag]) > 0 ? s[t.tag] : v }))
+                            }
+                          />
                         </View>
                         {isCountedTag(t.tag) && Number(values[t.tag]) > 0 && (
                           <CountRow tag={t.tag} value={Number(values[t.tag])} onChange={(n) => setValues((s) => ({ ...s, [t.tag]: n }))} />

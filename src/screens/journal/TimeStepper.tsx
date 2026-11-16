@@ -43,6 +43,8 @@ export function TimeStepper({ value, onChange, timeZone, label = "Time" }: { val
   const day = dayWord(shown, now);
   const [typing, setTyping] = React.useState(false);
   const [draft, setDraft] = React.useState("");
+  /** The time showing when typing began: what a half-typed or future time falls back to. */
+  const [startAt, setStartAt] = React.useState(at);
   // A typed time on the shown day; one still ahead of now (or not a time) leaves it as it was.
   const commit = () => {
     if (!typing) return;
@@ -79,7 +81,16 @@ export function TimeStepper({ value, onChange, timeZone, label = "Time" }: { val
           <StableTextInput
             autoFocus
             defaultValue={shown.slice(11)}
-            onChangeText={setDraft}
+            onChangeText={(text) => {
+              setDraft(text);
+              // Handed over as it is typed: tapping Add or Save does not blur the field, so a time that only landed
+              // on blur was lost and the entry was saved at the old one. Whatever the text does not yet make (not a
+              // time, or one still ahead of now) is the time it started at, so the value always matches the text:
+              // the "1" on the way to "18:30" must not be left behind as 01:00.
+              const t = parseClock(text);
+              const next = t ? wallMinutes(`${shown.slice(0, 10)} ${t}`) : null;
+              onChange(wallOf(next !== null && next <= nowMin ? next : startAt));
+            }}
             onSubmitEditing={commit}
             onBlur={commit}
             keyboardType="numbers-and-punctuation"
@@ -96,6 +107,7 @@ export function TimeStepper({ value, onChange, timeZone, label = "Time" }: { val
           <Pressable
             onPress={() => {
               setDraft(shown.slice(11));
+              setStartAt(at);
               setTyping(true);
             }}
             accessibilityRole="button"

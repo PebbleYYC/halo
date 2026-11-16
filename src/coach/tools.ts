@@ -218,13 +218,13 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
           outcome,
           unit: j.unit,
           scoped: want != null && want.length > 0,
-          effects: j.items.filter((i) => hit(i.key, i.label)).map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith, withoutAvg: i.avgWithout, yesDays: i.yes, noDays: i.no })),
+          effects: j.items.filter((i) => hit(i.key, i.label)).map((i) => ({ key: i.key, behaviour: i.label, effect: i.effect, confidenceInterval: i.ci ?? null, delta: round(i.delta, 1), withAvg: i.avgWith === null ? null : round(i.avgWith, outcome === "hrv" ? 1 : 0), withoutAvg: i.avgWithout === null ? null : round(i.avgWithout, outcome === "hrv" ? 1 : 0), yesDays: i.yes, noDays: i.no })),
           needsMoreData: j.needsMore.filter((n) => hit(n.key, n.label)).map((n) => ({ behaviour: n.label, yesDays: n.yes, noDays: n.no })),
           // A counted behaviour (alcohol) by how much: the next-day average after none, a little and a lot. An average
           // of null has too few nights to say.
           byAmount: amounts
             .filter((a) => hit(a.tag, a.label))
-            .map((a) => ({ behaviour: a.label, arms: [a.none, a.light, a.heavy].map((x) => ({ amount: x.label, nights: x.n, nextDayAvg: x.avg === null ? null : round(x.avg, 1) })), uncountedNights: a.unknown })),
+            .map((a) => ({ behaviour: a.label, arms: [a.none, a.light, a.heavy].map((x) => ({ amount: x.label, nights: x.n, nextDayAvg: x.avg === null ? null : round(x.avg, outcome === "hrv" ? 1 : 0) })), uncountedNights: a.unknown })),
         };
       },
     }),
@@ -243,7 +243,7 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
           outcome,
           unit: d.unit,
           scoped: want != null && want.length > 0,
-          timings: d.items.filter((i) => hit(i.tag, i.label)).map((i) => ({ medicine: i.label, splitTime: i.split, earlier: { avg: i.early.avg, days: i.early.n, range: [i.early.from, i.early.to] }, later: { avg: i.late.avg, days: i.late.n, range: [i.late.from, i.late.to] }, delta: round(i.delta, 1), confidenceInterval: i.ci.map((n) => round(n, 1)), effect: i.effect })),
+          timings: d.items.filter((i) => hit(i.tag, i.label)).map((i) => ({ medicine: i.label, splitTime: i.split, earlier: { avg: round(i.early.avg, outcome === "hrv" ? 1 : 0), days: i.early.n, range: [i.early.from, i.early.to] }, later: { avg: round(i.late.avg, outcome === "hrv" ? 1 : 0), days: i.late.n, range: [i.late.from, i.late.to] }, delta: round(i.delta, 1), confidenceInterval: i.ci.map((n) => round(n, 1)), effect: i.effect })),
           needsMoreData: d.needsMore.filter((n) => hit(n.tag, n.label)).map((n) => ({ medicine: n.label, reason: n.reason, timedDays: n.timedDays, spreadMinutes: n.spreadMin })),
         };
       },

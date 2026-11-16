@@ -38,8 +38,12 @@ export function countPhrase(tag: string, n: number): string {
  * A yes behaviour's label as it reads in a badge or a history row: a counted one carries its amount ("Alcohol · 3"),
  * so the number the check-in captured is visible at a glance; every other behaviour is just its name.
  */
-export function yesLabel(tag: string, label: string, value: number): string {
-  return isCountedTag(tag) && value >= 1 ? `${label} · ${value}` : label;
+export function yesLabel(tag: string, label: string, value: number, day?: string): string {
+  const spec = COUNTED_TAGS[tag];
+  if (!spec || value < 1) return label;
+  // Before counting began a Yes was stored as 1 whatever the amount: that 1 is not "one drink".
+  if (day !== undefined && day < spec.since && value === 1) return label;
+  return `${label} · ${value}`;
 }
 
 /** How few days an amount needs before its average is shown. */

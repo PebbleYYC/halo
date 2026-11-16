@@ -204,6 +204,13 @@ export const NightHeart = React.memo(function NightHeart({ hr, stages, timeZone,
   const color = useStageColor();
   const [selected, setSelected] = React.useState<Stage>("awake");
   const night: Night | null = stages?.value && stages.value.segments.length ? stages.value : null;
+  // Another night: the stage picked on the last one may not be in this one, so it starts over.
+  const bed = night?.bed;
+  const [bedSeen, setBedSeen] = React.useState(bed);
+  if (bed !== bedSeen) {
+    setBedSeen(bed);
+    setSelected("awake");
+  }
   const segments = night?.segments;
   const highlight = React.useMemo(() => (segments ? segments.filter((g) => g.stage === selected) : undefined), [segments, selected]);
   const rows = night ? ORDER.flatMap((s) => night.rows.filter((r) => r.stage === s)) : [];

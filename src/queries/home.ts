@@ -128,7 +128,7 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
     keyStats: keyStats(rows, day, isToday, keys, units, byNow),
     cardStats: Object.fromEntries(keyStats(rows, day, isToday, CARD_STATS, units, byNow).map((s) => [s.key, s])) as HomeVM["cardStats"],
     dashboard: { defaults, empty: emptyKeys(rows, day, isToday) },
-    phone: phoneDay(rows, day, isToday, units),
+    phone: phoneDay(rows, day, isToday, units, byNow),
     weeklyTeaser,
     outlook: outlookOf(ctx, row, { recovery, strain, target }, isToday, { timeline, tonight }),
     insights: isToday ? insightsOf(ctx, rows, row, day, { strain, target }) : [],
@@ -191,6 +191,7 @@ export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, 
         ? { lowMin: st.lowMin, mediumMin: st.mediumMin, highMin: st.highMin, longestHigh: st.longestHigh ? { at: clock(st.longestHigh.start * 1000, ctx.timeZone), minutes: st.longestHigh.minutes } : null }
         : null,
     bedtime: perform ? clock(perform.bedtimeAt, ctx.timeZone) : null,
+    bedtimePassed: !!perform && ctx.now > perform.bedtimeAt,
   });
 }
 
@@ -333,7 +334,7 @@ export function keyStats(rows: Map<string, DayRow>, day: string, isToday: boolea
   return keys.map((key) => {
     const { pick, ...s } = specs[key];
     // Today's running totals (steps, calories…) compare with the same hours of the past 30 days, not their whole days.
-    const { mean, sd, scaled } = priorStatsByNow(rows, day, pick, isToday && RUNNING_TOTALS.has(key) ? byNow : null);
+    const { mean, sd, scaled } = priorStatsByNow(rows, day, pick, isToday && RUNNING_TOTALS.has(key) ? byNow : null, key);
     return { key, label: DASHBOARD_LABEL[key], ...s, average: mean, ...(scaled && { averageLabel: AVG_BY_NOW }), ...(sd !== undefined && { sd }) };
   });
 }
@@ -349,12 +350,12 @@ function emptyKeys(rows: Map<string, DayRow>, day: string, isToday: boolean): Da
  * The band recorded no heart rate on `day` but the phone counted something: Home leads with those numbers (§11 CD2).
  * Null when the band was worn, or when the phone recorded nothing either.
  */
-function phoneDay(rows: Map<string, DayRow>, day: string, isToday: boolean, units: Units): KeyStat[] | null {
+function phoneDay(rows: Map<string, DayRow>, day: string, isToday: boolean, units: Units, byNow: ReadonlyMap<string, number> | null = null): KeyStat[] | null {
   const row = rows.get(day);
   if (!row || (row.s1 && row.s1.hrCount > 0)) return null;
   // Calories alone is the source's resting-burn estimate, there with or without a phone: it needs movement too.
   if (!row.metrics?.steps && !row.extra.distance && !row.activities.length) return null;
-  const stats = keyStats(rows, day, isToday, PHONE_STATS, units).filter((s) => s.metric.value !== null);
+  const stats = keyStats(rows, day, isToday, PHONE_STATS, units, byNow).filter((s) => s.metric.value !== null);
   return stats.length ? stats : null;
 }
 

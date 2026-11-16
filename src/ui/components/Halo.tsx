@@ -88,7 +88,12 @@ function useRingProgress(target: number, delay: number, still: boolean, motionKe
     // Nothing to draw yet: an empty ring waits rather than filling to zero and jumping when the day's figures land.
     // One that was showing a figure and has lost it (a day with no score) empties, rather than keeping the old fill.
     if (!ready) {
-      if (!drawn.current) return;
+      // Not drawn on this visit: the figure went while the screen was away (a new day at midnight), and the ring
+      // still holds the fill it had. It empties at once, so no old score sits beside "--".
+      if (!drawn.current) {
+        p.set(0);
+        return;
+      }
       p.set(withSpring(0, RING_SPRING));
       return () => cancelAnimation(p);
     }

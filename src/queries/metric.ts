@@ -226,7 +226,7 @@ export async function getMetricDetail(key: DetailKey, day: string, ctx: QueryCtx
   // A running total on today is measured against what the past 30 days had reached by this hour, not their whole days.
   const running = m.partialToday && isToday && valueDay === today && RUNNING_TOTALS.has(key);
   const share = running ? await shareByNow(ctx, today) : null;
-  const prior = valueDay ? priorStatsByNow(rows, valueDay, (r) => m.pick(r), share) : { mean: null, sd: undefined, scaled: false };
+  const prior = valueDay ? priorStatsByNow(rows, valueDay, (r) => m.pick(r), share, key) : { mean: null, sd: undefined, scaled: false };
 
   const shown: Point[] = days.slice(-SPAN).map((d) => {
     const soFar = m.partialToday && d === today && raw(d) !== null;

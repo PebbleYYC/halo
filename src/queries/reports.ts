@@ -255,7 +255,7 @@ async function tagLabels(ctx: QueryCtx): Promise<Map<string, string>> {
 function insightOf(r: Report, word: string, inTarget: number, withTarget: number): string | null {
   if (r.averages.recovery == null) return null;
   const scored = r.bands.green + r.bands.yellow + r.bands.red;
-  const mood = r.bands.red > r.bands.green ? "A demanding" : r.bands.green * 2 >= scored ? "A strong" : "A balanced";
+  const mood = r.bands.red > r.bands.green ? "A demanding" : r.bands.green * 2 >= scored && r.bands.red < r.bands.green ? "A strong" : "A balanced";
   const parts = [`${mood} ${word}: ${r.bands.green} green ${r.bands.green === 1 ? "day" : "days"}`];
   if (withTarget) parts[0] += ` and strain inside your target on ${inTarget} of ${withTarget} days`;
   parts[0] += ".";

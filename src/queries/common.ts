@@ -197,7 +197,32 @@ export function priorStats(rows: Map<string, DayRow>, day: string, pick: (r: Day
 export const AVG_BY_NOW = "avg by now";
 
 /** The metrics that pile up through the day, so today's number is a running total, not a reading. */
-export const RUNNING_TOTALS: ReadonlySet<string> = new Set(["steps", "calories", "distance", "floors", "active_minutes", "azm", "active_calories"]);
+export const RUNNING_TOTALS: ReadonlySet<string> = new Set([
+  "steps",
+  "calories",
+  "distance",
+  "floors",
+  "elevation",
+  "active_minutes",
+  "light_minutes",
+  "sedentary_minutes",
+  "azm",
+  "active_calories",
+  "swim_strokes",
+  // The Strain summary's own rows: minutes in the heart-rate zones and in strength work pile up the same way.
+  "zones13",
+  "zones45",
+  "strength",
+]);
+
+/**
+ * How much of a day's total calories is the resting burn, which runs by the clock, not by movement. Scaled by the
+ * share of steps alone, an 08:00 "average by now" came out near 5% of the day (120 kcal of 2,400) against some 650
+ * already burned, and every morning read as far above average.
+ */
+const RESTING_CALORIE_SHARE = 0.7;
+/** How far through the day each by-now map was taken (0 to 1), for the totals that run partly by the clock. */
+const DAY_FRACTION = new WeakMap<ReadonlyMap<string, number>, number>();
 
 /** Fewer past days than this with minute-level steps: the running totals fall back to the whole-day average. */
 export const MIN_BY_NOW_DAYS = 5;
@@ -225,6 +250,7 @@ export async function shareByNow(ctx: QueryCtx, day: string): Promise<Map<string
     }
     if (total > 0) out.set(d, sofar / total);
   }
+  DAY_FRACTION.set(out, Math.max(0, Math.min(1, elapsed / 86_400)));
   return out;
 }
 
@@ -232,13 +258,16 @@ export async function shareByNow(ctx: QueryCtx, day: string): Promise<Map<string
  * The prior-30-day mean and SD of `pick`, each day scaled to what it had reached by this time of day. `scaled` is false
  * when too few days have minute-level steps: then it is the ordinary whole-day mean, and the row says "30-day avg".
  */
-export function priorStatsByNow(rows: Map<string, DayRow>, day: string, pick: (r: DayRow) => number | null | undefined, byNow: ReadonlyMap<string, number> | null) {
+export function priorStatsByNow(rows: Map<string, DayRow>, day: string, pick: (r: DayRow) => number | null | undefined, byNow: ReadonlyMap<string, number> | null, key?: string) {
   if (byNow) {
     const xs: (number | null)[] = [];
+    // Total calories are mostly the resting burn: that part is scaled by the clock, the rest by the day's movement.
+    const clock = key === "calories" ? DAY_FRACTION.get(byNow) : undefined;
     for (let k = 1; k <= 30; k++) {
       const d = addDays(day, -k);
       const r = rows.get(d);
-      const share = byNow.get(d);
+      const moved = byNow.get(d);
+      const share = moved === undefined || clock === undefined ? moved : RESTING_CALORIE_SHARE * clock + (1 - RESTING_CALORIE_SHARE) * moved;
       const v = r ? pick(r) : null;
       xs.push(finite(v) && share !== undefined ? v * share : null);
     }

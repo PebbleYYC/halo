@@ -129,7 +129,8 @@ export type Range = { start: Date; end: Date };
  * Every record of `type` in the range, following page tokens. Ascending by time. `origins` limits the read to those
  * apps' records (Health Connect's dataOriginFilter; see sourcePolicy.ts).
  */
-export async function readAll<T extends ReadType>(type: T, range: Range, pageSize = 1000, origins?: string[]): Promise<RecordResult<T>[]> {
+/** `onPage` is called after each page: a long read reports that it is alive (the sync beats its run lock on it). */
+export async function readAll<T extends ReadType>(type: T, range: Range, pageSize = 1000, origins?: string[], onPage?: () => void): Promise<RecordResult<T>[]> {
   await ensureInitialized();
   const out: RecordResult<T>[] = [];
   let pageToken: string | undefined;
@@ -144,6 +145,7 @@ export async function readAll<T extends ReadType>(type: T, range: Range, pageSiz
     const page = await readRecords(type, options);
     out.push(...page.records);
     pageToken = page.pageToken;
+    onPage?.();
   } while (pageToken);
   return out;
 }

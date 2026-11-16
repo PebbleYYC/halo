@@ -156,6 +156,9 @@ export class MemoryStore implements Store {
   async markIntradayDirty(days: string[]) {
     for (const d of days) this.dirty.add(d);
   }
+  async intradayDirty() {
+    return [...this.dirty].sort();
+  }
   async takeIntradayDirty() {
     const days = [...this.dirty].sort();
     this.dirty.clear();

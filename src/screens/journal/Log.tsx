@@ -221,11 +221,16 @@ export function Log({ vm }: LogProps) {
     setError(null);
   };
 
+  // A second tap before the first render disables the button would write the entry twice.
+  const sending = React.useRef(false);
   const send = async (input: LogInput, close = true) => {
     if (!actx) return setError("Couldn’t save. Try again.");
+    if (sending.current) return;
+    sending.current = true;
     setSaving(true);
     setError(null);
     const r = await logEntry(actx, input).catch(() => ({ ok: false as const, error: "Couldn’t save. Try again." }));
+    sending.current = false;
     setSaving(false);
     if (!r.ok) return setError(r.error);
     if (close) shut();

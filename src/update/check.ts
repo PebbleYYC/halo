@@ -117,7 +117,8 @@ export function checkForUpdate({ force = false } = {}): Promise<UpdateStatus> {
   if (inflight && !force) return inflight;
   const run = (async () => {
     const s = await readState();
-    if (!force && !(await readSettings()).updates) return statusOf(s);
+    // Off means off: the last answer is kept for About, but nothing is offered.
+    if (!force && !(await readSettings()).updates) return { ...statusOf(s), available: null };
     try {
       const latest = await fetchLatest();
       console.log(`[update] checked: latest ${latest.version}, installed ${INSTALLED_VERSION}${force ? " (manual)" : ""}`);

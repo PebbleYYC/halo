@@ -451,11 +451,16 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
     app.dataChanged();
   };
 
+  // A second tap before the first render disables the button would log the meal twice.
+  const sending = React.useRef(false);
   const send = async (run: () => Promise<ActionResult<unknown>>, message: string) => {
     if (!actx) return setError("Couldn’t save. Try again.");
+    if (sending.current) return;
+    sending.current = true;
     setSaving(true);
     setError(null);
     const r = await run().catch(() => ({ ok: false as const, error: "Couldn’t save. Try again." }));
+    sending.current = false;
     setSaving(false);
     if (!r.ok) return setError(r.error);
     done(message);

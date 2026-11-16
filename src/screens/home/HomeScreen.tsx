@@ -132,7 +132,9 @@ export default function HomeScreen() {
   const progress = importing ? (syncProgress ? progressLabel(syncProgress) : "Syncing…") : null;
 
   // Built only when the day's data changes: the bar's ticks re-render this screen, not the page.
-  const error = !vm ? home.error : null;
+  // Also when the day on screen is not the one asked for and its query failed: the previous day's cards would
+  // otherwise sit, undimmed, under the new date with no sign anything went wrong.
+  const error = !vm || vm.day !== d ? home.error : null;
   const timeZone = app.timeZone;
   const retry = app.refresh;
   const content = React.useMemo(() => {

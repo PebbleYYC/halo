@@ -62,7 +62,7 @@ function HealthSkeleton({ icon: Icon, tint, title, filled }: { icon: LucideIcon;
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12, marginTop: 8 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <SkeletonText size={30} lineHeight={36} width={84} />
-          <SkeletonText size={14} lineHeight={19} width={132} />
+          <SkeletonText size={13} lineHeight={18} width={132} />
         </View>
         <Skeleton radius={10} style={{ width: MINI_W, height: MINI_H, marginBottom: 3 }} />
       </View>

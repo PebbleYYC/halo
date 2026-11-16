@@ -46,7 +46,13 @@ function useFieldRun(): SharedValue<number> {
   const t = useSharedValue(1);
   const focused = useIsFocused();
   React.useEffect(() => {
-    if (!focused || reduceMotionNow()) return;
+    // Reduce motion is the settled state, set outright: a run cut short by leaving the screen would otherwise stay
+    // frozen where it stopped (stars invisible, waves flat) for as long as the setting is on.
+    if (reduceMotionNow()) {
+      t.set(1);
+      return;
+    }
+    if (!focused) return;
     t.set(0);
     t.set(withTiming(1, { duration: FIELD_MS, easing: Easing.linear }));
     return () => cancelAnimation(t);

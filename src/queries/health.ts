@@ -298,7 +298,10 @@ function healthspanInsight(pace: number | null, deltaYears: number, cs: Healthsp
         ? "Aging slower"
         : pace > 1.1
           ? "Aging faster"
-          : "Steady and healthy";
+          : // A steady pace is only "healthy" near your own age: six years older and holding is said as that.
+            deltaYears > 1
+            ? "Older than your age, holding steady"
+            : "Steady and healthy";
   const best = [...cs].sort((a, b) => a.years - b.years)[0];
   const worst = [...cs].sort((a, b) => b.years - a.years)[0];
   const label = (c: HealthspanContribution) => HS_META[c.key].label.toLowerCase();
@@ -537,7 +540,8 @@ export async function getStress(day: string, ctx: QueryCtx): Promise<StressVM> {
             lowMin: st.lowMin,
             mediumMin: st.mediumMin,
             highMin: st.highMin,
-            typicalDeltaMin: typical == null ? null : st.highMin - typical,
+            // A day still running can only be said to be over its typical: "1 h 10 min less" at 08:30 is not yet true.
+            typicalDeltaMin: typical == null || (isToday && st.highMin < typical) ? null : st.highMin - typical,
             weekday: formatDay(day, { weekday: "long" }),
             typical: sameStress.length ? { lowMin: typicalOf((x) => x.lowMin), mediumMin: typicalOf((x) => x.mediumMin), highMin: typical! } : null,
           },

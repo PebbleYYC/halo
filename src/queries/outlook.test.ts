@@ -51,6 +51,17 @@ describe("outlookText, evening", () => {
     expect(outlookText({ ...ev, stress: { lowMin: 100, mediumMin: 50, highMin: 60, longestHigh: null } })?.body).toContain("the day has been a mix of calm and busy, with stressful stretches");
     expect(outlookText({ ...ev, stress: { lowMin: 10, mediumMin: 5, highMin: 5, longestHigh: null } })).toBeNull();
   });
+
+  it("follows where Strain already stands in the morning outlook, and what kind of day it was in the review", () => {
+    const am = { ...ev, review: false, recovery: 80, target: [8, 12] as [number, number] };
+    expect(outlookText({ ...am, strain: 14.2 })?.body).toContain("already past today’s Strain target of 8.0 to 12.0, at 14.2");
+    expect(outlookText({ ...am, strain: 9 })?.body).toContain("already in today’s Strain target");
+    expect(outlookText({ ...am, strain: 2 })?.body).toContain("A good day for a harder session");
+    // Five hours focused and 25 minutes stressed is a focused day, not a stressful one.
+    expect(outlookText({ ...ev, stress: { lowMin: 20, mediumMin: 300, highMin: 25, longestHigh: null } })?.body).toContain("the day has been mostly focused");
+    expect(outlookText({ ...ev, stress: { lowMin: 0, mediumMin: 60, highMin: 0, longestHigh: null } })?.body).not.toContain("stressful");
+    expect(outlookText({ ...ev, stress: null, bedtime: "22:40", bedtimePassed: true })?.body).toContain("as soon as you can");
+  });
 });
 
 describe("minutesText", () => {

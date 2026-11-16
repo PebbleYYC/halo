@@ -241,7 +241,7 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
   return (
     <GlowCard color={recovery === null ? null : band === "yellow" ? theme.recoveryYellow : band === "red" ? theme.recoveryRed : theme.recoveryGreen} padding={16} gap={14}>
       {/* The same head as every lead card; the link to the data sits on its right, where "Details" does elsewhere. */}
-      <HeroHead icon={Target} ink={c.ink} title="Today’s scores" right={<PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />} />
+      <HeroHead icon={Target} ink={c.ink} title={vm.isToday ? "Today’s scores" : "Scores"} right={<PillAction label="See data" accessibilityLabel="See data: every metric in Trends" onPress={() => go("/trends")} />} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
         <Pressable onPress={() => go("/trends")} accessibilityRole="button" accessibilityLabel="Open your data in Trends" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
           <ScoreRings motionKey="today" recovery={recovery} sleep={sleep} strain={strain} strainTarget={dials.strainTarget} size={size} delay={RINGS_DELAY} />

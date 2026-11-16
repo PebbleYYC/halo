@@ -283,7 +283,7 @@ function NutritionLine({ go }: { go: (href: string) => void }) {
   return (
     <FootRow icon={Utensils} tint="sand" title="Nutrition" onPress={() => go("/nutrition")} accessibilityLabel={`${spoken}. Open Nutrition`}>
       {t && t.kcal !== null ? (
-        <Sentence size={14}>
+        <Sentence size={13}>
           {"Today "}
           <NumSpan size={14}>{formatValue("grouped", t.kcal)}</NumSpan>
           {" kcal"}
@@ -296,7 +296,7 @@ function NutritionLine({ go }: { go: (href: string) => void }) {
           )}
         </Sentence>
       ) : (
-        <Sentence size={14}>{t ? "No food logged today" : "Today’s food"}</Sentence>
+        <Sentence size={13}>{t ? "No food logged today" : "Today’s food"}</Sentence>
       )}
     </FootRow>
   );

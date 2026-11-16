@@ -150,7 +150,7 @@ export async function getJournal(day: string, ctx: QueryCtx): Promise<JournalVM>
   for (let d = stripStart; d <= today; d = addDays(d, 1)) strip.push({ day: d, done: byDay.has(d) });
   const mine = byDay.get(day) ?? [];
   const yesOf = (es: typeof entries) =>
-    es.filter((e) => e.value > 0).map((e) => ({ tag: e.tag, label: yesLabel(e.tag, label.get(e.tag) ?? e.tag, e.value) }));
+    es.filter((e) => e.value > 0).map((e) => ({ tag: e.tag, label: yesLabel(e.tag, label.get(e.tag) ?? e.tag, e.value, e.day) }));
 
   const strongest = impact?.impacts.find((t) => t.effects.recovery.label === "positive" || t.effects.recovery.label === "negative");
   const teaser = strongest
