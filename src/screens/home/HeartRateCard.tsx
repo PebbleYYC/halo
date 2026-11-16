@@ -63,7 +63,7 @@ export function HeartRateCard({ today, onOpen }: { today: boolean; onOpen: () =>
     context = <HealthContext>{`${lo}–${hi} last ${RECENT_MINUTES} min`}</HealthContext>;
   } else if (!latest && updatedAt === null) {
     // Before the first read: the line's shape, nothing to say yet.
-    context = <SkeletonText size={14} lineHeight={19} width={120} />;
+    context = <SkeletonText size={13} lineHeight={18} width={120} />;
   } else if (!latest) {
     context = <HealthContext>{error ?? (app.source === "demo" ? "The demo has no readings yet." : app.source === "google" ? "Nothing from Google Health yet." : "Nothing synced from Health Connect yet.")}</HealthContext>;
   }
@@ -94,7 +94,7 @@ export function HeartRateCard({ today, onOpen }: { today: boolean; onOpen: () =>
             : undefined
         }
         accessibilityLabel={today ? `${spoken}. Opens heart rate` : spoken}
-        value={<HealthValue text={bpm ? String(bpm) : null} unit="BPM" color={lost ? c.sub : undefined} />}
+        value={<HealthValue text={bpm ? String(bpm) : null} unit="bpm" color={lost ? c.sub : undefined} />}
         context={context}
         chart={chart}
         footer={today ? <View style={{ flexDirection: "row" }}>{streaming ? <StopLiveButton /> : <GoLiveButton onPress={() => setSheet(true)} />}</View> : undefined}

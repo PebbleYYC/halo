@@ -259,7 +259,10 @@ function Trend({ points, p }: { points: TrendPoint[]; p: TrendChartProps }) {
       smooth: props.smooth ? trailingMean(stable, stable.length - Math.min(n, stable.length) + i, props.smooth) : null,
     }));
     const values = rows.map((r) => r.value).filter((v): v is number => v !== null);
-    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    // The average is of finished days: today's running total (1,200 steps at 09:00) is drawn, but it is not a day's
+    // figure yet and would pull the average, its guide line and the header down.
+    const done = rows.filter((r) => !r.provisional).map((r) => r.value).filter((v): v is number => v !== null);
+    const avg = done.length ? done.reduce((a, b) => a + b, 0) / done.length : values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
     const delta = props.deltas?.[range] ?? null;
     const tone = delta === null || !props.direction || delta === 0 ? null : deltaTone(props.direction, delta, 0).tone;
     const line = !!props.line || range === "6m" || range === "1y";
@@ -280,12 +283,18 @@ function Trend({ points, p }: { points: TrendPoint[]; p: TrendChartProps }) {
     let yTicks: number[];
     if (props.colorBy === "band") {
       domain = [0, 100];
-      yTicks = line ? [0, 50, 100] : [33, 67, 100];
+      // The band cuts either way, so the grid does not change between the week and the six months.
+      yTicks = line ? [0, 33, 67, 100] : [33, 67, 100];
     } else if (props.colorBy === "stress") {
       domain = [0, 3];
       yTicks = line ? [0, 1.5, 3] : [1, 2, 3];
     } else if (line && (props.colorBy === "single" || props.line)) {
-      const t = niceTicks(Math.min(lo, ...extend, ...smoothVals), Math.max(hi, ...extend, ...smoothVals), 3);
+      const a = Math.min(lo, ...extend, ...smoothVals);
+      const b = Math.max(hi, ...extend, ...smoothVals);
+      // Every value the same (VO2 max at 42.0 for six months): one tick is no scale, and the line fell to the floor.
+      // It gets room either side, so a flat line is drawn across the middle.
+      const pad = a === b ? Math.max(1, Math.abs(a) * 0.1) : 0;
+      const t = niceTicks(a - pad, b + pad, 3);
       domain = [t[0], t[t.length - 1]];
       yTicks = t;
     } else {

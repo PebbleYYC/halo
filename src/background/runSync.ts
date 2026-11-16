@@ -2,6 +2,7 @@
 // (src/state/app.tsx's run()) do the same thing: take the run lock (lock.ts), import from the source (Health Connect,
 // or the Google Health API with a silent Google sign-in), score, then send the alerts that are due (alerts.ts). Within
 // one JavaScript runtime a second call joins the first; across runtimes the lock keeps the two apart.
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState } from "react-native";
 import { openStore } from "@/data/db";
 import type { Store } from "@/data/store";
@@ -38,6 +39,18 @@ export type RunSyncResult = {
   /** Sync hints (permission_missing:<Type>, …), never errors. */
   warnings: string[];
 };
+
+/**
+ * When a run last finished scoring, in epoch ms, written by whichever runtime ran it. The import stamps its own time
+ * before the scoring starts, so that alone cannot say the day on disk is scored; and a background run inside the
+ * app's own process finishes without the app's screens hearing of it. The app reads this for both.
+ */
+const SCORED_KEY = "pulse.sync.scoredAt";
+export async function readScoredAt(): Promise<number> {
+  const raw = await AsyncStorage.getItem(SCORED_KEY).catch(() => null);
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) ? n : 0;
+}
 
 /**
  * How long the app waits for a live background run before giving up and using what is on disk. A dead one is not
@@ -109,6 +122,7 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
     }
     await timed(`pipeline (${opts.owner})`, () => runPipeline(store, profile, { today: localDay(Date.now() / 1000, opts.timeZone), onProgress: opts.onProgress }));
     scored = true;
+    await AsyncStorage.setItem(SCORED_KEY, String(Date.now())).catch(() => {});
     // The scores are on disk: the lock goes now, before the network extras. A weather request that never answers
     // (no timer can cut it short in a headless task) used to hold the lock, and the app behind it, until it went stale.
     await releaseLock(opts.owner);

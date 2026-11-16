@@ -1,6 +1,6 @@
 {
   "name": "pulse",
-  "version": "1.26.70",
+  "version": "1.26.71",
   "main": "index.ts",
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.71",
@@ -83,7 +83,8 @@
   "private": true,
   "reanimated": {
     "staticFeatureFlags": {
-      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true,
+      "FORCE_REACT_RENDER_FOR_SETTLED_ANIMATIONS": false
     }
   }
 }

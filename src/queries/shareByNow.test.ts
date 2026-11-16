@@ -44,3 +44,19 @@ describe("priorStatsByNow", () => {
     expect(r.mean).toBeCloseTo(10_000);
   });
 });
+
+describe("calories by now", () => {
+  it("scales the resting burn by the clock and only the rest by the day's movement", async () => {
+    const store = new MemoryStore();
+    // Ten past days, each with all of its steps at 20:00: at 08:00 no steps have been taken on any of them.
+    const days = Array.from({ length: 10 }, (_, k) => addDays(TODAY, -k - 1));
+    await store.putSteps(days.map((d) => ({ ts: localMidnight(d, TZ) + 20 * 3600, v: 5000 })));
+    const now = localMidnight(TODAY, TZ) + 8 * 3600;
+    const share = await shareByNow({ store, today: TODAY, now, timeZone: TZ } as never, TODAY);
+    const rows = new Map(days.map((d) => [d, { day: d, metrics: { calories: 2400 } } as never]));
+    const pick = (r: DayRow) => r.metrics?.calories ?? null;
+    // By steps alone the average by 08:00 would be 0 kcal; a third of the day's resting burn is 560.
+    expect(priorStatsByNow(rows, TODAY, pick, share, "steps").mean).toBeCloseTo(0);
+    expect(priorStatsByNow(rows, TODAY, pick, share, "calories").mean).toBeCloseTo(2400 * 0.7 * (8 / 24));
+  });
+});

@@ -63,7 +63,7 @@ export function WeeklyPlanRow({ vm, go }: Pick<SlotProps, "vm" | "go">) {
   if (ready && keys.length === 0)
     return (
       <FootRow icon={CalendarCheck} tint="mint" title="Weekly plan" onPress={() => go(PLAN_HREF)} accessibilityLabel="Weekly plan: no weekly targets switched on. Set weekly targets">
-        <Sentence size={14}>No weekly targets switched on</Sentence>
+        <Sentence size={13}>No weekly targets switched on</Sentence>
         <Txt size={13} lineHeight={18} weight={500} style={{ color: c.teal }}>
           Set weekly targets
         </Txt>
@@ -86,7 +86,7 @@ export function WeeklyPlanRow({ vm, go }: Pick<SlotProps, "vm" | "go">) {
         }
       >
         {data ? (
-          <Sentence size={14}>
+          <Sentence size={13}>
             {data.isCurrentWeek ? "" : `${titleOf(data)} · `}
             <NumSpan size={14} color={all ? c.tintInk.mint : undefined}>{String(data.onTrack)}</NumSpan>
             {" of "}

@@ -7,21 +7,22 @@ import * as React from "react";
 import { View } from "react-native";
 import { CircleAlert, ShieldCheck } from "lucide-react-native";
 import { dayHref, useDay } from "@/lib/day";
-import { MISSING } from "@/lib/format";
 import { reasonCopy } from "@/lib/reasons";
 import { getMonitor, metricHref, type MonitorVM } from "@/queries";
 import { useQuery } from "@/state/app";
 import { KeyStatRow, KeyStatRowSkeleton, SectionShell, Skeleton, SkeletonText, Txt } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
-import { ActivityRings } from "@/ui/components/Halo";
+import { ActivityRings, RING_LAND_MS, RollingNumber } from "@/ui/components/Halo";
+import { font } from "@/ui/fonts";
+import { REASON_ICON } from "@/ui/components/ReasonPlaceholder";
 import { alpha } from "@/lib/utils";
 import { HERO_RING, HERO_RING_STROKE } from "@/screens/detail/ScoreHero";
 import { TonePill } from "@/ui/components/Meter";
 import { CalmCard, Sentence } from "@/screens/detail/calmKit";
 import { HeartRhythm, HeartRhythmSkeleton } from "./HeartRhythm";
 import { MONITOR_INFO } from "./info";
-import { CardHead, RollingValue } from "./kit";
+import { CardHead } from "./kit";
 import { DetailScreen, ErrorState, useDaySwitcher, usePush } from "./shells";
 import { Rows, statIcon } from "./view";
 import { VitalTiles, VitalTilesSkeleton } from "./VitalTiles";
@@ -62,17 +63,24 @@ function Count({ count }: { count: MonitorVM["count"] | undefined }) {
             {!count ? (
               <SkeletonText role="valueHero" size={54} lineHeight={58} chars={2} />
             ) : (
-              <View style={{ alignItems: "center" }}>
-                <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-                  <RollingValue value={v ? String(v.inRange) : MISSING} size={54} />
-                  <Txt size={22} lineHeight={28} weight={700} style={{ color: c.sub, marginLeft: 1, marginBottom: 8 }}>
-                    {`/${v?.total ?? 5}`}
+              v ? (
+                <View style={{ alignItems: "center" }}>
+                  <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+                    {/* Set as the other heroes' numbers are (ScoreHero): same size, line, weight and tracking. */}
+                    <RollingNumber text={String(v.inRange)} lineHeight={58} duration={RING_LAND_MS} style={[font.numberAt(54, 800), { color: c.ink, letterSpacing: -1.5 }]} />
+                    <Txt size={22} lineHeight={28} weight={700} style={{ color: c.sub, marginLeft: 1, marginBottom: 8 }}>
+                      {`/${v.total}`}
+                    </Txt>
+                  </View>
+                  <Txt size={15} lineHeight={20} weight={600} align="center" style={{ color: c.sub, marginTop: -2 }}>
+                    within range
                   </Txt>
                 </View>
-                <Txt size={15} lineHeight={20} weight={600} align="center" style={{ color: c.sub, marginTop: -2 }}>
-                  within range
-                </Txt>
-              </View>
+              ) : (
+                // No count: the reason's own mark, as the other heroes show, not "–/5 within range" over a sentence
+                // saying there is nothing to count.
+                React.createElement(REASON_ICON[reason!.code] ?? ShieldCheck, { size: 30, color: c.sub, strokeWidth: 2 })
+              )
             )}
           </ActivityRings>
         </View>

@@ -49,6 +49,8 @@ export interface Store {
   /** Days whose intraday samples changed since the pipeline last ran (stage 1 reruns them). */
   markIntradayDirty(days: string[]): Promise<void>;
   takeIntradayDirty(): Promise<string[]>;
+  /** The dirty days, left in place: the scoring run reads them, and takes them only once it has redone them. */
+  intradayDirty(): Promise<string[]>;
 
   // Reads
   allMetrics(): Promise<Metrics[]>;

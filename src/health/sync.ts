@@ -128,6 +128,9 @@ export function windowPlan(a: {
   return { full, reimport };
 }
 
+/** How many syncs in a row the changes call has failed. */
+const CHANGES_FAILED_KEY = "pulse.hc.changesFailed";
+
 const recordStart = (r: { time?: string; startTime?: string }): number | null => {
   const iso = r.time ?? r.startTime;
   const ms = iso ? Date.parse(iso) : NaN;
@@ -136,7 +139,7 @@ const recordStart = (r: { time?: string; startTime?: string }): number | null =>
 
 /** What changed since `token`: the earliest start among other records (a backfill), and the sleep and workouts edited
  *  (their start and end) or deleted (their ids). */
-export type ChangeScan = { earliest: number | null; edited: { startTs: number; endTs: number; type: "SleepSession" | "ExerciseSession" }[]; deleted: string[] };
+export type ChangeScan = { earliest: number | null; edited: { id: string | null; startTs: number; endTs: number; type: "SleepSession" | "ExerciseSession" }[]; deleted: string[] };
 
 /** A change's record kind: by its type when the record carries one, else by shape (a sleep has stages, a workout a type). */
 function changedKind(r: object): "SleepSession" | "ExerciseSession" | null {
@@ -153,11 +156,11 @@ async function changesSince(token: string): Promise<ChangeScan | "expired"> {
     const res = await getChanges({ changesToken: tok });
     if (res.changesTokenExpired) return "expired";
     for (const c of res.upsertionChanges) {
-      const r = c.record as { time?: string; startTime?: string; endTime?: string };
+      const r = c.record as { time?: string; startTime?: string; endTime?: string; metadata?: { id?: string } };
       const t = recordStart(r);
       if (t === null) continue;
       const kind = changedKind(r);
-      if (kind) scan.edited.push({ startTs: t, endTs: r.endTime ? Math.floor(Date.parse(r.endTime) / 1000) : t, type: kind });
+      if (kind) scan.edited.push({ id: r.metadata?.id ?? null, startTs: t, endTs: r.endTime ? Math.floor(Date.parse(r.endTime) / 1000) : t, type: kind });
       else if (scan.earliest === null || t < scan.earliest) scan.earliest = t;
     }
     for (const d of res.deletionChanges) scan.deleted.push(d.recordId);
@@ -240,15 +243,29 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     let fromDay: string;
     /** Days of sleep or workouts edited or deleted at the source since the last sync: re-imported alone, not the days between. */
     const editedDays = new Set<string>();
+    /**
+     * The days among them that need clearing first: where a record Halo holds was deleted, or changed (its stored
+     * copy may have stages or a length the new one no longer has, which writing over it would leave behind). A night
+     * or workout that is simply new needs none: it is written in. Every upsert used to count, and Fitbit writes last
+     * night's sleep each morning, so most days' first sync cleared and re-read its whole window.
+     */
+    const removedDays = new Set<string>();
+    /** The changes call failed: this run reads the ordinary window, and the token must not move past what it missed. */
+    let changesFailed = false;
     // (plan.full already covers a missing token or first sync; repeated so the else branch can rely on both.)
     if (plan.full || !token || state.lastSyncTs === null || backfill) {
       fromDay = firstFrom;
       counts.full = 1;
       if (backfill) counts.backfill = 1;
     } else {
-      const changed = await changesSince(token).catch(() => "expired" as const);
+      // A failed call (a rate limit, Health Connect busy) is not an expired token: it gets the ordinary recent window
+      // and keeps the token, rather than a read of the whole history.
+      const changed = await changesSince(token).catch(() => null);
       fromDay = localDay(state.lastSyncTs - RESYNC_DAYS * 86_400, tz);
-      if (changed === "expired") {
+      if (changed === null) {
+        changesFailed = true;
+        counts.changesFailed = 1;
+      } else if (changed === "expired") {
         fromDay = historyFrom;
         counts.full = 1;
       } else {
@@ -262,9 +279,27 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
           editedDays.add(localDay(e.startTs, tz));
           if (e.type === "SleepSession") editedDays.add(localDay(e.endTs, tz));
         }
-        if (changed.deleted.length) {
+        if (changed.deleted.length || changed.edited.length) {
           const gone = new Set(changed.deleted);
-          for (const x of [...(await store.allSessions()), ...(await store.allExercises({ raw: true }))]) if (gone.has(x.id)) editedDays.add(x.day);
+          // A change to a record Halo already holds (by its id, or with no id to tell by): cleared like a deletion,
+          // on the day it was kept and the days it now covers.
+          const rewritten = new Set(changed.edited.map((e) => e.id).filter((id): id is string => !!id));
+          for (const e of changed.edited) {
+            if (e.id) continue;
+            removedDays.add(localDay(e.startTs, tz));
+            if (e.type === "SleepSession") removedDays.add(localDay(e.endTs, tz));
+          }
+          for (const x of [...(await store.allSessions()), ...(await store.allExercises({ raw: true }))]) {
+            if (gone.has(x.id)) {
+              editedDays.add(x.day);
+              removedDays.add(x.day);
+            } else if (rewritten.has(x.id)) {
+              removedDays.add(x.day);
+              const e = changed.edited.find((y) => y.id === x.id)!;
+              removedDays.add(localDay(e.startTs, tz));
+              if (e.type === "SleepSession") removedDays.add(localDay(e.endTs, tz));
+            }
+          }
         }
       }
       if (fromDay < historyFrom) fromDay = historyFrom;
@@ -280,7 +315,21 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
     let recordsKept = 0;
     let done = 0;
     let total = 0;
-    const importRange = async (fromDay: string, toDay: string, replace: boolean, rescoreAll: boolean) => {
+    // One type's read of the whole window can run for minutes with no step finished; each page still reports, so the
+    // run lock's heartbeat (runSync.ts) keeps going and the other runtime does not take a live run for a dead one.
+    // At most every few seconds, and under the step already showing, so the label does not flicker between reads.
+    let lastStep = "";
+    let lastAlive = 0;
+    const step = (name: string, d: number, t: number) => {
+      lastStep = name;
+      progress(name, d, t);
+    };
+    const alive = (type: string) => () => {
+      if (Date.now() - lastAlive < 5000) return;
+      lastAlive = Date.now();
+      progress(lastStep || `read:${type}`, done, total);
+    };
+    const importRange = async (fromDay: string, toDay: string, replace: boolean) => {
       const dayCount = daysBetween(fromDay, toDay) + 1;
       const endTs = toDay === today ? nowTs : Math.min(nowTs, localMidnight(addDays(toDay, 1), tz));
       const windowStart = localMidnight(fromDay, tz);
@@ -298,9 +347,9 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       // 1. Whole-window reads.
       const input: HealthInput = {};
       for (const type of WINDOW_TYPES) {
-        progress(`read:${type}`, done, total);
+        step(`read:${type}`, done, total);
         if (granted.has(type)) {
-          const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, origins), policy, tz));
+          const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, origins, alive(type)), policy, tz));
           (input as Record<string, unknown[]>)[type] = records;
           counts[`read:${type}`] = records.length;
           recordsKept += records.length;
@@ -348,17 +397,17 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       const spill: { HeartRate: HeartRateRecords; Steps: StepsRecords } = { HeartRate: [], Steps: [] };
       /** The day's records of `type`: those begun on it, and those begun before it that run past its midnight. */
       const dayRecords = async <T extends "HeartRate" | "Steps">(type: T, i: number, dayStart: number, dayRange: { start: Date; end: Date }) => {
-        const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, origins), policy, tz));
+        const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, origins, alive(type)), policy, tz));
         recordsKept += read.length;
         const before =
           i === 0
-            ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, origins), policy, tz))
+            ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, origins, alive(type)), policy, tz))
             : spill[type];
         return uniqueRecords([...before.filter((r) => ts(r.endTime) > dayStart), ...read]) as RecordsOf<T>;
       };
       for (let i = 0; i < dayCount; i++) {
         const day = addDays(fromDay, i);
-        progress(`read:day:${day}`, done, total);
+        step(`read:day:${day}`, done, total);
         const dayStart = localMidnight(day, tz);
         const nextMidnight = localMidnight(addDays(day, 1), tz);
         const dayEnd = Math.min(nextMidnight, endTs);
@@ -417,7 +466,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       counts.steps = (counts.steps ?? 0) + stepCount;
 
       // 3. Map and write the rest: the window's days only (the lead day's rows would be built from part of its records).
-      progress("write", done, total);
+      step("write", done, total);
       const sleep = mapSleep(input.SleepSession ?? [], tz);
       const sessions = inWindow(sleep.sessions);
       const sessionIds = new Set(sessions.map((s) => s.id));
@@ -435,8 +484,9 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       if (dailyValues.length) await store.upsertDailyValues(dailyValues);
       if (metrics.length) await store.upsertMetrics(metrics);
       await store.replaceExternalEntries({ from: fromDay, to: toDay }, external);
-      // A replaced range lost its scores: every day of it is recomputed, not only those with new samples.
-      const rescore = replace && rescoreAll ? Array.from({ length: dayCount }, (_, i) => addDays(fromDay, i)) : dirty;
+      // A replaced range is recomputed whole, not only the days that got samples back: its scores were kept through
+      // the clear, and a day that lost its samples would otherwise keep a score computed from them.
+      const rescore = replace ? Array.from({ length: dayCount }, (_, i) => addDays(fromDay, i)) : dirty;
       if (rescore.length) await store.markIntradayDirty(rescore);
       counts.sessions = (counts.sessions ?? 0) + sessions.length;
       counts.segments = (counts.segments ?? 0) + segments.length;
@@ -448,11 +498,11 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       done++;
     };
 
-    const editsInWindow = [...editedDays].some((d) => d >= fromDay);
-    await importRange(fromDay, today, plan.reimport || editsInWindow, editsInWindow);
+    const removedInWindow = [...removedDays].some((d) => d >= fromDay);
+    await importRange(fromDay, today, plan.reimport || removedInWindow);
     // Sleep and workouts edited at the source before the window: only their days, each re-imported in place.
     const older = dayRuns([...editedDays].filter((d) => d < fromDay && d >= historyFrom));
-    for (const [a, b] of older) await importRange(a, b, true, true);
+    for (const [a, b] of older) await importRange(a, b, true);
     if (editedDays.size) counts.editedDays = editedDays.size;
 
     // Under "Fitbit only", nothing at all from the Fitbit app means the policy is hiding everything (another band's app,
@@ -461,8 +511,22 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
 
     const firstDay = state.firstDay && state.firstDay < fromDay ? state.firstDay : fromDay;
     await store.setSyncState({ lastSyncTs: nowTs, firstDay, lastError: null });
-    if (nextToken) await AsyncStorage.multiSet([[TOKEN_KEY, nextToken], [TYPES_KEY, JSON.stringify(grantedTypes)]]).catch(() => {});
-    else await forgetChanges();
+    // No new token because the call failed: the old one stays, so the next sync is told again what this one read,
+    // rather than losing its place and reading the whole history.
+    // After a failed changes call the old token stays too: saving the new one would skip whatever the failed call
+    // would have reported (a backfill, an older edit). Three failures running and it is forgotten, so the next sync
+    // reads the whole history rather than staying on the short window for good.
+    const failures = changesFailed ? Number((await AsyncStorage.getItem(CHANGES_FAILED_KEY).catch(() => null)) ?? 0) + 1 : 0;
+    if (changesFailed && failures >= 3) {
+      await forgetChanges();
+      await AsyncStorage.multiRemove([CHANGES_FAILED_KEY]).catch(() => {});
+    } else if (changesFailed) {
+      await AsyncStorage.setItem(CHANGES_FAILED_KEY, String(failures)).catch(() => {});
+    } else {
+      await AsyncStorage.multiRemove([CHANGES_FAILED_KEY]).catch(() => {});
+      if (nextToken) await AsyncStorage.multiSet([[TOKEN_KEY, nextToken], [TYPES_KEY, JSON.stringify(grantedTypes)]]).catch(() => {});
+      else if (!grantedTypes.length) await forgetChanges();
+    }
     // Recorded last: a sync that fails part-way re-imports again next time.
     await writeImportState({ version: IMPORT_VERSION, policy });
     progress("done", done, total);

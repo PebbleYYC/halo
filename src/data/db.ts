@@ -435,6 +435,9 @@ class SqliteStore implements Store {
     if (!days.length) return;
     await this.tx((db) => this.many(db, "insert or ignore into intraday_dirty (day) values (?)", days.map((d) => [d])));
   }
+  async intradayDirty() {
+    return (await this.db.getAllAsync<{ day: string }>("select day from intraday_dirty order by day")).map((r) => r.day);
+  }
   async takeIntradayDirty() {
     let days: string[] = [];
     await this.tx(async (db) => {

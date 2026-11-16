@@ -66,7 +66,7 @@ export async function getStrain(day: string, ctx: QueryCtx): Promise<StrainVM> {
   // not their whole-day totals (148 steps at 8 a.m. is not "15,099 below average").
   const share = isToday ? await shareByNow(ctx, day) : null;
   const stat = (key: string, label: string, pick: (d: string) => number | null, unit: string | undefined, why = reason, running = false): KeyStat => {
-    const prior = priorStatsByNow(rows, day, (r) => pick(r.day), running ? share : null);
+    const prior = priorStatsByNow(rows, day, (r) => pick(r.day), running ? share : null, key);
     return { key, label, metric: maybe(pick(day), why), ...(unit && { unit }), average: prior.mean, ...(prior.scaled && { averageLabel: AVG_BY_NOW }), ...(prior.sd !== undefined && { sd: prior.sd }), direction: "up" };
   };
   // The source's roll-ups beside Steps: a missing one is the band left off, or a day the account has none.
@@ -78,16 +78,17 @@ export async function getStrain(day: string, ctx: QueryCtx): Promise<StrainVM> {
   const worn = (d: string) => (rows.get(d)?.s1?.hrCount ?? 0) > 0;
   const summary: KeyStat[] = [
     // Each row leads to its own detail: the zones to the page's "Time in zones" (`#zones`), strength to its workouts.
-    { ...stat("zones13", "Heart rate zones 1-3", (d) => zoneMin(rows.get(d), 0, 3), "min"), href: "#zones" },
-    { ...stat("zones45", "Heart rate zones 4-5", (d) => zoneMin(rows.get(d), 3, 5), "min"), href: "#zones" },
-    { ...stat("strength", "Strength activity time", (d) => (worn(d) ? strengthMin(d) : null), "min"), href: "/activities?kind=strength" },
+    // Running totals like Steps below: today's minutes so far against what earlier days had reached by this time.
+    { ...stat("zones13", "Heart rate zones 1-3", (d) => zoneMin(rows.get(d), 0, 3), "min", undefined, true), href: "#zones" },
+    { ...stat("zones45", "Heart rate zones 4-5", (d) => zoneMin(rows.get(d), 3, 5), "min", undefined, true), href: "#zones" },
+    { ...stat("strength", "Strength activity time", (d) => (worn(d) ? strengthMin(d) : null), "min", undefined, true), href: "/activities?kind=strength" },
     { ...stat("steps", "Steps", (d) => rows.get(d)?.metrics?.steps ?? null, undefined, reason, true), href: metricHref("steps") },
     ...STRAIN_EXTRAS.map(extra),
   ];
 
-  const pts = trendPoints(rows, day, (r) => (finite(r.s1?.effort) ? toStrain(r.s1.effort) : null));
-  // Today's calories and workouts are running totals: drawn faded, like a provisional score.
+  // Today's Strain, calories and workouts are running totals: drawn faded, like a provisional score.
   const soFar = (r: DayRow) => isToday && r.day === day;
+  const pts = trendPoints(rows, day, (r) => (finite(r.s1?.effort) ? toStrain(r.s1.effort) : null), undefined, soFar);
   const workoutMin = new Map<string, number>();
   const workoutKcal = new Map<string, number>();
   for (const e of exs) {

@@ -316,7 +316,11 @@ function HealthConnectSource() {
   const bg = useBackgroundRuns(hc);
   const lastOk = bg?.log.find((r) => r.result === "ok")?.at ?? null;
   const bgBlocked = hc && !!bg?.on && !!perms.state && !revoked && !perms.state.background;
-  const bgQuiet = hc && !!bg?.on && !!perms.state?.background && !syncing && now - Math.max(lastOk ?? 0, last ?? 0) > BACKGROUND_QUIET_MS;
+  // Judged by the background's own runs, not the app's: Halo syncs whenever it opens, so its own sync was always
+  // minutes old by the time this screen was on, and the warning could never show. With no finished run yet, the
+  // oldest attempt in the log stands in, so it stays quiet for the first hours after background sync is turned on.
+  const bgSince = lastOk ?? bg?.log.at(-1)?.at ?? null;
+  const bgQuiet = hc && !!bg?.on && !!perms.state?.background && !syncing && bgSince !== null && now - bgSince > BACKGROUND_QUIET_MS;
   const allowBackground = async () => {
     await askBackgroundPermission().catch(() => null);
     await perms.read();

@@ -26,6 +26,9 @@ async function askOnce(): Promise<void> {
   }
 }
 
+/** The version "Later" was last tapped on, for this run of the app. */
+let later: string | null = null;
+
 export function UpdatePrompt() {
   const { install, progress } = useUpdate();
   const [offer, setOffer] = React.useState<Release | null>(null);
@@ -35,7 +38,9 @@ export function UpdatePrompt() {
     const run = () =>
       void checkAndNotify().then((s) => {
         console.log(`[update] on open: ${s.available ? `offering ${s.available.version}` : "up to date"}`);
-        if (live && s.available) setOffer(s.available);
+        // "Later" holds for this run of the app: every return from the camera, a permission screen or the installer
+        // counted as opening Halo, and asked again.
+        if (live && s.available && s.available.version !== later) setOffer(s.available);
       });
     void askOnce().then(run);
     // Every return to Halo from another app or the home screen counts as opening it.
@@ -70,7 +75,10 @@ export function UpdatePrompt() {
         if (!r) return;
         void install(r).then((ok) => ok && setOffer(null));
       }}
-      onClose={() => setOffer(null)}
+      onClose={() => {
+        if (r) later = r.version;
+        setOffer(null);
+      }}
     />
   );
 }

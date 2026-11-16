@@ -100,7 +100,8 @@ export function MiniBars({ values, color, guide, width = MINI_W, height = MINI_H
   return (
     <Grow mode="rise" width={width} height={height}>
       {values.map((v, i) => {
-        const h = v === null || v <= 0 ? 3 : Math.max(bw, v * scale);
+        // At least a sliver, but not a full capsule: 300 steps on a 10,000 scale drawn 11 px tall read as 2,900.
+        const h = v === null || v <= 0 ? 3 : Math.max(Math.min(bw, 4), v * scale);
         const last = i === values.length - 1;
         return (
           <View

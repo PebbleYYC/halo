@@ -221,8 +221,10 @@ function StressCard({ m, timeZone, onPress }: { m: HealthHubVM["stress"] | undef
   const v = m?.value ?? null;
   const typical = v?.typicalHighMin ?? null;
   const dir = !v || typical === null ? null : v.highMin < typical - 1 ? "down" : v.highMin > typical + 1 ? "up" : "flat";
-  const vsLine = !v || !dir ? null : dir === "down" ? `Less than a typical ${v.weekday}` : dir === "up" ? `More than a typical ${v.weekday}` : `About a typical ${v.weekday}`;
-  const vsInk = dir === "down" ? c.tintInk.mint : dir === "up" ? c.tintInk.peach : c.sub;
+  // Today is still running: "more than typical" is already true whenever it shows, but "less" is only so far (five
+  // minutes of high stress at 08:30 is not a calm Sunday yet), so that side is said as so far, and not in green.
+  const vsLine = !v || !dir ? null : dir === "up" ? `More than a typical ${v.weekday}` : `So far, under a typical ${v.weekday}`;
+  const vsInk = dir === "up" ? c.tintInk.peach : c.sub;
   const label = !m ? "Stress" : !v ? "Stress: no still minutes yet today" : `Stress: ${hmm(v.highMin)} hours of high stress today${vsLine ? `. ${vsLine}` : ""}`;
   const spark = React.useMemo(() => (v && v.spark.length ? { value: { points: v.spark.map((p) => ({ t: p.t, value: p.v })) }, reason: null, provisional: false } : null), [v]);
   return (

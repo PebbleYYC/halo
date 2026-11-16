@@ -11,7 +11,7 @@ import { AppState as RNAppState, InteractionManager } from "react-native";
 // Background sync and notifications (src/background): the run body shared with the WorkManager task, the task's
 // registration at boot, and the tapped-notification → screen hook.
 import { useNotificationDeepLinks } from "@/background/links";
-import { markUiRuntime, registerAppStore, runSync } from "@/background/runSync";
+import { markUiRuntime, readScoredAt, registerAppStore, runSync } from "@/background/runSync";
 import { startBackground } from "@/background/startup";
 import { openStore } from "@/data/db";
 import { runOneTimeCleanups } from "@/data/cleanups";
@@ -170,6 +170,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     google: null,
   });
   const running = React.useRef<Promise<void> | null>(null);
+  /** The newest finished scoring run these screens have been drawn from (runSync.ts readScoredAt). */
+  const seenScored = React.useRef(0);
   /** A live refresh in flight: the ticker and a tap never stack reads. */
   const liveBusy = React.useRef(false);
   // Read again whenever the app comes back to the foreground: after a flight the days, the clock times and "today"
@@ -207,6 +209,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (r.warnings.length) console.log("[sync]", r.warnings.join("; "));
           if (!r.ran) console.log("[run] skipped:", r.skipped);
           const sync = await st.getSyncState();
+          seenScored.current = await readScoredAt();
           setSyncing(false);
           // A transition: the new scoring run re-renders every open screen, and React now does that in slices with
           // taps let in between instead of one long block.
@@ -268,7 +271,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         patch({ status: hasScores ? "ready" : "syncing" });
         if (!hasScores) {
           void run(st, profile, source);
-        } else if (source !== "demo" && !cleaned && syncedRecently(sync.lastSyncTs, timeZone)) {
+        } else if (source !== "demo" && !cleaned && syncedRecently(sync.lastSyncTs, timeZone) && (seenScored.current = await readScoredAt()) >= (sync.lastSyncTs ?? 0) * 1000) {
+          // (And scored since: the import stamps its time before the scoring run, so a background run that died in
+          // between left the new night unscored, and skipping here would leave it that way.)
           // Synced minutes ago (by the app or the background task) and still the same day: the saved scores are
           // current, and skipping the import and rescore keeps the first seconds free for taps and scrolling.
           perf("launch-sync", "skipped", `${Math.round(Date.now() / 1000 - (sync.lastSyncTs ?? 0))}s since the last`);
@@ -303,7 +308,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       const away = backgroundAt === null ? 0 : Date.now() - backgroundAt;
       backgroundAt = null;
-      if (away > 10 * 60_000 && store && state.profile && state.source) void run(store, state.profile, state.source);
+      if (away > 10 * 60_000 && store && state.profile && state.source) return void run(store, state.profile, state.source);
+      // Back sooner than that: no sync of our own, but the background task may have scored new data meanwhile (inside
+      // this very process, without the screens hearing of it). If it has, every screen reads again.
+      const st = store;
+      if (!st || running.current) return;
+      void readScoredAt().then(async (at) => {
+        if (at <= seenScored.current) return;
+        seenScored.current = at;
+        const sync = await st.getSyncState().catch(() => null);
+        if (sync) React.startTransition(() => set((s) => ({ ...s, sync, dataVersion: s.dataVersion + 1 })));
+      });
     });
     return () => sub.remove();
   }, [store, state.profile, state.source, run]);

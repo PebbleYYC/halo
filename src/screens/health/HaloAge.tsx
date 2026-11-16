@@ -10,7 +10,7 @@ import { Hourglass, Rabbit, Turtle } from "lucide-react-native";
 import { AGE_LABEL, formatValue, MISSING } from "@/lib/format";
 import { REBUILDING_COPY, useRebuilding } from "@/lib/rebuilding";
 import type { Metric, ReasonCode } from "@/lib/reasons";
-import { ReasonPlaceholder, Skeleton, TickScale, Txt } from "@/ui";
+import { Skeleton, TickScale, Txt } from "@/ui";
 import { useCalm, type CalmPalette, type CalmTint } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { softFill } from "@/ui/components/calmKit";
@@ -146,7 +146,6 @@ export function HaloAgeHero({ age, deltaYears, provisional = false, reason, your
         </View>
         {/* On the Health tab the card is one button whose label says all of this; elsewhere each part speaks for itself. */}
         {has && <AgeRuler age={realAge!} pulseAge={age!} color={c.system[tint === "peach" ? "orange" : "green"]} ink={ink} spoken={!onPress} />}
-        {!has && reason && <ReasonPlaceholder reason={reason} size="sm" />}
         {has && <Pills pills={pills} spoken={!onPress} />}
         {children}
       </View>
@@ -163,16 +162,17 @@ export function HaloAgeHeroSkeleton({ head = false, children }: { head?: boolean
       <Wash tint="mint" />
       <View importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: 16, paddingTop: head ? 14 : 20, paddingBottom: 18, gap: 14 }}>
         {head ? <CardHead tint="mint" icon={Hourglass} title={AGE_LABEL} /> : null}
-        <View style={{ alignItems: "center" }}>
+        {/* The same box the orb takes (its margin pulled in), so the card does not jump when the age lands. */}
+        <View style={{ alignItems: "center", marginVertical: -ORB_MARGIN }}>
           <Skeleton radius={orbSize / 2} style={{ width: orbSize, height: orbSize }} />
         </View>
         {/* The scale's box (its marker row, year labels and legend), the track where the real one runs. */}
-        <View style={{ height: 76 }}>
+        <View style={{ height: 104 }}>
           <Skeleton radius={4} style={{ height: 8, marginTop: 14 }} />
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           {[0, 1].map((i) => (
-            <View key={i} style={{ flex: 1, height: 63, borderRadius: 14, backgroundColor: softFill(c, "card") }} />
+            <View key={i} style={{ flex: 1, height: 81, borderRadius: 14, backgroundColor: softFill(c, "card") }} />
           ))}
         </View>
         {children}

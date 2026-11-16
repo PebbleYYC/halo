@@ -106,8 +106,11 @@ export function ColumnChart({ summary, data, format, unit, tickEvery = 1, refere
   const ink = calm.tintInk.sky;
   const any = data.some((d) => d.highlight);
   const unitText = unit ? (unit === "%" ? "%" : ` ${unit}`) : "";
-  const max = Math.max(0, ...data.map((d) => d.value ?? 0), reference?.y ?? 0) || 1;
-  const ticks = niceTicks(0, max, 3);
+  const peak = Math.max(0, ...data.map((d) => d.value ?? 0), reference?.y ?? 0) || 1;
+  const ticks = niceTicks(0, peak, 3);
+  // The scale ends at the top gridline, not at the tallest bar: niceTicks rounds up past the data, and with the scale
+  // stopping at the data that last line was drawn above the canvas and the tallest bar ran into the top edge.
+  const max = Math.max(peak, ticks[ticks.length - 1] ?? peak);
   const tickText = ticks.map((v) => formatValue(format, v));
   // The value axis on the right: as wide as its widest label, the gap and air.
   const gutter = Math.max(...tickText.map(textWidth)) + AXIS.gap + 2;

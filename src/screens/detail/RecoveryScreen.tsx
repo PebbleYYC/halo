@@ -209,7 +209,7 @@ function RecoveryWeek({ points, day, onPress }: { points: RecoveryVM["trend"]["p
                   left={i * pitch}
                   top={p.value === null ? WEEK_H : y(p.value)}
                   color={p.value === null ? "transparent" : c[DATA_COLORS[recoveryColor(p.value)].fill]}
-                  opacity={i === week.length - 1 ? 1 : 0.45}
+                  opacity={i === week.length - 1 ? 1 : 0.35}
                 />
               ))}
               {avg !== null && (

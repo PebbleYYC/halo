@@ -47,7 +47,11 @@ export async function syncMedReminders(list?: MedSchedule[]): Promise<boolean> {
     await ensureChannel();
     await ensureMedCategory();
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    await Promise.all(scheduled.filter((n) => n.identifier.startsWith(ID_PREFIX) && !n.identifier.startsWith(`${ID_PREFIX}snooze.`)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+    // A snooze outlives this resync only while its medicine still reminds: deleting the medicine, or turning its
+    // reminder off, used to leave "Time for X" to arrive ten minutes later anyway.
+    const reminding = meds.filter((m) => m.remind).map((m) => `${ID_PREFIX}snooze.${m.id}`);
+    const keep = (id: string) => id.startsWith(`${ID_PREFIX}snooze.`) && reminding.some((p) => id === p || id.startsWith(`${p}.`));
+    await Promise.all(scheduled.filter((n) => n.identifier.startsWith(ID_PREFIX) && !keep(n.identifier)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
     for (const m of meds) {
       if (!m.remind) continue;
       for (const t of m.times) {

@@ -145,7 +145,9 @@ export async function getGoalsDay(day: string, ctx: QueryCtx, goals: Goals): Pro
     const current = dayOf(key, goals, rows, day);
     const history = Array.from({ length: 7 }, (_, k) => dayOf(key, goals, rows, addDays(day, k - 6)));
     // Today counts once it is met; until then the streak runs to yesterday (as the Steps screen counts it).
-    let d = meta.partialToday && isToday && !current.done ? addDays(day, -1) : day;
+    // The same for a goal with nothing for today yet (last night's sleep before it has synced): a 12-night streak is
+    // not 0 at 06:30.
+    let d = isToday && !current.done && (meta.partialToday || current.value === null) ? addDays(day, -1) : day;
     let streak = 0;
     while (d >= from && dayOf(key, goals, rows, d).done) {
       streak++;

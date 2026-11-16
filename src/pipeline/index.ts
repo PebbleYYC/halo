@@ -98,9 +98,16 @@ export async function runPipeline(
     Object.assign(lastRun, { stage1Days: [], ms: Date.now() - t0, stage1Ms: 0, stage2Ms: 0 });
     return { days: 0, stage1Reran: 0 };
   }
-  const dirty = await store.takeIntradayDirty();
+  // Read, not taken: a run that is killed or throws part-way leaves them marked, so the next run redoes the days this
+  // one did not reach. (Taken first, they were forgotten, and a day's heart-rate series and Strain stayed stale: the
+  // memo key does not cover samples, so nothing else would have redone it.)
+  const dirty = await store.intradayDirty();
   const t1 = Date.now();
   lastRun.stage1Days = await stage1(store, data, dirty, po, opts.onProgress);
+  // Done: forget those days, and keep any that were marked while this ran.
+  const redone = new Set(dirty);
+  const since = (await store.takeIntradayDirty()).filter((d) => !redone.has(d));
+  if (since.length) await store.markIntradayDirty(since);
   const t2 = Date.now();
   await stage2(store, data, po, opts.onProgress);
   const t3 = Date.now();
