@@ -67,7 +67,8 @@ function Legend() {
 export function StrainRecoveryChart({ points, today, onPress }: { points: StrainRecoveryPoint[]; today: string; onPress?: () => void }) {
   const { c } = useTheme();
   const k = useChartInk();
-  const BAND_TEXT = { green: c.recoveryGreen, yellow: c.recoveryYellow, red: c.recoveryRedText } as const;
+  // Words and tick labels in the text tokens: the fills are far under 4.5:1 on a light card.
+  const BAND_TEXT = { green: c.recoveryGreenText, yellow: c.recoveryYellowText, red: c.recoveryRedText } as const;
   const BAND_FILL = { green: c.recoveryGreen, yellow: c.recoveryYellow, red: c.recoveryRed } as const;
   const { rows, summary } = React.useMemo(() => {
     const strains = points.map((p) => p.strain).filter((v): v is number => v !== null);
@@ -125,7 +126,7 @@ export function StrainRecoveryChart({ points, today, onPress }: { points: Strain
               <DashLine x1={x0} x2={x1} y1={PLOT_BOTTOM} y2={PLOT_BOTTOM} color={k.grid} width={GRID.width} />
               {/* Axes: Strain's ticks on the left in its orange, Recovery's on the right in their bands' colours. */}
               {LEFT_TICKS.map((v) => (
-                <SText key={v} x={x0 - AXIS.gap} y={ys(v) + AXIS.fontSize * 0.35} text={String(v)} font={tickFont} color={c.strain} anchor="end" />
+                <SText key={v} x={x0 - AXIS.gap} y={ys(v) + AXIS.fontSize * 0.35} text={String(v)} font={tickFont} color={c.strainText} anchor="end" />
               ))}
               <RightAxis x={x1} ys={RIGHT_TICKS.map(yr)} texts={rightTexts} font={tickFont} color={RIGHT_TICKS.map((v) => BAND_TEXT[recoveryBand(v)])} />
               {rows.map((r, i) => {
@@ -166,7 +167,7 @@ export function StrainRecoveryChart({ points, today, onPress }: { points: Strain
                   const q = str[i];
                   const y = labels[i].b;
                   return q && r.strain !== null && y !== null ? (
-                    <SText key={`sl${i}`} x={q.x} y={y + LABEL_SIZE * 0.35} text={formatValue("decimal1", r.strain)} font={labelFont} color={c.strain} anchor="middle" halo={k.card} />
+                    <SText key={`sl${i}`} x={q.x} y={y + LABEL_SIZE * 0.35} text={formatValue("decimal1", r.strain)} font={labelFont} color={c.strainText} anchor="middle" halo={k.card} />
                   ) : null;
                 })}
               </Group>

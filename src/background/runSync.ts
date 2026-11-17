@@ -104,6 +104,13 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
   if (!lock.taken) return { ran: false, skipped: `${lock.holder === "app" ? "the app" : "the background task"} is syncing`, warnings: [] };
   const warnings: string[] = [];
   let scored = false;
+  // The scoring reads its zone off the profile and the import is given one: they are made the same here, so the days
+  // the pipeline scores are the days the import wrote. (They differed after travel: the profile kept the zone Halo
+  // was set up in.)
+  if (profile.timeZone !== opts.timeZone) {
+    profile = { ...profile, timeZone: opts.timeZone };
+    await store.setProfile(profile).catch(() => {});
+  }
   // The caller's own listener is handed over before `opts` is replaced: read off `opts` inside the wrapper it would
   // be the wrapper itself, calling itself until the stack ran out (v1.26.67 failed every sync that way).
   const onProgress = beatingProgress(opts.owner, opts.onProgress);

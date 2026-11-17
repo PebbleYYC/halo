@@ -194,20 +194,22 @@ function StressVsTypical({ today, typical, weekday }: { today: number; typical: 
 /** Stress: today's time at high stress, the day's line beside it, then the same weekday's typical time. */
 /** Headache risk today: the level and its main reason; reads the stored weather on its own. */
 function HeadacheRiskCard({ onPress }: { onPress: () => void }) {
-  const { data: vm } = useQuery((ctx) => getHeadache(ctx), [], "headache");
+  const { data: vm, error } = useQuery((ctx) => getHeadache(ctx), [], "headache");
   const { c: theme } = useTheme();
   if (vm && !vm.enabled) return null;
   const r = vm?.today ?? null;
   const l = r ? HEADACHE_LEVEL[r.level] : null;
-  const context = !vm ? undefined : !r ? (vm.missing === "place" ? "Needs your location or a city" : "Getting the weather") : (r.reasons[0] ?? "Steady weather");
+  // A query that failed is said, not left as a skeleton that never resolves.
+  const failed = !vm && !!error;
+  const context = failed ? "Couldn’t load. Pull down to try again." : !vm ? undefined : !r ? (vm.missing === "place" ? "Needs your location or a city" : "Getting the weather") : (r.reasons[0] ?? "Steady weather");
   return (
     <HealthCard
       tint={l?.tint ?? "sky"}
       icon={CloudRain}
       title="Headache risk"
       when="Today"
-      loading={!vm}
-      value={vm ? (l ? l.word : null) : undefined}
+      loading={!vm && !failed}
+      value={vm || failed ? (l ? l.word : null) : undefined}
       valueColor={l ? theme[l.color] : undefined}
       context={context}
       onPress={onPress}

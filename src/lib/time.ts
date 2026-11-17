@@ -96,3 +96,15 @@ export function fractionalYears(birthDate: string, day: string) {
   const birthday = (n: number) => Date.UTC(by + n, bm - 1, bd); // Feb 29 in a common year rolls to Mar 1
   return whole + (Date.parse(day) - birthday(whole)) / (birthday(whole + 1) - birthday(whole));
 }
+
+/**
+ * The phone's time zone now. The app and the background task both import and score in it, so a day means the same
+ * span in either; `fallback` is for a runtime where Intl has no answer.
+ */
+export const deviceTimeZone = (fallback = "UTC"): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || fallback;
+  } catch {
+    return fallback;
+  }
+};

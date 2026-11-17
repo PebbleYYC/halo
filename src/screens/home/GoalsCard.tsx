@@ -100,7 +100,7 @@ export function GoalsCard({ vm, at, go }: SlotProps) {
         accessibilityLabel={data ? `${title}: ${data.done} of ${data.goals.length} done. Opens every goal with its streak` : title}
         footer={footer}
       >
-        {data ? <Tiles goals={data.goals} /> : <TilesSkeleton keys={keys} />}
+        {data ? <Tiles goals={data.goals} /> : q.error ? <LoadFailed /> : <TilesSkeleton keys={keys} />}
         {data?.week && <WeekStrip week={data.week} dayTarget={goals.targets.azm} />}
       </HomeCard>
       <GoalsSheet
@@ -151,7 +151,7 @@ export function GoalsGlance({ vm, at, go }: SlotProps) {
       gap={18}
     >
       <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16 }}>
-        {data ? data.goals.map((g, i) => <GoalRing key={g.key} g={g} day={data.day} order={i} onPress={() => go(at(ringHref(g.key)))} />) : keys.map((k) => <GoalRingSkeleton key={k} />)}
+        {data ? data.goals.map((g, i) => <GoalRing key={g.key} g={g} day={data.day} order={i} onPress={() => go(at(ringHref(g.key)))} />) : q.error ? <LoadFailed /> : keys.map((k) => <GoalRingSkeleton key={k} />)}
       </View>
     </HomeCard>
   );
@@ -201,6 +201,16 @@ function GoalRing({ g, day, order, onPress }: { g: GoalRow; day: string; order: 
         </Txt>
       </View>
     </PressableView>
+  );
+}
+
+/** The goals could not be read: said plainly, where the skeleton would otherwise sit for good. */
+function LoadFailed() {
+  const c = useCalm();
+  return (
+    <Txt size={15} lineHeight={20} style={{ color: c.sub }}>
+      Couldn’t load your goals. Pull down to try again.
+    </Txt>
   );
 }
 

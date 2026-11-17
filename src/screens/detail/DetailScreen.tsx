@@ -149,25 +149,22 @@ export function DetailScreen({
           <View style={{ gap: 12 }}>
             {/* Each block rises into place as the screen opens (a tab) or once its push has landed, cascading, and the
                 ones below the fold as they scroll in. A block mounting mid-push slides in with the screen instead. */}
-            {(hero || side) && (
-              <View style={{ gap: 12 }}>
-                {hero && (
-                  <Rise index={0}>
-                    <HeroSlot hero={hero} glow={heroGlow ?? null} />
-                  </Rise>
-                )}
-                {side && (
-                  <Rise index={1}>
-                    {/* Calm: no notch; the hero is a card of its own. */}
-                    {side}
-                  </Rise>
-                )}
-              </View>
+            {hero && (
+              <Rise index={0}>
+                <HeroSlot hero={hero} glow={heroGlow ?? null} />
+              </Rise>
             )}
-            {/* The range switcher sits under the lead card, so that card starts where every tab's does — and outside
-                the block above, which a range with no hero (Sleep's weekly) skips: nesting it there left the switcher
-                gone once you picked a week, with no way back to the day. */}
+            {/* The range switcher sits straight under the lead card: that card starts where every tab's does, and the
+                switcher stays at one height whatever the cards after it measure (it used to sit below the stage cards
+                by day and jump to the top for a week). It is outside the hero's own block, which a range with no hero
+                (Sleep's weekly) skips: nested there it vanished once you picked a week, with no way back. */}
             {banner}
+            {side && (
+              <Rise index={1}>
+                {/* Calm: no notch; the hero is a card of its own. */}
+                {side}
+              </Rise>
+            )}
             {below && (summary || !hero) && insight && <Rise index={2}>{insight}</Rise>}
             {below && primary && <Rise index={2}>{primary}</Rise>}
             {opened && rest.length > 0 && (

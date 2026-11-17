@@ -371,9 +371,13 @@ class SqliteStore implements Store {
   async deleteJournal(day: string, tag: string) {
     await this.tx((db) => db.runAsync("delete from journal_entries where day = ? and tag = ?", [day, tag]));
   }
-  async clearImported(range: DayRange, fromTs: number, toTs: number) {
+  async clearImported(range: DayRange, fromTs: number, toTs: number, samplesOnly = false) {
     const days = [range.from, range.to];
     await this.tx(async (db) => {
+      if (samplesOnly) {
+        if (toTs > fromTs) for (const table of ["hr_days", "steps_days"] as const) await this.dropSamples(db, table, fromTs, toTs);
+        return;
+      }
       await db.runAsync("delete from daily_metrics where day >= ? and day <= ?", days);
       await db.runAsync("delete from sleep_segments where session_id in (select id from sleep_sessions where day >= ? and day <= ?)", days);
       await db.runAsync("delete from sleep_sessions where day >= ? and day <= ?", days);

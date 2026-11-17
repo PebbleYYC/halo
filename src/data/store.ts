@@ -33,7 +33,8 @@ export interface Store {
    * afresh. Those days' scores and series stay, so the screens keep showing them until the scoring run that follows
    * the import replaces each one. Halo's own logs, the journal and the profile stay.
    */
-  clearImported(range: DayRange, fromTs: number, toTs: number): Promise<void>;
+  /** `samplesOnly`: only the heart-rate and step samples in fromTs..toTs, leaving the days' rows (a re-import clears each day's samples as it reaches the day). With toTs <= fromTs, only the rows. */
+  clearImported(range: DayRange, fromTs: number, toTs: number, samplesOnly?: boolean): Promise<void>;
   /** Removes sleep sessions and their segments by id: nights the source no longer has (deleted in Fitbit). */
   deleteSessions(ids: string[]): Promise<void>;
   /** Removes workouts by id: workouts the source no longer has. */

@@ -49,6 +49,9 @@ export type Tokens = {
   recoveryYellow: string;
   recoveryRed: string;
   recoveryRedText: string;
+  /** The green and yellow bands as words and tick labels: the fills themselves are 2.2:1 and 1.5:1 on a white card. */
+  recoveryGreenText: string;
+  recoveryYellowText: string;
   // Strain, sleep
   strain: string;
   strainText: string;
@@ -193,6 +196,8 @@ export const DARK: Tokens = {
   recoveryRed: "#ff453a",
   // iOS's increased-contrast red and orange, for words in those colours.
   recoveryRedText: "#ff6961",
+  recoveryGreenText: "#30d158",
+  recoveryYellowText: "#ffd60a",
   strain: "#ff9f0a",
   strainText: "#ffb340",
   strainDeep: "#c76a00",
@@ -323,6 +328,8 @@ export const LIGHT: Tokens = {
   recoveryYellow: "#ffcc00",
   recoveryRed: "#ff3b30",
   recoveryRedText: "#d70015",
+  recoveryGreenText: "#1b7a33",
+  recoveryYellowText: "#a05a00",
   strain: "#ff9500",
   strainText: "#c93400",
   strainDeep: "#c93400",
