@@ -11,7 +11,7 @@ import { hourStepFor, spacedLabels } from "@/lib/chartmath";
 import { hourTicks, scaleLinear, STAGE_LANE, STAGES, type Stage, type StageSegment } from "@/lib/charts";
 import { clock, durationWords, hmm } from "@/lib/format";
 import type { Metric } from "@/lib/reasons";
-import { alpha } from "@/lib/utils";
+import { alpha, mix } from "@/lib/utils";
 import { useCalm } from "@/ui/calm";
 import { font } from "@/ui/fonts";
 import { useTheme } from "@/ui/ThemeProvider";
@@ -182,10 +182,13 @@ function StageTotals({ minutes, color }: { minutes: Record<Stage, number>; color
  * stretch under the finger and names it with its times ("REM · 23 minutes", "02:14–02:37"); a tap opens the explorer.
  */
 export function HypnogramChart({ night, timeZone: tz, onPress, legend = true }: { night: HypnogramNight; timeZone?: string; onPress?: () => void; legend?: boolean }) {
-  const { c } = useTheme();
+  const { c, scheme } = useTheme();
   const k = useChartInk();
   const fonts = useChartFonts();
   const color = React.useCallback((st: Stage) => c[DATA_COLORS[`stage-${st}`].fill], [c]);
+  // The lane names are text: on a light card the stage fills are as low as 1.9:1 (Awake, REM), so there they are
+  // deepened toward black, keeping the hue the blocks have.
+  const laneInk = React.useCallback((st: Stage) => (scheme === "light" ? mix(color(st), "#000000", 0.55) : color(st)), [color, scheme]);
   const { segs, starts, ends, minutes, summary } = React.useMemo(() => {
     const sorted = [...night.segments].sort((a, b) => a.start - b.start);
     const total = sorted.reduce((a, s) => a + (s.end - s.start), 0);
@@ -298,7 +301,7 @@ export function HypnogramChart({ night, timeZone: tz, onPress, legend = true }: 
             <Group>
               {/* Each lane named on the left in its stage's colour: the legend is the chart. */}
               {LANE_STAGE.map((st) => (
-                <SText key={st} x={X0 - 10} y={blockTop(st) + BLOCK / 2 + 12 * 0.35} text={STAGE_NAME[st]} font={laneFont(f)} color={color(st)} anchor="end" />
+                <SText key={st} x={X0 - 10} y={blockTop(st) + BLOCK / 2 + 12 * 0.35} text={STAGE_NAME[st]} font={laneFont(f)} color={laneInk(st)} anchor="end" />
               ))}
               {/* Dashed hairline rules between the lanes, and at the labelled hours through them. */}
               {[1, 2, 3].map((i) => (

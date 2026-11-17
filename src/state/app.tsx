@@ -25,7 +25,7 @@ import { askPermissions, availability, permissionState, type Availability } from
 import { refreshRecentHeartRate } from "@/health/live";
 import { forgetChanges } from "@/health/sync";
 import { toSignInError, type GoogleSignInError } from "../../modules/pulse-google/errors";
-import { localDay } from "@/lib/time";
+import { deviceTimeZone, localDay } from "@/lib/time";
 import { unitsKey } from "@/lib/units";
 import type { QueryCtx } from "@/queries/ctx";
 import { useAfterTransition } from "@/ui/components/AfterTransition";
@@ -151,7 +151,7 @@ type LiveValue = { liveHr: LiveHr; liveVersion: number; refreshLiveHr(): Promise
 const LiveCtx = React.createContext<LiveValue | null>(null);
 const ProgressCtx = React.createContext<Progress | null>(null);
 
-export const deviceTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+export { deviceTimeZone };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [store, setStore] = React.useState<Store | null>(null);
@@ -177,12 +177,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Read again whenever the app comes back to the foreground: after a flight the days, the clock times and "today"
   // follow the phone without a restart.
   const [timeZone, setTimeZone] = React.useState(deviceTimeZone);
+  // What a sync reads at the moment it runs. Held in a ref so that the run and the boot below are not rebuilt by a
+  // zone change: the boot used to run again on one, opening the database a second time.
+  const zone = React.useRef(timeZone);
+  /** The zone the data on screen was last synced in: the launch's, until a sync runs in another. */
+  const lastRunZone = React.useRef(timeZone);
   React.useEffect(() => {
     const sub = RNAppState.addEventListener("change", (next) => {
-      if (next === "active") setTimeZone((tz) => (deviceTimeZone() === tz ? tz : deviceTimeZone()));
+      if (next !== "active") return;
+      // The ref first: the resume listener further down may start a sync in this same event, before any render.
+      const tz = deviceTimeZone();
+      zone.current = tz;
+      setTimeZone((prev) => (prev === tz ? prev : tz));
     });
     return () => sub.remove();
   }, []);
+  React.useEffect(() => {
+    zone.current = timeZone;
+  }, [timeZone]);
   const today = localDay(Date.now() / 1000, timeZone);
   // A tapped notification opens its screen once the navigator exists (src/background/links.ts).
   useNotificationDeepLinks();
@@ -195,13 +207,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (running.current) return running.current;
       const job = (async () => {
         setSyncing(true);
+        lastRunZone.current = zone.current;
         patch({ status: "syncing", error: null });
         try {
           // The sync + pipeline body is src/background/runSync.ts, shared with the background task. It takes the
           // cross-runtime run lock and sends the alerts that are due; when the task holds the lock, the app waits for
           // that run to end and then shows its scores.
           const r = await runSync(st, profile, source, {
-            timeZone,
+            timeZone: zone.current,
             owner: "app",
             waitIfLocked: true,
             onProgress: (step, done, total) => patch({ progress: { step, done, total } }),
@@ -231,7 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       running.current = job;
       return job;
     },
-    [timeZone],
+    [],
   );
 
   // Boot: open the store, read what's saved, decide the first screen.
@@ -271,7 +284,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         patch({ status: hasScores ? "ready" : "syncing" });
         if (!hasScores) {
           void run(st, profile, source);
-        } else if (source !== "demo" && !cleaned && syncedRecently(sync.lastSyncTs, timeZone) && (seenScored.current = await readScoredAt()) >= (sync.lastSyncTs ?? 0) * 1000) {
+        } else if (source !== "demo" && !cleaned && syncedRecently(sync.lastSyncTs, zone.current) && (seenScored.current = await readScoredAt()) >= (sync.lastSyncTs ?? 0) * 1000) {
           // (And scored since: the import stamps its time before the scoring run, so a background run that died in
           // between left the new night unscored, and skipping here would leave it that way.)
           // Synced minutes ago (by the app or the background task) and still the same day: the saved scores are
@@ -293,7 +306,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [run, timeZone]);
+  }, [run]);
+
+  // The phone changed zone (a flight): the days are imported and scored again in the new one. Judged against the zone
+  // the last sync actually ran in, once nothing is running: a sync already under way in the old zone (the resume
+  // one, usually) is followed by one in the new.
+  React.useEffect(() => {
+    if (state.status !== "ready" || !store || !state.profile || !state.source) return;
+    if (lastRunZone.current === timeZone) return;
+    void run(store, state.profile, state.source);
+  }, [timeZone, store, state.profile, state.source, state.status, run]);
 
   // Coming back to the foreground after 10 minutes away re-imports (Health Connect gets new nights while the app sleeps).
   React.useEffect(() => {

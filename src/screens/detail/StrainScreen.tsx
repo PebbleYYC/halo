@@ -7,7 +7,7 @@
 // the training cards, ahead of the charts.
 import * as React from "react";
 import { View } from "react-native";
-import { Dumbbell, Flame, Footprints, HeartPulse, Activity as ActivityIcon, type LucideIcon } from "lucide-react-native";
+import { CircleAlert, Dumbbell, Flame, Footprints, HeartPulse, Activity as ActivityIcon, type LucideIcon } from "lucide-react-native";
 import { dayHref } from "@/lib/day";
 import { formatValue } from "@/lib/format";
 import { reasonCopy } from "@/lib/reasons";
@@ -58,7 +58,7 @@ export function ActivityTab() {
 
 function StrainView({ tab = false }: { tab?: boolean }) {
   const calm = useCalm();
-  const { timeZone } = useApp();
+  const { timeZone, refresh } = useApp();
   const { d, today, switcher } = useDayNav();
   const onBack = useBack();
   const push = usePush();
@@ -124,6 +124,10 @@ function StrainView({ tab = false }: { tab?: boolean }) {
             <Anchor anchors={anchors} id="goals">
               <GoalsCard {...slot} />
             </Anchor>
+          ) : homeQ.error ? (
+            // The day's goals, activities and Energy Bank ride on this query: when it fails they would just be
+            // missing, with nothing to say why.
+            <EmptyState icon={CircleAlert} body="Couldn’t load the day’s goals and activities." action={{ label: "Try again", onPress: () => void refresh() }} />
           ) : null
         ) : (
           heart

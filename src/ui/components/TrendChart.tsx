@@ -231,7 +231,7 @@ function Trend({ points, p }: { points: TrendPoint[]; p: TrendChartProps }) {
   };
   const bands: Band[] | null =
     p.colorBy === "band" ? [0, 34, 67].map((from) => ({ from, color: c[DATA_COLORS[recoveryColor(from)].fill] })) : p.colorBy === "stress" ? [0, 1, 2].map((from) => ({ from, color: c[DATA_COLORS[STRESS_COLOR[stressLevel(from)]].fill] })) : null;
-  const BAND_TICK = { green: c.recoveryGreen, yellow: c.recoveryYellow, red: c.recoveryRedText } as const;
+  const BAND_TICK = { green: c.recoveryGreenText, yellow: c.recoveryYellowText, red: c.recoveryRedText } as const;
 
   // Screens map their trend to points on every render: key the model on the points' content, not their identity, so a
   // parent re-render (a scroll-driven header, another card's state) never rebuilds the chart.

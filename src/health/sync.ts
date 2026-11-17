@@ -380,12 +380,10 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       // A re-import replaces: what earlier imports wrote for these days goes before the new rows are written, so a day the
       // new mapping or policy leaves without steps, a workout or a derived minute doesn't keep the old one. The first day
       // goes too: the reads' lead (READ_LEAD_S) brings back its night, which began before the window.
-      // Every screen goes blank from here until the days are written back: the copy says a rebuild is running, so a
-      // half-finished import doesn't read as lost data.
-      if (replace) {
-        setRebuilding(true);
-        await store.clearImported({ from: fromDay, to: toDay }, windowStart, endTs + 1);
-      }
+      // It goes piece by piece, each just ahead of what replaces it: a day's samples as the loop reaches the day (2),
+      // the days' rows once everything to write is in hand (3). Cleared whole and up front, a run that Android stopped
+      // part-way through 180 days of heart rate left the history empty, and the next run began by emptying it again.
+      if (replace) setRebuilding(true);
 
       // 2. Per-day heart rate and steps, written as they come. A record comes back with the day its start falls in, so one
       // running over midnight carries its later samples into the next day (`spill`); the first day reads the lead for
@@ -417,6 +415,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
         }
         const clip = { startTs: dayStart, endTs: dayEnd };
         const dayRange = { start: new Date(dayStart * 1000), end: new Date(dayEnd * 1000) };
+        if (replace) await store.clearImported({ from: day, to: day }, dayStart, dayEnd === endTs ? endTs + 1 : dayEnd, true);
         let touched = false;
         let hr: HrSample[] = [];
         let minutes: StepsMinute[] = [];
@@ -479,6 +478,8 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       // Water, food and cycle logs made in Fitbit: the window's rows are replaced, so what Fitbit deleted goes too.
       const external = inWindow(mapExternalEntries(input, tz));
 
+      // The days' rows go now, with their replacements mapped and ready: written straight after.
+      if (replace) await store.clearImported({ from: fromDay, to: toDay }, 0, 0);
       if (sessions.length) await store.upsertSessions(sessions, segments);
       if (exercises.length) await store.upsertExercises(exercises);
       if (dailyValues.length) await store.upsertDailyValues(dailyValues);

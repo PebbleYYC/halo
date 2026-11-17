@@ -136,6 +136,23 @@ describe("syncHealthConnect re-import", () => {
     expect(hc.readAll.mock.calls.every((c) => JSON.stringify(c[3]) === JSON.stringify([FITBIT]))).toBe(true);
   });
 
+  it("keeps the old history when a re-import is cut short: it clears as it goes, not all at once", async () => {
+    const store = await staleStore();
+    const before = (await store.allMetrics()).map((m) => m.day);
+    expect(before.length).toBeGreaterThan(0);
+    // The read dies on the window's second day of heart rate, as a run Android stops part-way would.
+    const read = hc.readAll.getMockImplementation()!;
+    let days = 0;
+    hc.readAll.mockImplementation(async (...args: Parameters<typeof read>) => {
+      if (args[0] === "HeartRate" && ++days > 2) throw new Error("stopped");
+      return read(...args);
+    });
+    await expect(syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 5 })).rejects.toThrow("stopped");
+    // Nothing of the days' rows has gone: they are replaced only once everything to write is in hand.
+    expect((await store.allMetrics()).map((m) => m.day)).toEqual(before);
+    hc.readAll.mockImplementation(read);
+  });
+
   it("re-imports once: the next sync is incremental again", async () => {
     const store = await staleStore();
     await syncHealthConnect(store, { timeZone: TZ, now: NOW, historyDays: 5 });

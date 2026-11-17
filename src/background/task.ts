@@ -4,6 +4,7 @@
 // its access (Health Connect's background read permission, or a connected Google account, whose token the sync gets
 // silently), runs the shared runSync, and logs the outcome (log.ts). It also checks GitHub for a Halo update, so it is
 // registered while background sync or Settings › Notifications › App updates is on (startup.ts).
+import { deviceTimeZone } from "@/lib/time";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as BackgroundTask from "expo-background-task";
 import * as TaskManager from "expo-task-manager";
@@ -46,7 +47,9 @@ export async function runBackgroundTask(): Promise<BackgroundTask.BackgroundTask
       await appendLog({ at: t0, result: "skipped", ms: Date.now() - t0, note: skip ?? "no profile yet" });
       return BackgroundTask.BackgroundTaskResult.Success;
     }
-    const r = await runSync(store, profile, source, { timeZone: profile.timeZone, owner: "task" });
+    // The phone's zone, as the app syncs in (the profile's is where it was set up): one zone for both runtimes, so a
+    // day is the same span whichever of them imported it.
+    const r = await runSync(store, profile, source, { timeZone: deviceTimeZone(profile.timeZone), owner: "task" });
     await appendLog({
       at: t0,
       result: r.ran ? "ok" : "skipped",
