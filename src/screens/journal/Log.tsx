@@ -369,6 +369,11 @@ export function Log({ vm }: LogProps) {
         title={`Log ${KIND_LABEL[shown].toLowerCase()}`}
         description={demo ? "Demo: saved in Halo only" : "Saved in Halo on this phone"}
         done={{ label: saving ? "Saving…" : "Add", onPress: save, disabled: saving }}
+        // Symptoms grows while it is open (choosing Headache adds "How bad is the headache?"), and a sheet sized to its
+        // content then re-sizes itself, taking no taps until it has settled: the severity could not be chosen for a
+        // while after Headache. Opened at its full height, like the check-in (which grows the same way), it only
+        // scrolls further.
+        size={shown === "symptoms" ? "tall" : "default"}
       >
         {shown === "water" && (
           <>
