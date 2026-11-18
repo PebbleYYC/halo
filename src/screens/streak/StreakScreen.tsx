@@ -5,7 +5,7 @@
 // src/queries/streak.ts, shared with the capsule's count.
 import * as React from "react";
 import { View } from "react-native";
-import { Flame } from "lucide-react-native";
+import { Flame as FlameIcon } from "lucide-react-native";
 import { DAY, formatDay } from "@/lib/format";
 import { addDays, daysBetween } from "@/lib/time";
 import { alpha } from "@/lib/utils";
@@ -16,15 +16,15 @@ import { useCalm } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { addMonths, monthGrid, monthLabel, monthOf, weekdayLabels } from "@/ui/components/CalendarSheet";
 import { CalmButton } from "@/screens/settings/calmKit";
-import { ActivityRings, RING_LAND_MS, RollingNumber } from "@/ui/components/Halo";
-import { TonePill } from "@/ui/components/Meter";
+import { RING_LAND_MS, RollingNumber } from "@/ui/components/Halo";
 import { font } from "@/ui/fonts";
-import { useTheme } from "@/ui/ThemeProvider";
-import { HERO_RING, HERO_RING_STROKE } from "@/screens/detail/ScoreHero";
+import { HERO_RING } from "@/screens/detail/ScoreHero";
 import { Sentence } from "@/screens/detail/calmKit";
 import { CardHead } from "@/screens/health/kit";
 import { DetailScreen, ErrorState } from "@/screens/health/shells";
 import { Rows } from "@/screens/health/view";
+import { Flame } from "./Flame";
+import { flameTier, nextTier } from "./tiers";
 
 const INFO = {
   title: "Wear streak",
@@ -55,42 +55,51 @@ export default function StreakScreen() {
 }
 
 /**
- * The lead card: the ring filling toward the next milestone, the run's length in its middle, and under it since when,
- * and how far the next milestone is.
+ * The lead card: the flame (in the streak's colour, tiers.ts) lit as you arrive, the run's length rolling in under it,
+ * then three figures (when it started, the longest run, the next milestone) and when the flame next changes colour.
  */
 function Hero({ vm }: { vm: StreakVM | undefined }) {
   const c = useCalm();
-  const { c: t } = useTheme();
   const days = vm?.current?.days ?? 0;
   const next = vm?.next ?? null;
-  const ink = t.flameBody;
-  const since = vm?.current ? `Worn every day since ${dayText(vm.current.from, vm.today)}.` : "Wear your band today to start a new streak.";
+  const tier = flameTier(days);
+  const up = nextTier(days);
   return (
     <Card style={{ alignSelf: "stretch" }}>
       <View style={{ gap: 14, alignItems: "center" }}>
         <View style={{ alignSelf: "stretch" }}>
-          <CardHead tint="peach" icon={Flame} title="Wear streak" />
-        </View>
-        <View accessible accessibilityRole="image" accessibilityLabel={!vm ? "Loading your streak" : `${days}-day streak${next ? `, ${next - days} days to ${next}` : ""}`}>
-          <ActivityRings motionKey="streak" size={HERO_RING} stroke={HERO_RING_STROKE} rings={[{ progress: vm ? (next ? days / next : 1) : null, color: ink, track: alpha(ink, 0.18) }]} delay={120}>
-            {!vm ? (
-              <SkeletonText role="valueHero" size={54} lineHeight={58} chars={3} />
-            ) : (
-              <View style={{ alignItems: "center" }}>
-                <RollingNumber text={String(days)} lineHeight={58} duration={RING_LAND_MS} style={[font.numberAt(54, 800), { color: c.ink, letterSpacing: -1.5 }]} />
-                <Txt size={15} lineHeight={20} weight={600} align="center" style={{ color: c.sub, marginTop: -2 }}>
-                  day streak
-                </Txt>
-              </View>
-            )}
-          </ActivityRings>
+          <CardHead tint="peach" icon={FlameIcon} title="Wear streak" />
         </View>
         {!vm ? (
-          <Skeleton style={{ height: 24, width: 140 }} />
+          <>
+            <Skeleton radius={HERO_RING / 2} style={{ width: HERO_RING, height: HERO_RING }} />
+            <SkeletonText role="valueHero" size={54} lineHeight={58} chars={3} />
+          </>
         ) : (
-          <View style={{ alignItems: "center", gap: 8 }}>
-            <TonePill tone="neutral">{next ? `${next - days} ${next - days === 1 ? "day" : "days"} to ${next}` : "Past every milestone"}</TonePill>
-            <Sentence align="center">{since}</Sentence>
+          <>
+            <Flame tier={tier} box={HERO_RING} accessibilityLabel={`A ${tier.name} flame: a ${days}-day streak`} />
+            <View accessible accessibilityLabel={`${days}-day streak`} style={{ alignItems: "center", marginTop: -6 }}>
+              <RollingNumber text={days.toLocaleString()} lineHeight={58} duration={RING_LAND_MS} style={[font.numberAt(54, 800), { color: c.ink, letterSpacing: -1.5 }]} />
+              <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                Day streak
+              </Txt>
+            </View>
+          </>
+        )}
+        {vm && (
+          <View style={{ alignSelf: "stretch", flexDirection: "row", marginTop: 4 }}>
+            <Figure value={vm.current ? dayText(vm.current.from, vm.today) : "–"} label="Started" />
+            <Rule />
+            <Figure value={vm.longest ? vm.longest.days.toLocaleString() : "0"} label="Longest" />
+            <Rule />
+            <Figure value={next ? `${(next - days).toLocaleString()} to go` : "–"} label={next ? `To ${next.toLocaleString()} days` : "Every milestone"} />
+          </View>
+        )}
+        {vm && (
+          <View style={{ alignItems: "center", gap: 4 }}>
+            <Sentence size={13} align="center">
+              {!vm.current ? "Wear your band today to light a new streak." : up ? `Turns ${up.name} at ${up.from.toLocaleString()} days.` : "Burning in its hottest colour."}
+            </Sentence>
             {vm.todayPending && vm.current && (
               <Sentence size={13} align="center">
                 {`Today joins it once your band has ${STREAK_TODAY_MIN / 60} hours of heart rate.`}
@@ -101,6 +110,26 @@ function Hero({ vm }: { vm: StreakVM | undefined }) {
       </View>
     </Card>
   );
+}
+
+/** One of the lead card's three figures: the value, and what it is under it. */
+function Figure({ value, label }: { value: string; label: string }) {
+  const c = useCalm();
+  return (
+    <View accessible accessibilityLabel={`${label}: ${value}`} style={{ flex: 1, minWidth: 0, alignItems: "center", gap: 2, paddingHorizontal: 4 }}>
+      <Txt size={17} lineHeight={22} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[font.numeric(700), { color: c.ink }]}>
+        {value}
+      </Txt>
+      <Txt size={13} lineHeight={18} numberOfLines={1} style={{ color: c.sub }}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
+function Rule() {
+  const c = useCalm();
+  return <View style={{ width: 0.5, alignSelf: "stretch", marginVertical: 4, backgroundColor: c.line }} />;
 }
 
 /** One line of the record: what it is (and when, under it) on the left, the figure on the right. */
@@ -160,9 +189,8 @@ function RecordSkeleton() {
  */
 function Milestones({ vm }: { vm: StreakVM }) {
   const c = useCalm();
-  const { c: t } = useTheme();
-  const ink = t.flameBody;
   const days = vm.current?.days ?? 0;
+  const ink = flameTier(days).accent;
   const ahead = vm.next ? [vm.next, ...nextAfter(vm.next, 2)] : [];
   const items: { n: number; state: "reached" | "next" | "later"; note: string }[] = [
     ...vm.reached.slice(-6).map((r) => ({ n: r.days, state: "reached" as const, note: dayText(r.on, vm.today) })),
@@ -185,9 +213,10 @@ function Milestones({ vm }: { vm: StreakVM }) {
                 borderRadius: 27,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: m.state === "reached" ? alpha(ink, 0.2) : "transparent",
+                // Each one passed in the colour the flame burned in from there: the run's colours, in order.
+                backgroundColor: m.state === "reached" ? alpha(flameTier(m.n).accent, 0.2) : "transparent",
                 borderWidth: m.state === "later" ? 1 : 2,
-                borderColor: m.state === "later" ? c.line : ink,
+                borderColor: m.state === "later" ? c.line : m.state === "reached" ? flameTier(m.n).accent : ink,
                 borderStyle: m.state === "next" ? "dashed" : "solid",
               }}
             >
@@ -237,8 +266,8 @@ function Calendar({ vm }: { vm: StreakVM }) {
  */
 const Month = React.memo(function Month({ month, vm }: { month: string; vm: StreakVM }) {
   const c = useCalm();
-  const { c: t } = useTheme();
-  const band = alpha(t.flameBody, 0.24);
+  const accent = flameTier(vm.current?.days ?? 0).accent;
+  const band = alpha(accent, 0.24);
   const weeks = React.useMemo(() => monthGrid(month), [month]);
   const heads = React.useMemo(() => weekdayLabels(), []);
   const state = (d: string | null): DayWear | null => (d ? (vm.wear[d] ?? null) : null);
@@ -296,7 +325,7 @@ const Month = React.memo(function Month({ month, vm }: { month: string; vm: Stre
                         }}
                       />
                     )}
-                    {s === "pending" && <View style={{ position: "absolute", width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderStyle: "dashed", borderColor: t.flameBody }} />}
+                    {s === "pending" && <View style={{ position: "absolute", width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderStyle: "dashed", borderColor: accent }} />}
                     {d && (
                       <Txt size={15} lineHeight={20} weight={s === "worn" ? 600 : 400} style={{ color: outside ? c.faint : s === "worn" || s === "pending" ? c.ink : c.sub, fontVariant: ["tabular-nums"] }}>
                         {String(Number(d.slice(8)))}
