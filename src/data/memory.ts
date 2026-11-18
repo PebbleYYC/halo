@@ -230,6 +230,12 @@ export class MemoryStore implements Store {
   async scoresIn(range: DayRange) {
     return copy([...this.scores.values()].filter((r) => inRange(r.day, range)).sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0)));
   }
+  async wearDaysIn(range: DayRange) {
+    return [...this.scores.values()]
+      .filter((r) => inRange(r.day, range))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+      .map((r) => ({ day: r.day, hrCount: r.strain?.hrCount ?? 0, hrMinutes: (r.strain?.hrMinutesAm ?? 0) + (r.strain?.hrMinutesPm ?? 0) }));
+  }
   async bodySignalsIn(range: DayRange) {
     return [...this.scores.values()]
       .filter((r) => inRange(r.day, range))

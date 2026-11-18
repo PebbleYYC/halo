@@ -164,6 +164,7 @@ export default function HomeScreen() {
             streak={isToday ? (streak.data ?? null) : null}
             sync={{ status: shell.status, now: shell.now, onPress: refresh }}
             onAvatar={() => router.navigate("/more")}
+            onStreak={() => router.push("/streak")}
           />
         }
       >

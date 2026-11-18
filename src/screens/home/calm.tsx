@@ -27,7 +27,7 @@ import { CalendarSheet } from "@/ui/components/CalendarSheet";
 import { PillAction } from "@/ui/components/CalmSurface";
 import { RoundStep, stepDay } from "@/ui/components/DateSwitcher";
 import { BAR_ROW, BarEdge } from "@/ui/components/DetailHeader";
-import { BAR_BUTTON, GlassButton, GlassCapsule } from "@/ui/components/GlassButton";
+import { BAR_BUTTON, GlassButton } from "@/ui/components/GlassButton";
 import { RING_LAND_MS, RING_STAGGER, RollingNumber, ScoreRings } from "@/ui/components/Halo";
 import { StreakFlame, UserAvatar } from "@/ui/components/HomeHeader";
 import { usePress, usePressStyle } from "@/ui/components/press";
@@ -66,11 +66,11 @@ const spokenHm = (min: number | null) => {
 
 // The bar
 
-/** The streak, a glass capsule: the flame, the count in bold figures and "day streak" in grey. */
-function StreakCapsule({ days }: { days: number }) {
+/** The streak, a glass capsule button: the flame, the count in bold figures and "day streak" in grey. Opens the streak. */
+function StreakCapsule({ days, onPress }: { days: number; onPress?: () => void }) {
   const c = useCalm();
   return (
-    <GlassCapsule accessibilityLabel={`${days}-day streak`} style={{ gap: 6, paddingLeft: 12, paddingRight: 14 }}>
+    <GlassButton wide onPress={onPress} accessibilityLabel={`${days}-day streak. Opens your streak`} style={{ gap: 6, paddingLeft: 12, paddingRight: 14 }}>
       <StreakFlame u={0.62} />
       <Txt size={15} lineHeight={20} weight={600} numberOfLines={1} style={{ color: c.sub }}>
         <Txt size={15} lineHeight={20} weight={700} style={[font.numeric(700), { color: c.ink }]}>
@@ -78,7 +78,7 @@ function StreakCapsule({ days }: { days: number }) {
         </Txt>
         {" day streak"}
       </Txt>
-    </GlassCapsule>
+    </GlassButton>
   );
 }
 
@@ -87,7 +87,7 @@ function StreakCapsule({ days }: { days: number }) {
  * the glass bends what scrolls under it), the streak capsule on the left, the sync status and the profile button on the
  * right, and the inline title, centred, fading in once the large title has folded under the bar.
  */
-export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<number> | null; title: string; streak: { days: number } | null; sync: { status: SyncShellStatus; now: number | null; onPress?: () => void }; onAvatar: () => void }) {
+export function TodayBar({ y, title, streak, sync, onAvatar, onStreak }: { y: SharedValue<number> | null; title: string; streak: { days: number } | null; sync: { status: SyncShellStatus; now: number | null; onPress?: () => void }; onAvatar: () => void; onStreak?: () => void }) {
   const c = useCalm();
   const me = useMe();
   const insets = useSafeAreaInsets();
@@ -106,7 +106,7 @@ export function TodayBar({ y, title, streak, sync, onAvatar }: { y: SharedValue<
       </Animated.View>
       {/* The bar's row takes the touches over its whole width, as iOS's bar does: what has scrolled under it can't be tapped. */}
       <View style={{ marginTop: insets.top, height: BAR_ROW, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16 }}>
-        {streak && streak.days > 0 ? <StreakCapsule days={streak.days} /> : null}
+        {streak && streak.days > 0 ? <StreakCapsule days={streak.days} onPress={onStreak} /> : null}
         <View style={{ flex: 1 }} />
         <SyncStatus status={sync.status} now={sync.now} onPress={sync.onPress} hideText />
         <GlassButton onPress={onAvatar} accessibilityLabel="Settings">
