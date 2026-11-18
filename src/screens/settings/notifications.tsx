@@ -7,7 +7,7 @@
 // permission first. The groups rise into place as the page opens.
 import * as React from "react";
 import { AppState, Linking, View } from "react-native";
-import { Bell, BellRing, CalendarRange, CloudOff, Download, Flame, Moon, NotebookPen, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react-native";
+import { Bell, BellRing, CalendarRange, CloudOff, Download, Flame, Moon, NotebookPen, Lightbulb, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react-native";
 import { applyBedtime } from "@/background/alerts";
 import { DEEP_LINK, formatTime, parseTime, recoveryBody } from "@/background/decide";
 import { readLog, type RunLogEntry } from "@/background/log";
@@ -269,7 +269,7 @@ function Notifications({ s }: { s: ReturnType<typeof useNotificationSettings> })
     return p === "granted";
   };
 
-  const set = async (key: "recoveryReady" | "cantSync" | "strainTarget" | "healthMonitor" | "weeklyReport", on: boolean) => {
+  const set = async (key: "recoveryReady" | "cantSync" | "strainTarget" | "healthMonitor" | "weeklyReport" | "patterns", on: boolean) => {
     if (!(await allowed(on))) return;
     await s.update({ [key]: on });
   };
@@ -323,6 +323,15 @@ function Notifications({ s }: { s: ReturnType<typeof useNotificationSettings> })
           disabled={denied}
         />
         <SwitchRow icon={CalendarRange} system="blue" label="Weekly report" description="Monday morning, when last week’s report is ready" value={s.settings.weeklyReport} onChange={(v) => void set("weeklyReport", v)} disabled={denied} />
+        <SwitchRow
+          icon={Lightbulb}
+          system="purple"
+          label="Patterns"
+          description="At most once a week, when the Coach spots a new pattern in your nights and journal. Needs the Coach set up."
+          value={s.settings.patterns}
+          onChange={(v) => void set("patterns", v)}
+          disabled={denied}
+        />
       </InsetGroup>
       <InsetGroup title="Reminders" inset="icon">
         <SwitchRow icon={NotebookPen} system="indigo" label="Check-in reminder" description="Every day; opens the Journal" value={s.settings.checkIn} onChange={(v) => void setCheckIn(v)} disabled={denied} />

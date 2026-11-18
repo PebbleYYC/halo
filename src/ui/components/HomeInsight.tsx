@@ -17,11 +17,13 @@ import { Card } from "./Card";
 import { iconRadius, softFill } from "./calmKit";
 import { Txt } from "./Text";
 
-export type HomeInsightItem = { key: string; title: string; body: string };
+export type HomeInsightItem = { key: string; title: string; body: string; tint?: CalmTint; icon?: LucideIcon };
+/** A text button under the shown insight ("Ask Coach", "Dismiss"). */
+export type HomeInsightAction = { label: string; onPress: (item: HomeInsightItem) => void; primary?: boolean };
 
 /** An insight's family colour by what it is about. */
 const TINT: Record<string, CalmTint> = { recovery: "mint", sleep: "lavender", strain: "peach" };
-const tintOf = (key: string): CalmTint => TINT[key] ?? "lavender";
+const tintOf = (it: HomeInsightItem): CalmTint => it.tint ?? TINT[it.key] ?? "lavender";
 /** The subject's own glyph (anti-slop R-04: no generic sparkle). */
 const ICON: Record<string, LucideIcon> = { recovery: HeartPulse, sleep: Moon, strain: Flame };
 
@@ -83,7 +85,11 @@ function Words({ k, item, shown, swap }: { k: number; item: HomeInsightItem; sho
   );
 }
 
-export function HomeInsight({ items }: { items: HomeInsightItem[] }) {
+/**
+ * `label` names the card for screen readers; `eyebrow` is a small line over the title (the patterns card's "From your
+ * patterns"); `actions` are text buttons under the shown insight, the same for every card so nothing moves on a swap.
+ */
+export function HomeInsight({ items, label = "Insights", eyebrow, actions }: { items: HomeInsightItem[]; label?: string; eyebrow?: string; actions?: HomeInsightAction[] }) {
   const c = useCalm();
   const [i, setI] = React.useState(0);
   const n = items.length;
@@ -101,22 +107,48 @@ export function HomeInsight({ items }: { items: HomeInsightItem[] }) {
   if (!n) return null;
   const several = n > 1;
   return (
-    <View accessibilityLabel="Insights" style={{ paddingBottom: several ? 8 : 0 }}>
+    <View accessibilityLabel={label} style={{ paddingBottom: several ? 8 : 0 }}>
       {several && <View style={{ position: "absolute", left: 18, right: 18, bottom: 0, height: 32, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, backgroundColor: softFill(c, "ground"), opacity: 0.7 }} />}
       <Card padding={16}>
         {items.map((it, k) => (
-          <Wash key={it.key} k={k} tint={tintOf(it.key)} swap={swap} />
+          <Wash key={it.key} k={k} tint={tintOf(it)} swap={swap} />
         ))}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
           <View style={{ width: 36, height: 36 }}>
             {items.map((it, k) => (
-              <Square key={it.key} k={k} tint={tintOf(it.key)} icon={ICON[it.key] ?? Lightbulb} swap={swap} />
+              <Square key={it.key} k={k} tint={tintOf(it)} icon={it.icon ?? ICON[it.key] ?? Lightbulb} swap={swap} />
             ))}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
+            {eyebrow ? (
+              <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, marginBottom: 2 }}>
+                {eyebrow}
+              </Txt>
+            ) : null}
             {items.map((it, k) => (
               <Words key={it.key} k={k} item={it} shown={k === at} swap={swap} />
             ))}
+            {actions?.length ? (
+              <View style={{ flexDirection: "row", gap: 18, marginTop: 10 }}>
+                {actions.map((a) => (
+                  <Pressable
+                    key={a.label}
+                    onPress={() => {
+                      haptic.select();
+                      a.onPress(items[at]);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${a.label}: ${items[at].title}`}
+                    hitSlop={10}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+                  >
+                    <Txt size={15} lineHeight={20} weight={600} style={{ color: a.primary ? c.teal : c.sub }}>
+                      {a.label}
+                    </Txt>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         </View>
         {several && (

@@ -14,6 +14,7 @@ import { alpha } from "@/lib/utils";
 import { isDashboardKey, type EnergyBankVM, type HomeVM, type KeyStat } from "@/queries";
 import { nutritionOn } from "@/queries/food";
 import { useQuery } from "@/state/app";
+import { PatternsCard } from "./PatternsCard";
 import { useJournalVersion } from "@/screens/journal/state";
 import { ActivityCard, EmptyState, EnergyBankChart, HomeInsight, InfoButton, MetricState, MetricTags, ReasonPlaceholder, SectionShell, SleepCard, StrainRecoveryChart, Txt } from "@/ui";
 import { useCalm, type CalmTint } from "@/ui/calm";
@@ -97,6 +98,7 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
           // Keyed by the set, so a refresh with fewer cards never leaves the carousel on an index past the end.
           <HomeInsight key={vm.insights.map((it) => it.key).join()} items={vm.insights} />
         )}
+        {vm.isToday && <PatternsCard key="patterns" day={vm.day} go={go} />}
         {vm.outlook && <DayBanner key="outlook" outlook={vm.outlook} />}
         {(vm.state || vm.isToday) && <StateCard key="state" state={vm.state} today={vm.isToday} timeZone={timeZone} onOpen={() => go(at("/health/stress"))} onBreathe={() => go("/breathe")} />}
         {vm.isToday && <HeadacheCard key="headache" onOpen={() => go("/health/headache")} />}
