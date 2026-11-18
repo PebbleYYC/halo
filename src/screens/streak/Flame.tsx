@@ -1,6 +1,7 @@
 // The streak's flame: three layered tongues (outer, middle, core) in the streak's colour (tiers.ts), a soft glow behind
-// and a few sparks. Like the Halo Age orb and the Sleep and Activity fields, it arrives and then rests: it ignites from
-// its base, flickers for five seconds with sparks lifting off, and settles still (DESIGN.md › Motion: nothing loops).
+// and a few sparks, drawn in the hero ring's hole under the count, as Sleep's sky and Activity's waves are. Like them it
+// arrives and then rests: it ignites from its base, flickers for five seconds with sparks lifting off, and settles
+// still and faded, so the number over it reads (DESIGN.md › Motion: nothing loops).
 // One driver runs 0 → 1 and stops; every layer is a function of it. It plays on arriving at the screen and again on a
 // tap; Reduce Motion shows it at rest.
 import * as React from "react";
@@ -125,14 +126,17 @@ function Spark({ k, run, size, color }: { k: number; run: SharedValue<number>; s
   );
 }
 
+/** How bright the flame stays once it has settled, behind the count. */
+const REST_OPACITY = 0.32;
+
 /**
- * The flame in a `box` px square (the hero's ring size, so the lead card is the same height as every tab's). Tapping
- * it lights it again.
+ * The flame filling a ring's hole, `box` px across, clipped to the circle. Tapping it lights it again.
  */
 export function Flame({ tier, box, accessibilityLabel }: { tier: FlameTier; box: number; accessibilityLabel: string }) {
   const [run, play] = useRun();
   const id = React.useId().replace(/:/g, "");
-  const size = { w: box * 0.62, h: box * 0.8 };
+  const size = { w: box * 0.6, h: box * 0.78 };
+  const fade = useAnimatedStyle(() => ({ opacity: 1 - (1 - REST_OPACITY) * restOf(run.value) }));
   const glow = useAnimatedStyle(() => {
     const t = run.value;
     const ignite = glide(clamp01(t / 0.2));
@@ -148,10 +152,11 @@ export function Flame({ tier, box, accessibilityLabel }: { tier: FlameTier; box:
       accessibilityRole="image"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint="Lights the flame again"
-      style={{ width: box, height: box, alignItems: "center", justifyContent: "flex-end" }}
+      style={{ position: "absolute", width: box, height: box, borderRadius: box / 2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}
     >
+      <Animated.View pointerEvents="none" style={[{ position: "absolute", width: box, height: box, alignItems: "center", justifyContent: "center" }, fade]}>
       {/* The glow behind, in the flame's base colour, fading to nothing at its edge. */}
-      <Animated.View pointerEvents="none" style={[{ position: "absolute", width: box, height: box, top: box * 0.06 }, glow]}>
+      <Animated.View pointerEvents="none" style={[{ position: "absolute", width: box, height: box, top: box * 0.08 }, glow]}>
         <Svg width={box} height={box}>
           <Defs>
             <RadialGradient id={`g${id}`} cx="50%" cy="58%" r="50%">
@@ -162,7 +167,7 @@ export function Flame({ tier, box, accessibilityLabel }: { tier: FlameTier; box:
           <Circle cx={box / 2} cy={box / 2} r={box / 2} fill={`url(#g${id})`} />
         </Svg>
       </Animated.View>
-      <View pointerEvents="none" style={{ width: size.w, height: size.h, marginBottom: box * 0.04 }}>
+      <View pointerEvents="none" style={{ width: size.w, height: size.h }}>
         <Tongue i={0} run={run} size={size} fill={tier.outer} id={`o${id}`} />
         <Tongue i={1} run={run} size={size} fill={tier.middle} id={`m${id}`} />
         <Tongue i={2} run={run} size={size} fill={tier.core} id={`c${id}`} />
@@ -170,6 +175,7 @@ export function Flame({ tier, box, accessibilityLabel }: { tier: FlameTier; box:
           <Spark key={k} k={k} run={run} size={size} color={tier.middle[0]} />
         ))}
       </View>
+      </Animated.View>
     </Pressable>
   );
 }
