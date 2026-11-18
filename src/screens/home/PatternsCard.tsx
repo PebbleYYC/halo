@@ -1,26 +1,27 @@
-// Today's "From your patterns": once the Coach is set up, the findings in the person's own nights and journal
-// (src/queries/patterns.ts), in the Coach's words when it has rewritten them (src/coach/patterns.ts), as the same
-// carousel card as the day's insights with "Ask Coach" and "Dismiss" under each. Nothing shows without the Coach or
-// without a finding. The words never swap while the card is on screen: a rewrite asked now is shown next time.
+// Today's "Coach spotted": once the Coach is set up, the patterns its model found in the person's own nights and journal
+// and the app confirmed (src/coach/discover.ts), as the same carousel card as the day's insights with "Ask Coach" and
+// "Dismiss" under each. Nothing shows without the Coach or without a finding that held up. Opening Home on a day the
+// Coach hasn't looked yet starts its look; the card appears when it's done.
 import * as React from "react";
-import { BedDouble, CalendarDays, Clock, NotebookPen, type LucideIcon } from "lucide-react-native";
-import { dismissedPatterns, dismissPattern, patternWords, savedWords } from "@/coach/patterns";
+import { Brain, Flame, HeartPulse, Moon, type LucideIcon } from "lucide-react-native";
+import { discover, dismissedFindings, dismissFinding, lookedToday, savedFindings, SHOW_DAYS, subscribeFindings } from "@/coach/discover";
+import type { FindingSubject } from "@/coach/discoverText";
 import { useHasCoachKey } from "@/coach/session";
-import { getPatterns, type Pattern, type PatternKind } from "@/queries/patterns";
+import { addDays } from "@/lib/time";
 import type { QueryCtx } from "@/queries/ctx";
 import { useQuery } from "@/state/app";
 import { HomeInsight, type HomeInsightItem } from "@/ui/components/HomeInsight";
 import type { CalmTint } from "@/ui/calm";
 
-const TINT: Record<Pattern["subject"], CalmTint> = { recovery: "mint", sleep: "lavender", strain: "peach" };
-const ICON: Record<PatternKind, LucideIcon> = { weekday: CalendarDays, bedtime: BedDouble, timing: Clock, behaviour: NotebookPen };
+const TINT: Record<FindingSubject, CalmTint> = { recovery: "mint", sleep: "lavender", strain: "peach", stress: "sky" };
+const ICON: Record<FindingSubject, LucideIcon> = { recovery: HeartPulse, sleep: Moon, strain: Flame, stress: Brain };
 
-async function patternCards(ctx: QueryCtx) {
-  const patterns = await getPatterns(ctx);
-  const [words, dismissed] = await Promise.all([savedWords(patterns), dismissedPatterns(ctx.now)]);
-  // Not rewritten yet: ask now, show the app's own words until the next open.
-  if (!words && patterns.length) void patternWords(patterns);
-  return { patterns, words: words ?? {}, dismissed };
+async function findingCards(ctx: QueryCtx) {
+  const [saved, dismissed] = await Promise.all([savedFindings(), dismissedFindings(ctx.now)]);
+  // Not looked today: look now (once; discover() shares a run in flight), show what's saved meanwhile.
+  if (!lookedToday(saved, ctx.today)) void discover(ctx);
+  const fresh = saved && saved.day >= addDays(ctx.today, -SHOW_DAYS) ? saved.findings : [];
+  return fresh.filter((f) => !(f.key in dismissed));
 }
 
 export function PatternsCard({ day, go }: { day: string; go: (href: string) => void }) {
@@ -30,36 +31,30 @@ export function PatternsCard({ day, go }: { day: string; go: (href: string) => v
 }
 
 function Cards({ day, go }: { day: string; go: (href: string) => void }) {
-  const q = useQuery(patternCards, [day], `patterns:${day}`);
+  const [runs, setRuns] = React.useState(0);
+  React.useEffect(() => subscribeFindings(() => setRuns((n) => n + 1)), []);
+  const q = useQuery(findingCards, [day, runs], `findings:${day}:${runs}`);
   const [gone, setGone] = React.useState<string[]>([]);
-  const data = q.data;
-  const items = React.useMemo<(HomeInsightItem & { ask: string })[]>(() => {
-    if (!data) return [];
-    return data.patterns
-      .filter((p) => !(p.key in data.dismissed) && !gone.includes(p.key))
-      .map((p) => ({ key: p.key, title: data.words[p.key]?.title ?? p.title, body: data.words[p.key]?.body ?? p.body, tint: TINT[p.subject], icon: ICON[p.kind], ask: p.ask }));
-  }, [data, gone]);
+  const findings = React.useMemo(() => (q.data ?? []).filter((f) => !gone.includes(f.key)), [q.data, gone]);
+  const items = React.useMemo<HomeInsightItem[]>(() => findings.map((f) => ({ key: f.key, title: f.title, body: f.body, tint: TINT[f.subject], icon: ICON[f.subject] })), [findings]);
   const actions = React.useMemo(
     () => [
       {
         label: "Ask Coach",
         primary: true,
-        onPress: (it: HomeInsightItem) => {
-          const ask = items.find((x) => x.key === it.key)?.ask ?? it.title;
-          go(`/coach?q=${encodeURIComponent(ask)}`);
-        },
+        onPress: (it: HomeInsightItem) => go(`/coach?q=${encodeURIComponent(findings.find((f) => f.key === it.key)?.ask ?? it.title)}`),
       },
       {
         label: "Dismiss",
         onPress: (it: HomeInsightItem) => {
           setGone((g) => [...g, it.key]);
-          void dismissPattern(it.key);
+          void dismissFinding(it.key);
         },
       },
     ],
-    [items, go],
+    [findings, go],
   );
   if (!items.length) return null;
   // Keyed by the set, so a dismissal never leaves the carousel on an index past the end.
-  return <HomeInsight key={items.map((it) => it.key).join()} items={items} label="Patterns" eyebrow="From your patterns" actions={actions} />;
+  return <HomeInsight key={items.map((it) => it.key).join()} items={items} label="Coach spotted" eyebrow="Coach spotted" actions={actions} />;
 }
