@@ -20,6 +20,7 @@ import { runPipeline } from "@/pipeline";
 import { timed } from "@/lib/perf";
 import { setForeground } from "@/lib/yield";
 import { notifyAfterRun } from "./alerts";
+import { patternsAfterRun } from "./patterns";
 import { beatingProgress, releaseLock, takeLock, waitForLock, type RunOwner } from "./lock";
 
 export type Source = "health_connect" | "google" | "demo";
@@ -150,7 +151,9 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
     // The Claude connector, when set up: the task waits for the send (its process may end after); the app doesn't.
     if (scored) {
       const send = sendAfterSync(store, profile, opts.timeZone);
-      if (opts.owner === "task") await send;
+      // The Coach's patterns: found and worded now, so Home has them in its words; a weekly one may be sent.
+      const patterns = patternsAfterRun(store, profile, opts.timeZone);
+      if (opts.owner === "task") await Promise.all([send, patterns]);
     }
   }
 }

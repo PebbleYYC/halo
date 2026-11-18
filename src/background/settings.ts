@@ -25,6 +25,8 @@ export type BackgroundSettings = {
   healthMonitor: boolean;
   /** "Weekly report ready", Monday morning once last week's report is complete. */
   weeklyReport: boolean;
+  /** "Patterns": once the Coach is set up, a new finding in the person's nights and journal, at most once a week. */
+  patterns: boolean;
   /** "Halo x.y.z is available": Halo asks GitHub for its latest release each time it opens and in the background (no health data is sent). */
   updates: boolean;
 };
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: BackgroundSettings = {
   strainTarget: false,
   healthMonitor: false,
   weeklyReport: false,
+  patterns: false,
   updates: true,
 };
 
