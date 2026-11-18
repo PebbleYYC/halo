@@ -11,20 +11,23 @@ import { addDays, daysBetween } from "@/lib/time";
 import { alpha } from "@/lib/utils";
 import { getStreak, MILESTONES, STREAK_TODAY_MIN, type DayWear, type Run, type StreakVM } from "@/queries/streak";
 import { useQuery } from "@/state/app";
-import { SectionShell, Skeleton, SkeletonText, Txt } from "@/ui";
+import { SectionShell, SkeletonText, Txt } from "@/ui";
 import { useCalm } from "@/ui/calm";
 import { Card } from "@/ui/components/Card";
 import { addMonths, monthGrid, monthLabel, monthOf, weekdayLabels } from "@/ui/components/CalendarSheet";
 import { CalmButton } from "@/screens/settings/calmKit";
-import { RING_LAND_MS, RollingNumber } from "@/ui/components/Halo";
+import { ActivityRings, RING_LAND_MS, RollingNumber } from "@/ui/components/Halo";
 import { font } from "@/ui/fonts";
-import { HERO_RING } from "@/screens/detail/ScoreHero";
+import { HERO_RING, HERO_RING_STROKE } from "@/screens/detail/ScoreHero";
 import { Sentence } from "@/screens/detail/calmKit";
 import { CardHead } from "@/screens/health/kit";
 import { DetailScreen, ErrorState } from "@/screens/health/shells";
 import { Rows } from "@/screens/health/view";
 import { Flame } from "./Flame";
 import { flameTier, nextTier } from "./tiers";
+
+/** The ring's hole, where the flame and the count sit. */
+const HOLE = HERO_RING - HERO_RING_STROKE * 2;
 
 const INFO = {
   title: "Wear streak",
@@ -70,22 +73,25 @@ function Hero({ vm }: { vm: StreakVM | undefined }) {
         <View style={{ alignSelf: "stretch" }}>
           <CardHead tint="peach" icon={FlameIcon} title="Wear streak" />
         </View>
-        {!vm ? (
-          <>
-            <Skeleton radius={HERO_RING / 2} style={{ width: HERO_RING, height: HERO_RING }} />
-            <SkeletonText role="valueHero" size={54} lineHeight={58} chars={3} />
-          </>
-        ) : (
-          <>
-            <Flame tier={tier} box={HERO_RING} accessibilityLabel={`A ${tier.name} flame: a ${days}-day streak`} />
-            <View accessible accessibilityLabel={`${days}-day streak`} style={{ alignItems: "center", marginTop: -6 }}>
-              <RollingNumber text={days.toLocaleString()} lineHeight={58} duration={RING_LAND_MS} style={[font.numberAt(54, 800), { color: c.ink, letterSpacing: -1.5 }]} />
-              <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, letterSpacing: 0.8, textTransform: "uppercase" }}>
-                Day streak
-              </Txt>
+        {/* The ring every tab leads with, filling toward the next milestone in the flame's colour; the flame burns in
+            its hole under the count, then settles and fades, as Sleep's sky and Activity's waves do. */}
+        <View accessible={!!vm} accessibilityLabel={vm ? `${days}-day streak, a ${tier.name} flame${next ? `, ${next - days} days to ${next}` : ""}` : undefined}>
+          <ActivityRings motionKey="streak" size={HERO_RING} stroke={HERO_RING_STROKE} rings={[{ progress: vm ? (next ? days / next : 1) : null, color: tier.accent, track: alpha(tier.accent, 0.18) }]} delay={120}>
+            <View style={{ width: HOLE, height: HOLE, alignItems: "center", justifyContent: "center" }}>
+              {vm && <Flame tier={tier} box={HOLE} accessibilityLabel={`A ${tier.name} flame`} />}
+              {!vm ? (
+                <SkeletonText role="valueHero" size={54} lineHeight={58} chars={3} />
+              ) : (
+                <View pointerEvents="none" style={{ alignItems: "center" }}>
+                  <RollingNumber text={days.toLocaleString()} lineHeight={58} duration={RING_LAND_MS} style={[font.numberAt(54, 800), { color: c.ink, letterSpacing: -1.5 }]} />
+                  <Txt size={15} lineHeight={20} weight={600} align="center" style={{ color: c.sub, marginTop: -2 }}>
+                    day streak
+                  </Txt>
+                </View>
+              )}
             </View>
-          </>
-        )}
+          </ActivityRings>
+        </View>
         {vm && (
           <View style={{ alignSelf: "stretch", flexDirection: "row", marginTop: 4 }}>
             <Figure value={vm.current ? dayText(vm.current.from, vm.today) : "–"} label="Started" />
