@@ -1,8 +1,6 @@
 // Home's header state that the web reads from its ShellStatus (src/server/queries/settings.ts): the sync status for
 // the battery slot and the wear streak, rebuilt from the app state and the Store.
 import * as React from "react";
-import { addDays } from "@/lib/time";
-import type { QueryCtx } from "@/queries";
 import { useApp } from "@/state/app";
 import type { SyncShellStatus } from "@/ui";
 
@@ -39,29 +37,8 @@ export function useSyncShell(): { status: SyncShellStatus; now: number } {
   };
 }
 
-/** Today counts toward the streak once it has this many minutes of heart rate; until then the streak ends yesterday. */
-const STREAK_TODAY_MIN = 6 * 60;
-
-/**
- * Consecutive worn days (the web's getWearStreak, spec §4.3): a day is worn when it has any heart rate. Today
- * neither counts nor breaks the streak until it has enough data. Null when the streak is 0.
- */
-export async function wearStreak(ctx: QueryCtx): Promise<{ days: number; asOf: string } | null> {
-  const from = ctx.sync.firstDay ?? addDays(ctx.today, -365);
-  const rows = await ctx.store.scoresIn({ from, to: ctx.today });
-  const byDay = new Map(rows.map((r) => [r.day, r]));
-  let days = 0;
-  let asOf: string | null = null;
-  for (let d = ctx.today; byDay.has(d); d = addDays(d, -1)) {
-    const s1 = byDay.get(d)!.strain;
-    const minutes = (s1?.hrMinutesAm ?? 0) + (s1?.hrMinutesPm ?? 0);
-    if (d === ctx.today && minutes < STREAK_TODAY_MIN) continue;
-    if ((s1?.hrCount ?? 0) <= 0) break;
-    asOf ??= d;
-    days++;
-  }
-  return days > 0 && asOf ? { days, asOf } : null;
-}
+/** The capsule's count: the same rules as the streak page (src/queries/streak.ts). */
+export { wearStreak } from "@/queries/streak";
 
 const STEP_LABEL: Record<string, string> = {
   write: "Saving your data",
