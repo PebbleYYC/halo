@@ -47,7 +47,9 @@ export function MetricSheet({
     if (key !== current) onPick(key);
   };
   return (
-    <BottomSheet open={open} onClose={onClose} title={title}>
+    // Full height: a sheet sized to its content resizes as a section opens, and gorhom drops taps while it settles (the
+    // chips didn't answer). Tall, it never moves.
+    <BottomSheet open={open} onClose={onClose} title={title} size="tall">
       {none && (
         <View style={{ flexDirection: "row", paddingBottom: 12 }}>
           <Chip label={none} selected={current === null} onPress={() => pick(null)} />
