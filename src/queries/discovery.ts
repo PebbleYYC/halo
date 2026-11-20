@@ -9,14 +9,14 @@
 // Alignment: a variable's value on day D means
 //   night    the night that ended on the morning of D (that day's stored Recovery and sleep);
 //   day      what happened during D (Strain, steps, stress);
-//   evening  the evening of D (getting into bed that night, a medicine's first dose of the day);
+//   evening  the evening of D (getting into bed that night, a medicine's evening dose, from 15:00);
 //   journal  D's check-in answers (yes/no, or a count);
 //   weekday  D is that weekday.
 // A test pairs x on D with y on D + lag (lag 1: the night after; lag 0: the same day).
 import { addDays, localMinutes } from "@/lib/time";
 import { withMedicineNoDays } from "@/lib/medicine";
 import { finite, loadDays, type DayRow, type QueryCtx, toStrain } from "./common";
-import { tagRows, timedDoses } from "./journal";
+import { eveningDoses, tagRows, timedDoses } from "./journal";
 
 export type VarGroup = "night" | "day" | "evening" | "journal" | "weekday";
 export type Variable = {
@@ -119,14 +119,8 @@ export function buildVariables(d: DiscoveryData): Variable[] {
       return next ? eveningMin(next.start, d.timeZone) : null;
     }),
   );
-  // A medicine's first dose of each day it was logged with a time.
-  const first = new Map<string, Map<string, number>>();
-  for (const x of d.doses) {
-    const m = first.get(x.tag) ?? new Map<string, number>();
-    m.set(x.day, Math.min(m.get(x.day) ?? Infinity, x.minute));
-    first.set(x.tag, m);
-  }
-  for (const [tag, m] of first) add({ key: `dose:${tag}`, label: `${d.doseLabel(tag)} dose time`, unit: "clock", group: "evening", flag: false }, m);
+  // A medicine's evening dose (journal.ts eveningDoses): a morning one is too far from the night to judge it on.
+  for (const [tag, m] of eveningDoses(d.doses)) add({ key: `dose:${tag}`, label: `${d.doseLabel(tag)} evening dose time`, unit: "clock", group: "evening", flag: false }, m);
   // Journal answers: the days a behaviour was answered, yes (or a count) against no; a medicine's no-days filled in.
   const answers = new Map<string, Record<string, number>>();
   for (const e of d.journal) answers.set(e.day, { ...answers.get(e.day), [e.tag]: e.value });

@@ -71,7 +71,7 @@ export const TOOL_DOCS: Record<string, ToolDoc> = {
     },
   },
   get_dose_timing: {
-    description: "For a 'when' question about medication — whether taking it earlier or later in the day changes next-day recovery, HRV or sleep. Splits each medicine's days at the median time of its first dose and compares the two halves, with sample sizes and a confidence interval. This is the right tool for dosing-time questions; get_journal_impacts only compares days a behaviour was logged against days it wasn't, which says nothing about time of day. Medicines without enough timed days, or whose doses all fall around one time, come back under needsMoreData with the reason.",
+    description: "For a 'when' question about medication — whether taking it earlier or later in the day changes next-day recovery, HRV or sleep. Uses only evening doses (from 15:00; a morning dose is too far from the night to judge), splits each medicine's evenings at the median dose time and compares the two halves, with sample sizes and a confidence interval. This is the right tool for dosing-time questions; get_journal_impacts only compares days a behaviour was logged against days it wasn't, which says nothing about time of day. Medicines without enough timed days, or whose doses all fall around one time, come back under needsMoreData with the reason.",
     params: {
       outcome: { type: "one of: recovery, hrv, sleep; default recovery", description: "Outcome to compare." },
       behaviours: { type: "array of strings (optional)", description: "Medicine names to scope to, e.g. [\"Bupropion XL\"]. Omit to cover every timed medicine." },
