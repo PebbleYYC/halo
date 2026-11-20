@@ -8,6 +8,7 @@
 // rolling into place in its middle) beside capsule meters for protein, carbs and fat (each growing in its own colour),
 // then "Add food", today's food as inset grouped lists by meal, the targets as an iOS list with "Edit", the averages as
 // Health cards and the month as Apple Health's bars. The food and targets sheets are iOS sheets.
+import { balanceWords } from "@/queries/energy";
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Camera, ChartColumn, Pencil, PencilLine, Plus, Trash2, TriangleAlert, Utensils, type LucideIcon } from "lucide-react-native";
@@ -116,6 +117,8 @@ function TodayCard({ vm }: { vm: NutritionVM }) {
       <View style={{ gap: 2 }}>
         <Sentence>{left === 0 ? "Calorie target reached" : `Calories: ${leftText(left, "kcal")}`}</Sentence>
         <Sentence>{proteinLeft === 0 ? "Protein target reached" : `Protein: ${proteinLeft > 0 ? `${grams(proteinLeft)} g to go` : `${grams(-proteinLeft)} g over your target`}`}</Sentence>
+        {vm.balance.today && <Sentence>{vm.balance.today.verdict === "early" ? "Balance: too early to call" : `Balance: on course for ${balanceWords(vm.balance.today)}`}</Sentence>}
+        {vm.balance.yesterday && <Sentence>{`Yesterday: ${balanceWords(vm.balance.yesterday)}`}</Sentence>}
       </View>
       {t.fiber !== null && (
         <View accessible style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 6 }}>

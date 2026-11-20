@@ -81,6 +81,8 @@ const RUNNING: Record<string, string> = {
   get_health: "Checking your Health Monitor…",
   get_report: "Reading your report…",
   get_profile: "Checking your profile…",
+  remember: "Remembering…",
+  forget: "Forgetting…",
 };
 
 export const ERRORS: Record<string, string> = {
@@ -156,8 +158,11 @@ const PartView = React.memo(
     if (!part.type.startsWith("tool-")) return null;
     const name = part.type.slice(5);
     const tool = part as ToolPart;
-    if (tool.state === "output-error") return <Caption>Couldn’t read that part of your data.</Caption>;
+    if (tool.state === "output-error") return <Caption>{name === "remember" || name === "forget" ? "Couldn’t update the memory." : "Couldn’t read that part of your data."}</Caption>;
     if (tool.state !== "output-available") return <Caption live>{RUNNING[name] ?? "Looking at your data…"}</Caption>;
+    // Memory writes: one quiet line, the fact in the Coach's words (Settings › Coach lists and deletes them).
+    if (name === "remember") return <Caption>{`Remembered: ${(tool.output as { saved?: string })?.saved ?? ""}`}</Caption>;
+    if (name === "forget") return <Caption>{(tool.output as { forgotten?: boolean })?.forgotten ? "Forgotten" : "Nothing to forget"}</Caption>;
     if (name === "get_day")
       return (
         <View style={{ gap: 10 }}>

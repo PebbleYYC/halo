@@ -8,6 +8,7 @@ import { glyphForType } from "@/ui/activityGlyphs";
 import { Pencil } from "lucide-react-native";
 import { GlassButton } from "@/ui/components/GlassButton";
 import { EditActivitySheet } from "./EditActivitySheet";
+import { EffortCard } from "./EffortCard";
 import * as React from "react";
 import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -108,6 +109,7 @@ export default function ActivityScreen() {
         )
       }
       secondary={[
+        vm.kind === "strength" && <EffortCard key="effort" session={`w:${vm.id}`} />,
         // Garmin-style Aerobic Training Effect (version 19), when the workout has heart rate.
         !noHr && <TrainingEffectCard key="te" te={vm.trainingEffect} />,
         // A card of its own. Without heart rate there is nothing to recover from, and the notice says why.
