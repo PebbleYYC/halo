@@ -15,6 +15,8 @@ import { isDashboardKey, type EnergyBankVM, type HomeVM, type KeyStat } from "@/
 import { nutritionOn } from "@/queries/food";
 import { useQuery } from "@/state/app";
 import { PatternsCard } from "./PatternsCard";
+import { contentKey, useDismissed } from "@/lib/dismissed";
+import { SwipeAway } from "@/ui/motion/SwipeAway";
 import { useJournalVersion } from "@/screens/journal/state";
 import { ActivityCard, EmptyState, EnergyBankChart, HomeInsight, InfoButton, MetricState, MetricTags, ReasonPlaceholder, SectionShell, SleepCard, StrainRecoveryChart, Txt } from "@/ui";
 import { useCalm, type CalmTint } from "@/ui/calm";
@@ -87,6 +89,10 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
   const data = extra.data?.day === vm.day ? extra.data : null;
   const open = React.useCallback((href: string) => go(at(href)), [go, at]);
   const openHr = React.useCallback(() => go("/health/heart-rate"), [go]);
+  // Swiped-away cards stay gone until what they say changes.
+  const [gone, off] = useDismissed();
+  const insights = vm.insights.filter((it) => !gone(contentKey("insight", it.key, it.title, it.body)));
+  const outlook = vm.outlook && !gone(contentKey("outlook", vm.outlook.title, vm.outlook.body)) ? vm.outlook : null;
   return (
     <View style={{ gap: CARD_GAP }}>
       {/* Each card rises into place, cascading as Today opens and once more as it scrolls into view (rise.tsx). */}
@@ -94,12 +100,16 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
         <TodayHero key="hero" vm={vm} at={at} go={go} asleepMin={data?.asleepMin ?? null} />
         {vm.phone && vm.dials.reason && <NoBandLine key="noband" reason={vm.dials.reason.reason} />}
         {vm.monitorAlert && <MonitorAlert key="monitor" alert={vm.monitorAlert} onOpen={() => go(at("/health/monitor"))} />}
-        {vm.insights.length > 0 && (
-          // Keyed by the set, so a refresh with fewer cards never leaves the carousel on an index past the end.
-          <HomeInsight key={vm.insights.map((it) => it.key).join()} items={vm.insights} />
+        {insights.length > 0 && (
+          // Keyed by the set, so a refresh or a swipe with fewer cards never leaves the carousel past the end.
+          <HomeInsight key={insights.map((it) => it.key).join()} items={insights} onDismiss={(it) => off(contentKey("insight", it.key, it.title, it.body))} />
         )}
         {vm.isToday && <PatternsCard key="patterns" day={vm.day} go={go} />}
-        {vm.outlook && <DayBanner key="outlook" outlook={vm.outlook} />}
+        {outlook && (
+          <SwipeAway key="outlook" id={outlook.body} onDismiss={() => off(contentKey("outlook", outlook.title, outlook.body))}>
+            <DayBanner outlook={outlook} />
+          </SwipeAway>
+        )}
         {(vm.state || vm.isToday) && <StateCard key="state" state={vm.state} today={vm.isToday} timeZone={timeZone} onOpen={() => go(at("/health/stress"))} onBreathe={() => go("/breathe")} />}
         {vm.isToday && <HeadacheCard key="headache" onOpen={() => go("/health/headache")} />}
         {vm.phone && <PhoneActivity key="phone" stats={vm.phone} day={vm.day} today={vm.today} open={open} />}

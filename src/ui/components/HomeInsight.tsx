@@ -2,7 +2,8 @@
 // green, Sleep indigo, Strain orange), a solid icon square in that colour with its subject's glyph in white, the title (16/21
 // semibold) over the body (a 14/19 grey sentence). With several insights a second card peeks out underneath, and a
 // footer counts them (a dot per card and "2 of 3") beside a round next button; the next one cross-fades in, rising a
-// few dp, on the UI thread. Every card sits in the same cell, so nothing below moves on a cycle.
+// few dp, on the UI thread. Every card sits in the same cell, so nothing below moves on a cycle. With `onDismiss`, the
+// shown insight swipes away sideways once read.
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
@@ -13,6 +14,7 @@ import { font } from "@/ui/fonts";
 import { REASE } from "@/ui/motion/easing";
 import { haptic } from "@/ui/motion/haptics";
 import { reduceMotionNow } from "@/ui/motion/system";
+import { SwipeAway } from "@/ui/motion/SwipeAway";
 import { Card } from "./Card";
 import { iconRadius, softFill } from "./calmKit";
 import { Txt } from "./Text";
@@ -89,7 +91,8 @@ function Words({ k, item, shown, swap }: { k: number; item: HomeInsightItem; sho
  * `label` names the card for screen readers; `eyebrow` is a small line over the title (the patterns card's "From your
  * patterns"); `actions` are text buttons under the shown insight, the same for every card so nothing moves on a swap.
  */
-export function HomeInsight({ items, label = "Insights", eyebrow, actions }: { items: HomeInsightItem[]; label?: string; eyebrow?: string; actions?: HomeInsightAction[] }) {
+/** `onDismiss`: the shown insight was swiped away; the owner drops it (and the card goes when none are left). */
+export function HomeInsight({ items, label = "Insights", eyebrow, actions, onDismiss }: { items: HomeInsightItem[]; label?: string; eyebrow?: string; actions?: HomeInsightAction[]; onDismiss?: (item: HomeInsightItem) => void }) {
   const c = useCalm();
   const [i, setI] = React.useState(0);
   const n = items.length;
@@ -106,7 +109,7 @@ export function HomeInsight({ items, label = "Insights", eyebrow, actions }: { i
   };
   if (!n) return null;
   const several = n > 1;
-  return (
+  const card = (
     <View accessibilityLabel={label} style={{ paddingBottom: several ? 8 : 0 }}>
       {several && <View style={{ position: "absolute", left: 18, right: 18, bottom: 0, height: 32, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, backgroundColor: softFill(c, "ground"), opacity: 0.7 }} />}
       <Card padding={16}>
@@ -183,5 +186,11 @@ export function HomeInsight({ items, label = "Insights", eyebrow, actions }: { i
         )}
       </Card>
     </View>
+  );
+  if (!onDismiss) return card;
+  return (
+    <SwipeAway id={items[at].key} onDismiss={() => onDismiss(items[at])}>
+      {card}
+    </SwipeAway>
   );
 }

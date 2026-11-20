@@ -2,6 +2,7 @@
 // long night out land very differently on the next morning, and a bare Yes loses that. A counted behaviour stores
 // the amount as its entry value (saveJournalEntry already takes an integer there); Yes means "one", and the count is
 // shown wherever the behaviour is. This lives in plain TS so the queries and the check-in UI share one definition.
+import { armDiff } from "@/core/algorithms/journalImpact";
 
 export type Counted = {
   /** The sub-row's question, e.g. "How many drinks?". */
@@ -49,7 +50,8 @@ export function yesLabel(tag: string, label: string, value: number, day?: string
 /** How few days an amount needs before its average is shown. */
 export const AMOUNT_MIN_DAYS = 3;
 
-export type AmountArm = { label: string; n: number; avg: number | null };
+/** `vsNone`: whether this amount's next day is clearly above or below none's (95 % bootstrap CI clear of zero). */
+export type AmountArm = { label: string; n: number; avg: number | null; vsNone?: "higher" | "lower" | null };
 export type AmountSplit = { tag: string; none: AmountArm; light: AmountArm; heavy: AmountArm; unknown: number };
 
 /**
@@ -72,7 +74,17 @@ export function amountSplit(tag: string, answers: readonly { day: string; value:
     const y = outcome(a.day);
     if (y != null && Number.isFinite(y)) arms[arm].push(y);
   }
-  const arm = (label: string, ys: number[]): AmountArm => ({ label, n: ys.length, avg: ys.length >= AMOUNT_MIN_DAYS ? ys.reduce((s, y) => s + y, 0) / ys.length : null });
+  const vsNone = (ys: number[], key: string): AmountArm["vsNone"] => {
+    if (ys.length < AMOUNT_MIN_DAYS || arms.none.length < AMOUNT_MIN_DAYS) return null;
+    const { ciLow, ciHigh } = armDiff(ys, arms.none, `${tag}:${key}`);
+    return ciLow > 0 ? "higher" : ciHigh < 0 ? "lower" : null;
+  };
+  const arm = (label: string, ys: number[], key?: string): AmountArm => ({
+    label,
+    n: ys.length,
+    avg: ys.length >= AMOUNT_MIN_DAYS ? ys.reduce((s, y) => s + y, 0) / ys.length : null,
+    ...(key ? { vsNone: vsNone(ys, key) } : {}),
+  });
   const light = spec.lightMax === 1 ? `1 ${spec.noun}` : `1–${spec.lightMax} ${spec.nounPlural}`;
-  return { tag, none: arm("None", arms.none), light: arm(light, arms.light), heavy: arm(`${spec.lightMax + 1}+ ${spec.nounPlural}`, arms.heavy), unknown };
+  return { tag, none: arm("None", arms.none), light: arm(light, arms.light, "light"), heavy: arm(`${spec.lightMax + 1}+ ${spec.nounPlural}`, arms.heavy, "heavy"), unknown };
 }

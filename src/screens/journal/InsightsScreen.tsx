@@ -13,6 +13,7 @@ import { getAmountImpact, getJournalInsights, getMedicineTiming } from "@/querie
 import type { ImpactMetricKey, JournalInsightsVM } from "@/queries/types";
 import { useQuery } from "@/state/app";
 import { useMedicines } from "@/state/medicines";
+import { CompareBars, type CompareRow } from "./CompareBars";
 import { medicineTag } from "@/lib/medicine";
 import { BottomSheet, DriverList, DriverListSkeleton, Txt } from "@/ui";
 import { font } from "@/ui/fonts";
@@ -197,49 +198,33 @@ function Unlock({ needsMore, word }: { needsMore: JournalInsightsVM["needsMore"]
  * amount shows its average from AMOUNT_MIN_DAYS nights; before that, how many it has.
  */
 function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: number }) {
-  const c = useCalm();
   const q = useQuery((ctx) => getAmountImpact(metric, ctx), [metric, version]);
   const rows = q.data;
   if (!rows?.length) return null;
-  const sd = metric === "hrv";
-  const v = (x: number) => (sd ? `${formatValue("signed1", x)} SD` : `${formatValue("int", x)}%`);
-  const word = WORD[metric];
+  const f = outcomeFormat(metric);
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4, paddingHorizontal: 4 }}>
-        <View accessibilityRole="header">
-          <Title>By amount</Title>
-        </View>
-        <Sentence>{`Next-day ${word} by how much.`}</Sentence>
-      </View>
+      <SectionHead title="By amount" line={`Next-day ${WORD[metric]} by how much.`} />
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
           const arms = [r.none, r.light, r.heavy];
-          // Higher is better for all three outcomes: the best of the amounts that have an average is the green one.
-          const best = Math.max(...arms.map((a) => a.avg ?? -Infinity));
-          const said = arms.map((a) => `${a.label}: ${a.avg === null ? `${a.n} of ${AMOUNT_MIN_DAYS} nights logged` : `${v(a.avg)} over ${a.n} nights`}`).join("; ");
+          // The clearest difference from none, if any: the headline, and the only coloured bar.
+          const clear = [r.light, r.heavy].filter((x) => x.vsNone && x.avg != null && r.none.avg != null).sort((x, y) => Math.abs(y.avg! - r.none.avg!) - Math.abs(x.avg! - r.none.avg!))[0];
+          const headline = clear
+            ? `${f.Word} is ${f.gap(clear.avg! - r.none.avg!)} ${clear.vsNone === "higher" ? "higher" : "lower"} after ${clear.label.toLowerCase()} than none.`
+            : "No clear difference yet.";
+          const rowsOut: CompareRow[] = arms.map((x) => ({
+            label: x.label,
+            sub: x.avg == null ? `${x.n} of ${AMOUNT_MIN_DAYS} nights` : `${x.n} ${x.n === 1 ? "night" : "nights"}`,
+            value: x.avg,
+            display: x.avg == null ? "" : f.v(x.avg),
+            mark: x === clear ? (clear.vsNone === "higher" ? "better" : "worse") : undefined,
+          }));
           return (
-            <View key={r.tag} accessible accessibilityLabel={`${r.label} by amount, next-day ${word}. ${said}.`} style={[{ paddingVertical: 12, gap: 6 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}>
-              <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
-                {r.label}
-              </Txt>
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                {arms.map((a) => (
-                  <View key={a.label} style={{ flex: 1, gap: 2 }}>
-                    <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
-                      {a.label}
-                    </Txt>
-                    <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: a.avg === null ? c.faint : a.avg === best && arms.filter((x) => x.avg !== null).length > 1 ? c.tintInk.mint : c.ink }]}>
-                      {a.avg === null ? "--" : v(a.avg)}
-                    </Txt>
-                    <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
-                      {a.avg === null ? `${a.n} of ${AMOUNT_MIN_DAYS} nights` : `${a.n} nights`}
-                    </Txt>
-                  </View>
-                ))}
-              </View>
-              {r.unknown > 0 && <Sentence size={13}>{`${r.unknown} ${r.unknown === 1 ? "night" : "nights"} without a count left out.`}</Sentence>}
-            </View>
+            <React.Fragment key={r.tag}>
+              <CompareBars first={i === 0} title={r.label} headline={headline} rows={rowsOut} domain={f.domain(arms.map((x) => x.avg))} signed={f.signed} />
+              {r.unknown > 0 && <Sentence size={13} style={{ marginTop: -6, paddingBottom: 8 }}>{`${r.unknown} ${r.unknown === 1 ? "night" : "nights"} without a count left out.`}</Sentence>}
+            </React.Fragment>
           );
         })}
       </Surface>
@@ -252,63 +237,61 @@ function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: 
  * day's metric after each. Shown once a medicine has 10 timed doses spread over more than half an hour.
  */
 function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; version: number }) {
-  const c = useCalm();
   const q = useQuery((ctx) => getMedicineTiming(metric, ctx), [metric, version]);
   const meds = useMedicines();
   const rows = q.data;
   if (!rows?.length) return null;
-  const sd = metric === "hrv";
-  const v = (x: number) => (sd ? `${formatValue("signed1", x)} SD` : `${formatValue("int", x)}%`);
-  const word = WORD[metric];
-  const Word = word.charAt(0).toUpperCase() + word.slice(1);
+  const f = outcomeFormat(metric);
   // The evening time a medicine is scheduled for (Settings › Medicines), to say what the better time replaces.
-  const scheduled = (tags: string[]) => {
-    const m = meds.find((x) => tags.includes(medicineTag(x.name)));
-    return m?.times.filter((t) => t >= "15:00").pop() ?? null;
-  };
+  const scheduled = (tags: string[]) => meds.find((x) => tags.includes(medicineTag(x.name)))?.times.filter((t) => t >= "15:00").pop() ?? null;
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4, paddingHorizontal: 4 }}>
-        <View accessibilityRole="header">
-          <Title>When you take it</Title>
-        </View>
-        <Sentence>{`Evening dose time against next-day ${word}.`}</Sentence>
-      </View>
+      <SectionHead title="When you take it" line={`Evening dose time against next-day ${WORD[metric]}.`} />
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
           const names = [r.label, ...r.with];
           const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : r.label;
           const late = r.clear === "late";
-          const gap = Math.abs(r.late.avg - r.early.avg);
-          const amount = sd ? `${(Math.round(gap * 10) / 10).toFixed(1)} SD` : `${formatValue("int", gap)} points`;
           const sched = scheduled([r.tag, ...r.with.map(medicineTag)]);
-          // The schedule is only named when it sits on the worse side of the split.
+          // The schedule is named only when it sits on the worse side of the split.
           const instead = sched && (late ? sched < r.split : sched >= r.split) ? ` instead of ${sched} as scheduled` : "";
-          const headline = r.clear ? `${Word} is ${amount} higher when you take it ${late ? "after" : "before"} ${r.split}${instead}.` : `No clear difference yet between before and after ${r.split}.`;
-          const [win, lose] = late ? [r.late, r.early] : [r.early, r.late];
-          const detail = r.clear
-            ? `${v(win.avg)} ${late ? "after" : "before"} · ${v(lose.avg)} ${late ? "before" : "after"} · ${r.early.n + r.late.n} evenings${r.with.length ? " · logged together" : ""}`
-            : `${v(r.early.avg)} before · ${v(r.late.avg)} after · ${r.early.n + r.late.n} evenings${r.with.length ? " · logged together" : ""}`;
-          return (
-            <View
-              key={r.tag}
-              accessible
-              accessibilityLabel={`${title}. ${headline} ${detail}.`}
-              style={[{ paddingVertical: 12, gap: 4 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
-            >
-              <Txt size={15} lineHeight={20} weight={600} style={{ color: c.sub }}>
-                {title}
-              </Txt>
-              <Txt size={17} lineHeight={22} weight={600} style={{ color: r.clear ? c.tintInk.mint : c.ink }}>
-                {headline}
-              </Txt>
-              <Txt size={13} lineHeight={18} style={[font.numeric(500), { color: c.sub }]}>
-                {detail}
-              </Txt>
-            </View>
-          );
+          const headline = r.clear ? `${f.Word} is ${f.gap(r.late.avg - r.early.avg)} higher when you take it ${late ? "after" : "before"} ${r.split}${instead}.` : "No clear difference yet.";
+          const evenings = (n: number) => `${n} ${n === 1 ? "evening" : "evenings"}`;
+          const bars: CompareRow[] = [
+            { label: `Before ${r.split}`, sub: evenings(r.early.n), value: r.early.avg, display: f.v(r.early.avg), mark: r.clear === "early" ? "better" : undefined },
+            { label: `After ${r.split}`, sub: evenings(r.late.n), value: r.late.avg, display: f.v(r.late.avg), mark: late ? "better" : undefined },
+          ];
+          return <CompareBars key={r.tag} first={i === 0} title={r.with.length ? `${title} · logged together` : title} headline={headline} rows={bars} domain={f.domain([r.early.avg, r.late.avg])} signed={f.signed} />;
         })}
       </Surface>
     </View>
   );
+}
+
+function SectionHead({ title, line }: { title: string; line: string }) {
+  return (
+    <View style={{ gap: 4, paddingHorizontal: 4 }}>
+      <View accessibilityRole="header">
+        <Title>{title}</Title>
+      </View>
+      <Sentence>{line}</Sentence>
+    </View>
+  );
+}
+
+/** How an outcome reads: its values, a gap between two ("19 points", "0.4 SD") and the bars' scale. */
+function outcomeFormat(metric: ImpactMetricKey) {
+  const sd = metric === "hrv";
+  const word = WORD[metric];
+  return {
+    Word: word.charAt(0).toUpperCase() + word.slice(1),
+    signed: sd,
+    v: (x: number) => (sd ? `${formatValue("signed1", x)}` : `${formatValue("int", x)}%`),
+    gap: (d: number) => (sd ? `${(Math.round(Math.abs(d) * 10) / 10).toFixed(1)} SD` : `${Math.round(Math.abs(d))} points`),
+    domain: (xs: (number | null)[]): [number, number] => {
+      if (!sd) return [0, 100];
+      const m = Math.max(0.5, ...xs.filter((x): x is number => x != null).map(Math.abs));
+      return [-m, m];
+    },
+  };
 }
