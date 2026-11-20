@@ -42,15 +42,16 @@ const PressableView = Animated.createAnimatedComponent(Pressable);
 // Opening
 
 /** One opening of the sheet: its time and meal to start from, and the Halo entry being edited, if any. */
-export type FoodRequest = { id: number; at: string; meal: Meal; edit: FoodItem | null };
+/** `text`: words to estimate from, already typed (Log anything's "a burger for lunch"). */
+export type FoodRequest = { id: number; at: string; meal: Meal; edit: FoodItem | null; text?: string };
 
 let seq = 0;
 /** A new session for the sheet, from a press handler: now (or the entry's time) in the person's zone. */
-export function foodRequest(timeZone: string, edit: FoodItem | null = null): FoodRequest {
-  const at = edit ? wallOf(edit.ts, timeZone) : wallNow(timeZone);
+export function foodRequest(timeZone: string, edit: FoodItem | null = null, text?: string, atWall?: string): FoodRequest {
+  const at = edit ? wallOf(edit.ts, timeZone) : (atWall ?? wallNow(timeZone));
   const meal = edit && edit.meal !== "UNKNOWN" ? edit.meal : mealAt(at.slice(11, 16));
   seq += 1;
-  return { id: seq, at, meal, edit };
+  return { id: seq, at, meal, edit, ...(text ? { text } : {}) };
 }
 
 /** A moment as the time field's text, "YYYY-MM-DD HH:mm". */
@@ -311,7 +312,7 @@ export function FoodSheet({ request, open, onClose, today, overviewLink }: FoodS
   const [drafts, setDrafts] = React.useState<Draft[]>([]);
   const [note, setNote] = React.useState<string | null>(null);
   const [via, setVia] = React.useState<FoodVia>("photo");
-  const [text, setText] = React.useState("");
+  const [text, setText] = React.useState(request.text ?? "");
   // The photo, in memory only: until its estimate is in, or for "Try again" after a failure. Never written anywhere.
   const [photo, setPhoto] = React.useState<MealPhoto | null>(null);
   const [problem, setProblem] = React.useState<Problem | null>(null);

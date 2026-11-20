@@ -58,6 +58,6 @@ describe("Activity Cost wording", () => {
 describe("detectedItem", () => {
   it("is the stored window in epoch ms with its label and Effort on the 0–21 scale", () => {
     const d = detectedItem({ start: 1000, end: 2800, avgHr: 118, maxHr: 131, minutes: 30, kind: "walk", steps: 3200, effort: null });
-    expect(d).toEqual({ kind: "walk", label: "Walking", start: 1_000_000, end: 2_800_000, avgHr: 118, maxHr: 131, strain: null, steps: 3200 });
+    expect(d).toEqual({ kind: "walk", label: "Walking", reviewed: false, detected: "walk", minutes: 30, start: 1_000_000, end: 2_800_000, avgHr: 118, maxHr: 131, strain: null, steps: 3200 });
   });
 });

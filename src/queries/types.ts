@@ -210,9 +210,15 @@ export type ActivityItem = Extract<TimelineItem, { kind: "activity" }>;
  * labelled by its steps. Shown, never scored; it has no detail screen.
  */
 export type DetectedItem = {
-  kind: "walk" | "run" | "cardio";
-  /** "Walking", "Running", "Other cardio". */
+  /** Detected from steps, or the sport the person confirmed it as. */
+  kind: "walk" | "run" | "ride" | "strength" | "cardio";
+  /** "Walking", "Running", "Cycling", "Strength", "Other cardio". */
   label: string;
+  /** Confirmed as a workout (it no longer asks). */
+  reviewed: boolean;
+  /** What the steps said, and how long: a dismissal learns from both. */
+  detected: "walk" | "run" | "cardio";
+  minutes: number;
   start: number;
   end: number;
   avgHr: number;

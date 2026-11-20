@@ -13,6 +13,7 @@ import { ChevronRight, CircleAlert, Lightbulb } from "lucide-react-native";
 import { DAY, dayLabel, formatDay } from "@/lib/format";
 import { useDay } from "@/lib/day";
 import { getJournal } from "@/queries/journal";
+import { TabCorner } from "@/screens/health/shells";
 import { getLog } from "@/queries/log";
 import type { JournalVM } from "@/queries/types";
 import { useApp, useQuery } from "@/state/app";
@@ -62,7 +63,7 @@ export default function JournalScreen() {
   const top = useBarInset();
   const [allHistory, setAllHistory] = React.useState(false);
   const q = useQuery((ctx) => getJournal(d, ctx), [d, version]);
-  const log = useQuery((ctx) => getLog(ctx, { demo: app.source === "demo" }), [version, app.source]);
+  const log = useQuery((ctx) => getLog(ctx, { demo: app.source === "demo", day: d }), [version, app.source, d]);
   // useQuery keeps the last day's data while the next loads: never show it as this day's.
   const vm = q.data?.day === d ? q.data : undefined;
   // The strip doesn't depend on the day (beyond reaching back to it), so the last one stays while the next loads.
@@ -82,7 +83,7 @@ export default function JournalScreen() {
       <>
         {/* Log first: a drink or a weigh-in is a two-tap job, the check-in an evening one (spec §11 LG1). */}
         <Rise index={1}>
-          <Section title="Log" action={{ label: "Medicines", onPress: () => router.push("/settings?s=medicines" as Href) }}>{log.data ? <Log vm={log.data} /> : <LogSkeleton />}</Section>
+          <Section title="Log" action={{ label: "Medicines", onPress: () => router.push("/settings?s=medicines" as Href) }}>{log.data ? <Log vm={log.data} day={d} /> : <LogSkeleton />}</Section>
         </Rise>
 
         <Rise index={2}>
@@ -143,10 +144,9 @@ export default function JournalScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.ground }}>
-      {/* Every frame's offset reaches the UI thread: the floating bar's inline title and scroll edge follow it. The page
-          is the glass's backdrop for the bar's round back button. Off the tab bar (it opens from Today and the check-in),
-          back goes to where it was opened from, or Today. */}
-      <GlassTarget style={{ flex: 1 }} overlay={<TitleHeader title="Journal" onBack={() => (router.canGoBack() ? router.back() : router.navigate("/" as Href))} scrollY={scrollY} />}>
+      {/* Every frame's offset reaches the UI thread: the floating bar's inline title and scroll edge follow it. A tab
+          root: the sync status and the avatar on the right, as on every tab. */}
+      <GlassTarget style={{ flex: 1 }} overlay={<TitleHeader title="Journal" right={<TabCorner />} scrollY={scrollY} />}>
         <Animated.ScrollView ref={setScrollRef} scrollEventThrottle={16} contentInsetAdjustmentBehavior="never" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: top, paddingBottom: clearance }}>
           <LargeTitle title="Journal" eyebrow={formatDay(d, DAY.long)} y={scrollY}>
             <DateSwitcher mode="day" date={d} today={today} firstDay={app.sync.firstDay} onChange={setDay} loading={!!q.data && !vm} />

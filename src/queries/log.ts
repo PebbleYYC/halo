@@ -286,6 +286,8 @@ export type LogVM = {
   foodToday: { kcal: number | null; protein: number | null };
   /** The last 14 days, newest first. */
   recent: LoggedEntry[];
+  /** The selected day's entries, in the order they happened (the Journal's timeline). */
+  dayEntries: LoggedEntry[];
   today: string;
   timeZone: string;
   /** Demo mode: entries stay in Halo. */
@@ -297,12 +299,14 @@ export type LogVM = {
 const RANK: Record<LogAccess, number> = { ok: 0, demo: 0, reconnect: 1, not_connected: 2 };
 
 /** `demo`: the app runs on the demo person's generated data (the QueryCtx doesn't carry the source). */
-export async function getLog(ctx: QueryCtx, opts: { demo?: boolean } = {}): Promise<LogVM> {
+export async function getLog(ctx: QueryCtx, opts: { demo?: boolean; day?: string } = {}): Promise<LogVM> {
   const today = todayOf(ctx);
+  const day = opts.day ?? today;
+  const units = unitsOf(ctx);
   const [waterToday, food, recent, tags] = await Promise.all([
     waterOn(ctx.store, today, ctx.timeZone),
     nutritionOn(ctx.store, today, ctx.timeZone),
-    recentEntries(ctx.store, localMidnight(addDays(today, -13), ctx.timeZone), 50, unitsOf(ctx)),
+    recentEntries(ctx.store, localMidnight(addDays(today, -13), ctx.timeZone), 200, units),
     ctx.store.journalTags(),
   ]);
   const byType = logAccess();
@@ -318,10 +322,20 @@ export async function getLog(ctx: QueryCtx, opts: { demo?: boolean } = {}): Prom
     // A male profile never sees cycle entries, even ones logged before the profile changed.
     recent: recent.filter((e) => ctx.profile.sex === "female" || (e.type !== "menstrual-period" && e.type !== "ovulation-test")),
     today,
+    dayEntries: (await dayEntries(ctx.store, day, ctx.timeZone, units)).filter((e) => ctx.profile.sex === "female" || (e.type !== "menstrual-period" && e.type !== "ovulation-test")),
     timeZone: ctx.timeZone,
     demo: !!opts.demo,
     medicines: tags.filter((t) => isMedicineTag(t.tag) && !t.hidden).map((t) => t.label),
   };
+}
+
+/** One day's entries, oldest first: its own window, however far back. */
+async function dayEntries(store: Store, day: string, tz: string, units: Units): Promise<LoggedEntry[]> {
+  const rows = await store.loggedEntries(localMidnight(day, tz) - 3600, 2000, localMidnight(addDays(day, 1), tz) + 3600);
+  return rows
+    .filter((r) => r.day === day)
+    .sort((a, b) => a.ts - b.ts)
+    .map((r) => ({ id: r.id, type: r.type as LogType, ts: r.ts, day: r.day, ...describeEntry(r.type as LogType, r.data, units), atGoogle: false, source: r.source }));
 }
 
 /** A logged dose, for the check-in's medicine rows and the dose editor. */

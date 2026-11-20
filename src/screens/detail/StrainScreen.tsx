@@ -20,6 +20,7 @@ import { MetricTags } from "@/ui/components/primitives";
 import { useOpenChart, type ChartRange } from "@/screens/chart/href";
 import { useCalm, type CalmPalette } from "@/ui/calm";
 import { TabCorner } from "@/screens/health/shells";
+import { ToReviewCard } from "./DetectedReview";
 import { useBottomClearance } from "@/ui/components/PageShell";
 import { font } from "@/ui/fonts";
 import { GoalsCard } from "@/screens/home/GoalsCard";
@@ -134,6 +135,7 @@ function StrainView({ tab = false }: { tab?: boolean }) {
         )
       }
       secondary={[
+        tab && <ToReviewCard key="tab-review" day={today} timeZone={timeZone} />,
         tab && slot && (
           <Anchor key="tab-activities" anchors={anchors} id="activities">
             <Activities {...slot} />

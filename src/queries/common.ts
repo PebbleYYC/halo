@@ -1,7 +1,7 @@
 // Shared by the screen queries: the batched day loader over the Store and the Metric builders.
 // Ported from Halo's src/server/queries/common.ts; every Postgres read is a Store read.
 import { workoutName } from "@/lib/activityTypes";
-import type { DetectedActivity } from "@/core/algorithms/autoWorkout";
+import { applyReviews, loadReviews, type Reviewed } from "@/lib/detectedReview";
 import { STRENGTH_TYPES } from "@/core/algorithms/healthspan";
 import { tanakaHRmax, toStrainScale } from "@/core/scoring/strain";
 import type { Exercise, Metrics } from "@/data/types";
@@ -45,7 +45,7 @@ export type DayRow = {
   s1: Stage1Day | null;
   activities: Stage1Activity[];
   /** Mobile: workouts stage 1 detected from elevated HR with none recorded (autoWorkout.ts); shown, never scored. */
-  detected: DetectedActivity[];
+  detected: Reviewed[];
   sessionRhr: number | null;
   recovery: RecoveryRow | null;
   sleep: SleepRow | null;
@@ -68,11 +68,12 @@ export type DayRow = {
 /** Every day in [from, to], one Store read per table (in parallel); days without rows come back empty. */
 export async function loadDays(ctx: QueryCtx, from: string, to: string): Promise<Map<string, DayRow>> {
   const { store } = ctx;
-  const [scoreRows, metricRows, extraRows, logged] = await Promise.all([
+  const [scoreRows, metricRows, extraRows, logged, reviews] = await Promise.all([
     store.scoresIn({ from, to }),
     metricsWithLoggedBody(store),
     store.dailyValues({ from, to }),
     store.loggedEntries(localMidnight(from, ctx.timeZone), Number.MAX_SAFE_INTEGER),
+    loadReviews(),
   ]);
   const scores = new Map(scoreRows.map((r) => [r.day, r]));
   const metrics = new Map<string, MetricsRow>();
@@ -98,7 +99,8 @@ export async function loadDays(ctx: QueryCtx, from: string, to: string): Promise
       day: d,
       s1: r?.strain ?? null,
       activities: r?.activities ?? [],
-      detected: r?.detected ?? [],
+      // As reviewed: dismissed ones (and ones like them) gone, confirmed ones with their sport.
+      detected: applyReviews(r?.detected ?? [], reviews, ctx.timeZone),
       sessionRhr: r?.sessionRhrBpm ?? null,
       recovery: r?.recovery ?? null,
       sleep: r?.sleep ?? null,

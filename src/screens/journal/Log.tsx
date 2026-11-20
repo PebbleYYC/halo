@@ -8,11 +8,11 @@
 // ("2026-10-07 14:30", "2026-10-07"): the app ships no native date picker. Food has a sheet of its own
 // (src/screens/nutrition/FoodSheet.tsx): a photo or a few words estimated by the person's AI provider, or typed in.
 import * as React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
-import { FORMATS } from "@/lib/format";
+import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Layers, PenLine, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
+import { DAY, FORMATS, formatDay } from "@/lib/format";
 import { flOzToMl, mlToFlOz } from "@/lib/units";
 import { CYCLE_SYMPTOMS, FLOWS, KIND_LABEL, LOG_KINDS, MOODS, OVULATION_RESULTS, SEVERITIES, SYMPTOMS, VALENCES, WATER_STEPS, WATER_STEPS_FL_OZ, type Dose, type LogKind, type LoggedEntry, type LogType, type LogVM } from "@/queries/log";
 import { useUnits } from "@/state/units";
@@ -22,7 +22,7 @@ import { CalmButton, IconTile, LIST_RADIUS, Num, SectionLabel, Sentence, useCalm
 import { deleteLogEntry, logEntry, type LogInput } from "./actions";
 import { useActionCtx } from "./AddBehaviour";
 import { Chips, ConfirmDialog, DialogAction, ErrorAlert, Field, TextField, toast } from "./controls";
-import { EMPTY, toInput, wallNow, when, type Form } from "./forms";
+import { EMPTY, toInput, wallNow, type Form } from "./forms";
 import { bumpJournal } from "./state";
 import { DoseEditor } from "./DoseEditor";
 import { medicineTag } from "@/lib/medicine";
@@ -30,6 +30,8 @@ import { TimeStepper } from "./TimeStepper";
 import { useMedicines } from "@/state/medicines";
 import { useApp } from "@/state/app";
 import { FoodSheet, foodRequest, type FoodRequest } from "../nutrition/FoodSheet";
+import { LogAnythingSheet } from "./LogAnything";
+import { wall } from "@/lib/time";
 
 const ICON: Record<LogKind, LucideIcon> = {
   water: Droplet,
@@ -139,13 +141,67 @@ function Tile({ kind, today, unit, onPress }: { kind: LogKind; today: number | n
   );
 }
 
+/** A one-tap log: a medicine stack, a usual medicine, or water. */
+type QuickItem = { key: string; label: string; detail?: string; icon: LucideIcon; tint: CalmTint; inputs: LogInput[]; said: string };
+
+/** "Log anything": a field-shaped button that opens the sheet. */
+function AnythingField({ onPress }: { onPress: () => void }) {
+  const c = useCalm();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Log anything"
+      accessibilityHint="Type what you did, the way you'd say it"
+      style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, backgroundColor: c.card, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, marginBottom: 12, opacity: pressed ? 0.7 : 1 })}
+    >
+      <PenLine size={19} color={c.sub} strokeWidth={2} />
+      <Txt size={16} lineHeight={21} numberOfLines={1} style={{ color: c.sub, flex: 1 }}>
+        Log anything…
+      </Txt>
+    </Pressable>
+  );
+}
+
+/** The one-tap row: capsules that scroll sideways, each logging now. Nothing shows until there is something usual. */
+function QuickRow({ items, onLog }: { items: QuickItem[]; onLog: (q: QuickItem) => void }) {
+  const c = useCalm();
+  if (!items.length) return null;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+      {items.map((q) => (
+        <Pressable
+          key={q.key}
+          onPress={() => onLog(q)}
+          accessibilityRole="button"
+          accessibilityLabel={`Log ${q.said} now`}
+          style={({ pressed }) => ({ minHeight: 44, borderRadius: 22, backgroundColor: c.card, flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 8, paddingRight: 14, opacity: pressed ? 0.6 : 1 })}
+        >
+          <IconTile icon={q.icon} tint={q.tint} size={28} />
+          <Txt size={15} lineHeight={20} weight={600} numberOfLines={1} style={{ color: c.ink }}>
+            {q.label}
+          </Txt>
+          {q.detail ? (
+            <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
+              {q.detail}
+            </Txt>
+          ) : null}
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+}
+
+/** "21:55": a moment's local clock. */
+const clockOf = (ts: number, timeZone: string) => wall(ts, timeZone).time.slice(0, 5);
+
 /** Pairs, for the two-column grid (an odd last tile keeps half the row). */
 const pairs = <T,>(xs: T[]) => Array.from({ length: Math.ceil(xs.length / 2) }, (_, i) => xs.slice(i * 2, i * 2 + 2));
 
-export type LogProps = { vm: LogVM };
+export type LogProps = { vm: LogVM; day: string };
 
 /** Journal's Log (spec §11 LG1): one tile per thing to log, each opening its sheet, and what was logged lately. */
-export function Log({ vm }: LogProps) {
+export function Log({ vm, day }: LogProps) {
   const c = useCalm();
   const { demo } = vm;
   const actx = useActionCtx();
@@ -174,7 +230,7 @@ export function Log({ vm }: LogProps) {
   // A logged dose being changed (its time, dose or medicine).
   const [doseEdit, setDoseEdit] = React.useState<Dose | null>(null);
   const [removing, setRemoving] = React.useState(false);
-  const [all, setAll] = React.useState(false);
+  const [anything, setAnything] = React.useState(false);
   // Food's own sheet: one session per opening.
   const [food, setFood] = React.useState<FoodRequest | null>(null);
   const [foodOpen, setFoodOpen] = React.useState(false);
@@ -258,7 +314,55 @@ export function Log({ vm }: LogProps) {
   };
 
   const medNames = [...new Set([...schedules.map((m) => m.name), ...vm.medicines])];
-  const recent = all ? vm.recent : vm.recent.slice(0, 6);
+  // The selected day's entries in the order they happened.
+  const timeline = vm.dayEntries;
+  // One tap for what's usually logged: each medicine stack (two or more scheduled at one time), then the medicines and
+  // the water amount logged most in the last two weeks.
+  const quick = React.useMemo<QuickItem[]>(() => {
+    const out: QuickItem[] = [];
+    const byTime = new Map<string, typeof schedules>();
+    for (const m of schedules) for (const t of m.times) byTime.set(t, [...(byTime.get(t) ?? []), m]);
+    const stacked = new Set<string>();
+    for (const [t, ms] of [...byTime].sort(([a], [b]) => (a < b ? -1 : 1))) {
+      if (ms.length < 2) continue;
+      ms.forEach((m) => stacked.add(m.name.toLowerCase()));
+      out.push({ key: `stack-${t}`, label: `${t} stack`, detail: `${ms.length}`, icon: Layers, tint: "mint", inputs: ms.map((m) => ({ kind: "medicine" as const, name: m.name, dose: m.dose || undefined })), said: ms.map((m) => m.name).join(", ") });
+    }
+    const count = new Map<string, { n: number; input: LogInput; label: string; icon: LucideIcon; tint: CalmTint }>();
+    for (const e of vm.recent) {
+      if (e.source !== "pulse") continue;
+      if (e.type === "medication" && !stacked.has(e.title.toLowerCase())) {
+        const k = `med-${e.title.toLowerCase()}`;
+        const had = count.get(k);
+        // Newest first: the first one seen carries the latest dose.
+        if (had) had.n++;
+        else count.set(k, { n: 1, input: { kind: "medicine", name: e.title, dose: e.detail === "Taken" ? undefined : e.detail }, label: e.title, icon: Pill, tint: "mint" });
+      }
+    }
+    const usual = [...count.entries()].filter(([, v]) => v.n >= 2).sort((a, b) => b[1].n - a[1].n).slice(0, 3);
+    for (const [k, v] of usual) out.push({ key: k, label: v.label, icon: v.icon, tint: v.tint, inputs: [v.input], said: v.label });
+    if (vm.recent.some((e) => e.type === "hydration-log" && e.source === "pulse")) {
+      const ml = steps[0].ml;
+      out.push({ key: "water", label: `+${steps[0].label} ${waterUnit}`, icon: Droplet, tint: "sky", inputs: [{ kind: "water", ml }], said: "Water" });
+    }
+    return out;
+  }, [schedules, vm.recent, steps, waterUnit]);
+  const logQuick = async (q: QuickItem) => {
+    if (!actx || sending.current) return;
+    sending.current = true;
+    const at = wallNow(vm.timeZone).replace(" ", "T");
+    let ok = 0;
+    for (const input of q.inputs) {
+      const r = await logEntry(actx, { ...input, at } as LogInput).catch(() => ({ ok: false as const, error: "" }));
+      if (r.ok) ok++;
+    }
+    sending.current = false;
+    if (!ok) return toast("Couldn’t save. Try again.");
+    toast(`Logged ${q.said}`);
+    bumpJournal();
+    rescoreIfBody(q.inputs[0].kind);
+  };
+
   // When it happened: day and time steppers (a dose's time feeds Insights' timing).
   const timeField = shown !== "period" && <TimeStepper value={at} onChange={setAt} timeZone={vm.timeZone} label={shown === "medicine" ? "Taken" : "Time"} />;
   const numeric = (k: string, label: string, hint: string, opts: { decimal?: boolean; placeholder?: string } = {}) => (
@@ -279,6 +383,8 @@ export function Log({ vm }: LogProps) {
 
   return (
     <>
+      <AnythingField onPress={() => setAnything(true)} />
+      <QuickRow items={quick} onLog={(q) => void logQuick(q)} />
       {/* Two columns of white tiles: every label whole, on one line. */}
       <View accessibilityLabel="Log" style={{ gap: TILE_GAP }}>
         {pairs(vm.kinds).map((row) => (
@@ -291,30 +397,20 @@ export function Log({ vm }: LogProps) {
         ))}
       </View>
 
-      <Sentence style={{ marginTop: 12, paddingHorizontal: 4 }}>
-        {demo
-          ? "Demo: what you log stays in Halo on this phone and is never written to Health Connect."
-          : app.source === "health_connect"
-            ? "What you log stays in Halo on this phone. Halo doesn’t write to Health Connect. Water, food and cycle entries logged in Fitbit show here once they sync."
-            : app.source === "google"
-              ? "What you log stays in Halo on this phone. Halo doesn’t write to your Google account; water and food logged in Fitbit count in your daily totals."
-              : "What you log stays in Halo on this phone. Halo doesn’t write to Health Connect."}
-      </Sentence>
-
-      {vm.recent.length > 0 && (
-        <View style={{ marginTop: 22, gap: 8 }}>
-          <SectionLabel>Last 14 days</SectionLabel>
-          <View accessibilityLabel="Logged in the last 14 days" style={{ borderRadius: LIST_RADIUS, backgroundColor: c.card, overflow: "hidden" }}>
-            {recent.map((e, i) => {
+      <View style={{ marginTop: 22, gap: 8 }}>
+        <SectionLabel>{day === vm.today ? "Today" : formatDay(day, DAY.short)}</SectionLabel>
+        {timeline.length === 0 ? (
+          <Sentence style={{ paddingHorizontal: 4 }}>{day === vm.today ? "Nothing logged yet today." : "Nothing logged this day."}</Sentence>
+        ) : (
+          <View accessibilityLabel="Timeline" style={{ borderRadius: LIST_RADIUS, backgroundColor: c.card, overflow: "hidden" }}>
+            {timeline.map((e, i) => {
               // Entries read from Health Connect were logged in Fitbit: shown as such, and never deleted from here
               // (Halo doesn't write to Health Connect; they go when they are deleted in Fitbit).
               const external = e.source === "health_connect";
-              const whenLine = e.type === "menstrual-period" ? e.day : when(e.ts, vm.today, vm.timeZone);
+              const whenLine = e.type === "menstrual-period" ? e.day : clockOf(e.ts, vm.timeZone);
               return (
                 <React.Fragment key={e.id}>
                   {i > 0 && <View style={{ height: StyleSheet.hairlineWidth, marginLeft: 16 + 30 + 12, backgroundColor: c.line }} />}
-                  {/* The tile and the delete button on the title and its time (21 + 2 + 18), whatever wraps; an entry
-                      logged in Fitbit keeps the button's column, so every row's lines wrap at one width. */}
                   <View style={{ minHeight: 60, flexDirection: "row", alignItems: "flex-start", gap: 12, paddingLeft: 16, paddingRight: 6, paddingVertical: 10 }}>
                     <View style={{ marginTop: (ENTRY_BAND - 30) / 2 }}>
                       <IconTile icon={TYPE_ICON[e.type]} tint={TYPE_TINT[e.type]} size={30} />
@@ -351,17 +447,22 @@ export function Log({ vm }: LogProps) {
                 </React.Fragment>
               );
             })}
-            {vm.recent.length > 6 && (
-              <>
-                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.line }} />
-                <CalmButton variant="quiet" size="md" onPress={() => setAll((x) => !x)} style={{ alignSelf: "stretch", borderRadius: 0 }}>
-                  {all ? "Show less" : `Show all ${vm.recent.length}`}
-                </CalmButton>
-              </>
-            )}
           </View>
-        </View>
-      )}
+        )}
+      </View>
+
+      <LogAnythingSheet
+        open={anything}
+        onClose={() => setAnything(false)}
+        timeZone={vm.timeZone}
+        today={vm.today}
+        known={vm.medicines}
+        onFood={(text, atWall) => {
+          setFood(foodRequest(vm.timeZone, null, text, atWall.replace("T", " ")));
+          setFoodOpen(true);
+        }}
+        onSaved={(kinds) => kinds.forEach((k) => rescoreIfBody(k === "behaviour" ? "medicine" : k))}
+      />
 
       <BottomSheet
         open={kind !== null}

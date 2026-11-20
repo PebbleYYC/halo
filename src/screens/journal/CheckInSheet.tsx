@@ -20,16 +20,18 @@ import { BottomSheet, SheetSection, Txt } from "@/ui";
 import { usePress, usePressStyle } from "@/ui/components/press";
 import { HomeCard } from "@/screens/home/controls";
 import { CalmButton, IconTile, TintPill, useCalm, type CalmTint } from "../settings/calmKit";
-import { loadCheckIn, saveJournalEntry } from "./actions";
+import { addCustomTag, loadCheckIn, saveJournalEntry } from "./actions";
 import { AddBehaviour, useActionCtx } from "./AddBehaviour";
-import { ConfirmDialog, DialogAction, ErrorAlert, haptic, TagBadge, toast, YesNo } from "./controls";
+import { Chips, ConfirmDialog, DialogAction, ErrorAlert, haptic, TagBadge, toast, YesNo } from "./controls";
 import { changedEntries, wallNow, type Values } from "./forms";
 import { DoseEditor } from "./DoseEditor";
 import { dosesOn, type Dose } from "@/queries/log";
 import type { ActionCtx } from "./actions";
 import { bumpJournal, openCheckIn, useOpenCheckInListener } from "./state";
 import { TAG_GROUPS, tagIcon } from "./tags";
-import { countedTag, isCountedTag } from "@/lib/behaviours";
+import { countedTag, isCountedTag, isScaleTag, SORENESS_LABEL, SORENESS_LEVELS, SORENESS_TAG } from "@/lib/behaviours";
+import { addDays } from "@/lib/time";
+import { loadDays } from "@/queries/common";
 import { font } from "@/ui/fonts";
 
 export { openCheckIn } from "./state";
@@ -160,8 +162,10 @@ export function CheckInSheetHost() {
   // The day's logged doses, under their medicines; `editing`: a dose being changed, or a medicine's new one ("new:tag").
   const [doses, setDoses] = React.useState<Dose[]>([]);
   const [editing, setEditing] = React.useState<string | null>(null);
+  // A workout the day before: the check-in asks how the muscles feel.
+  const [trained, setTrained] = React.useState(false);
 
-  const tags = data?.tags ?? [];
+  const tags = (data?.tags ?? []).filter((t) => !isScaleTag(t.tag));
   const saved = data?.checkIn.entries ?? {};
   const dirty = Object.keys(values).some((t) => values[t] !== saved[t]);
   const label = formatDay(data?.day ?? day, DAY.short);
@@ -177,6 +181,7 @@ export function CheckInSheetHost() {
     setConfirm(false);
     setDoses([]);
     setEditing(null);
+    setTrained(false);
     setOpen(true);
     setRequest((r) => ({ day: d, n: (r?.n ?? 0) + 1 }));
   });
@@ -196,6 +201,13 @@ export function CheckInSheetHost() {
         setData({ day: request.day, ...r.data });
         setValues({ ...r.data.checkIn.entries });
         void dosesOn(q.store, request.day, q.timeZone).then((d) => live && setDoses(d)).catch(() => {});
+        const before = addDays(request.day, -1);
+        void loadDays(q, before, before)
+          .then((rows) => {
+            const row = rows.get(before);
+            if (live && row) setTrained(row.activities.length > 0 || row.detected.some((d) => d.reviewed));
+          })
+          .catch(() => {});
       })
       .catch(() => live && setLoadError(true));
     return () => {
@@ -256,6 +268,11 @@ export function CheckInSheetHost() {
     const changes = changedEntries(values, data.checkIn.entries);
     let sent = 0;
     try {
+      // Soreness is a behaviour of its own, added the first time it's answered.
+      if (changes.some(([t]) => t === SORENESS_TAG) && !data.tags.some((t) => t.tag === SORENESS_TAG)) {
+        const added = await addCustomTag(actx, { label: SORENESS_LABEL });
+        if (!added.ok && !added.error.startsWith("Tag already exists")) return setSaveError(true);
+      }
       for (; sent < changes.length; sent++) {
         const [tag, value] = changes[sent];
         const r = await saveJournalEntry(actx, { day: data.day, tag, value });
@@ -303,6 +320,22 @@ export function CheckInSheetHost() {
         <View style={{ marginTop: 18 }}>
           <JournalLink onPress={openJournal} />
         </View>
+        {data && (trained || values[SORENESS_TAG] !== undefined) && (
+          <View style={{ marginTop: 22, gap: 8 }}>
+            <SheetSection>After yesterday’s workout</SheetSection>
+            <View style={{ borderRadius: 14, backgroundColor: c.sheetFill, padding: 14, gap: 12 }}>
+              <Txt size={16} lineHeight={21} style={{ color: c.ink }}>
+                How do your muscles feel?
+              </Txt>
+              <Chips
+                label="Muscle soreness"
+                options={SORENESS_LEVELS.map((l, i) => [String(i), l] as const)}
+                value={values[SORENESS_TAG] === undefined ? "" : String(values[SORENESS_TAG])}
+                onChange={(v) => setValues((s) => ({ ...s, [SORENESS_TAG]: typeof v === "string" && v !== "" ? Number(v) : undefined }))}
+              />
+            </View>
+          </View>
+        )}
         {!data &&
           (loadError ? (
             <View style={{ marginTop: 8 }}>
