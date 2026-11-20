@@ -59,7 +59,7 @@ export function Button({ variant = "default", size = "touch", onPress, disabled,
     <Pressable onPress={onPress} disabled={disabled} onPressIn={press.onPressIn} onPressOut={press.onPressOut} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityState={{ disabled: !!disabled }} hitSlop={size === "sm" ? 8 : 0}>
       <Animated.View style={[{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }, face, box, style, pressed]}>
         {text ? (
-          <Txt size={size === "sm" ? 15 : 17} lineHeight={size === "sm" ? 20 : 22} weight={600} color={color} align="center">
+          <Txt size={size === "sm" ? 15 : 17} lineHeight={size === "sm" ? 20 : 22} weight={600} color={color} align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flexShrink: 1 }}>
             {children}
           </Txt>
         ) : (
