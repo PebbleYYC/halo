@@ -261,6 +261,10 @@ export type MedTimingRow = {
   split: string;
   early: { n: number; avg: number };
   late: { n: number; avg: number };
+  /** Whether the gap is clear (its 95 % bootstrap CI leaves out zero): "early"/"late" for the better side, else null. */
+  clear: "early" | "late" | null;
+  /** Other medicines logged on exactly the same days at the same times: their numbers are this row's, so they share it. */
+  with: string[];
 };
 
 /** Days with a timed dose needed, and per side; the earlier and later halves must sit at least this far apart. */
@@ -328,9 +332,33 @@ export function medTiming(
       split: hhmm(mid),
       early: { n: early.length, avg: meanSd(early.map((r) => r.next)).mean! },
       late: { n: late.length, avg: meanSd(late.map((r) => r.next)).mean! },
-    });
+      clear: clearSide(
+        early.map((r) => r.next),
+        late.map((r) => r.next),
+        `medtiming:${tag}`,
+      ),
+      with: [],
+      sig: [...days].sort(([a], [b]) => (a < b ? -1 : 1)).map(([d, m]) => `${d}@${m}`).join(),
+    } as MedTimingRow & { sig: string });
   }
-  return out.sort((a, b) => Math.abs(b.early.avg - b.late.avg) - Math.abs(a.early.avg - a.late.avg) || a.label.localeCompare(b.label));
+  // Medicines always logged together (the same days, the same minute) can't be told apart: one row names them all.
+  const merged: MedTimingRow[] = [];
+  const bySig = new Map<string, MedTimingRow>();
+  for (const r of out as (MedTimingRow & { sig: string })[]) {
+    const { sig, ...row } = r;
+    const had = bySig.get(sig);
+    if (had) had.with.push(row.label);
+    else {
+      bySig.set(sig, row);
+      merged.push(row);
+    }
+  }
+  return merged.sort((a, b) => Math.abs(b.early.avg - b.late.avg) - Math.abs(a.early.avg - a.late.avg) || a.label.localeCompare(b.label));
+}
+
+function clearSide(early: number[], late: number[], key: string): "early" | "late" | null {
+  const { ciLow, ciHigh } = armDiff(early, late, key);
+  return ciLow > 0 ? "early" : ciHigh < 0 ? "late" : null;
 }
 
 /** Insights' "When you take it" for `metric`, from the last 90 days of logged doses. */
