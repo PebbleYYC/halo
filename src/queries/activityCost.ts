@@ -2,8 +2,10 @@
 // Cost is stage 2's stored result (src/core/algorithms/activityCost.ts) with the screens' names; the wording lives here
 // so every surface says the same thing.
 import { activityCostConfig, barelyMoves } from "@/core/algorithms/activityCost";
-import type { DetectedActivity, DetectedKind } from "@/core/algorithms/autoWorkout";
-import { ACTIVITY_NAME, ms, type QueryCtx, toStrain } from "./common";
+import type { DetectedActivity } from "@/core/algorithms/autoWorkout";
+import type { ReviewKind } from "@/lib/detectedReview";
+import { addDays } from "@/lib/time";
+import { ACTIVITY_NAME, loadDays, ms, type QueryCtx, toStrain } from "./common";
 import { FORMATS } from "./_lib";
 import type { ActivityCostEntry, ActivityCostVM, ActivityKind, DetectedItem } from "./types";
 
@@ -78,12 +80,15 @@ export function costDigest(vm: ActivityCostVM) {
   };
 }
 
-export const DETECTED_LABEL: Record<DetectedKind, string> = { walk: "Walking", run: "Running", cardio: "Other cardio" };
+export const DETECTED_LABEL: Record<ReviewKind, string> = { walk: "Walking", run: "Running", ride: "Cycling", strength: "Strength", cardio: "Other cardio" };
 
-/** A stored detected window as the screens show it. */
-export const detectedItem = (d: DetectedActivity): DetectedItem => ({
-  kind: d.kind,
-  label: DETECTED_LABEL[d.kind],
+/** A stored detected window as the screens show it (with its review, when read through loadDays). */
+export const detectedItem = (d: DetectedActivity & { reviewed?: boolean; sport?: ReviewKind }): DetectedItem => ({
+  kind: d.sport ?? d.kind,
+  label: DETECTED_LABEL[d.sport ?? d.kind],
+  reviewed: !!d.reviewed,
+  detected: d.kind,
+  minutes: d.minutes,
   start: ms(d.start),
   end: ms(d.end),
   avgHr: d.avgHr,
@@ -91,3 +96,11 @@ export const detectedItem = (d: DetectedActivity): DetectedItem => ({
   strain: d.effort == null ? null : toStrain(d.effort),
   steps: d.steps,
 });
+
+/** Detected activities of the last week not yet confirmed or dismissed, newest first (Activity's "To review"). */
+export async function getToReview(ctx: QueryCtx): Promise<DetectedItem[]> {
+  const rows = await loadDays(ctx, addDays(ctx.today, -6), ctx.today);
+  return [...rows.values()]
+    .flatMap((r) => r.detected.filter((d) => !d.reviewed).map(detectedItem))
+    .sort((a, b) => b.start - a.start);
+}

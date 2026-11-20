@@ -10,7 +10,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withS
 import * as Haptics from "expo-haptics";
 import { perf } from "@/lib/perf";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { createLucideIcon, HeartPlus, LayoutGrid, Menu, MessagesSquare, Moon, Plus, type LucideIcon } from "lucide-react-native";
+import { createLucideIcon, HeartPlus, LayoutGrid, Menu, MessagesSquare, Moon, NotebookPen, Plus, type LucideIcon } from "lucide-react-native";
 import { alpha } from "@/lib/utils";
 import { useCalm } from "@/ui/calm";
 import { BAR_FROST, LiquidGlass } from "@/ui/glass";
@@ -34,6 +34,7 @@ export const TABS: TabItem[] = [
   { key: "sleep", label: "Sleep", icon: Moon },
   { key: "activity", label: "Activity", icon: FigureRun },
   { key: "health", label: "Health", icon: HeartPlus },
+  { key: "journal", label: "Journal", icon: NotebookPen },
 ];
 
 /**
@@ -133,7 +134,7 @@ function TabButton({ icon: Icon, label, selected, color, onPress }: { icon: Luci
       style={{ flex: 1, minWidth: 0, alignItems: "center", justifyContent: "center" }}
     >
       <Icon size={23} color={color} strokeWidth={1.9} />
-      <Txt size={11} lineHeight={14} weight={selected ? 600 : 500} numberOfLines={1} style={{ color, marginTop: 3, letterSpacing: -0.1 }}>
+      <Txt size={11} lineHeight={14} weight={selected ? 600 : 500} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color, marginTop: 3, letterSpacing: -0.1 }}>
         {label}
       </Txt>
     </Pressable>
@@ -229,7 +230,7 @@ export type TabBarProps =
 
 const ROUTE_TAB: Record<string, string> = { index: "home", home: "home", "tab-sleep": "sleep", "tab-activity": "activity", health: "health", journal: "journal", more: "more" };
 /** A screen kept off the bar lights the tab it belongs to: the journal is Today's (its card lives there). */
-const HOST_TAB: Record<string, string> = { journal: "index" };
+const HOST_TAB: Record<string, string> = {};
 
 /** The action's accessible name (when none is given) and glyph: the sparkle for the coach, else the plus. */
 function actionItem(label: string | undefined): { label: string; icon: LucideIcon } {

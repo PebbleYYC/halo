@@ -39,7 +39,17 @@ export function countPhrase(tag: string, n: number): string {
  * A yes behaviour's label as it reads in a badge or a history row: a counted one carries its amount ("Alcohol · 3"),
  * so the number the check-in captured is visible at a glance; every other behaviour is just its name.
  */
+/**
+ * Behaviours answered on a scale instead of yes/no: muscle soreness, asked in the check-in the day after training. The
+ * value is the level (0 none … 3 very sore); Insights read any level above none as "yes".
+ */
+export const SORENESS_TAG = "muscle_soreness";
+export const SORENESS_LABEL = "Muscle soreness";
+export const SORENESS_LEVELS = ["None", "Mild", "Moderate", "Very sore"] as const;
+export const isScaleTag = (tag: string) => tag === SORENESS_TAG;
+
 export function yesLabel(tag: string, label: string, value: number, day?: string): string {
+  if (isScaleTag(tag)) return value > 0 ? `${label} · ${SORENESS_LEVELS[Math.min(3, value)].toLowerCase()}` : label;
   const spec = COUNTED_TAGS[tag];
   if (!spec || value < 1) return label;
   // Before counting began a Yes was stored as 1 whatever the amount: that 1 is not "one drink".

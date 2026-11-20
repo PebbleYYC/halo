@@ -8,7 +8,7 @@ import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { dayLabel, formatValue, hmm } from "@/lib/format";
-import { ACTIVITY_PAGE_DAYS, getActivities, type ActivitiesVM, type ActivityKind } from "@/queries";
+import { ACTIVITY_PAGE_DAYS, getActivities, type ActivitiesVM, type ActivityKind, type DetectedItem } from "@/queries";
 import { useApp, useQuery } from "@/state/app";
 import { ActivityCard, Card, EmptyState, TimelineSkeleton, Txt } from "@/ui";
 import { useCalm } from "@/ui/calm";
@@ -19,6 +19,7 @@ import { SectionLabel } from "@/screens/settings/calmKit";
 import { ActivityCostList, DETECTED_NOTE, DetectedRow } from "./ActivityCost";
 import { ChoicePill, Sentence, TealButton } from "./calmKit";
 import { DetailScreen, LoadError } from "./DetailScreen";
+import { ReviewSheet } from "./DetectedReview";
 import { useBack, usePush, useRefresh } from "./nav";
 import { activityHref } from "./view";
 
@@ -32,6 +33,7 @@ export default function ActivitiesScreen() {
   const router = useRouter();
   const push = usePush();
   const { timeZone } = useApp();
+  const [reviewing, setReviewing] = React.useState<DetectedItem | null>(null);
   const onBack = useBack("/");
   const { refreshing, onRefresh, retry } = useRefresh();
   const params = useLocalSearchParams<{ days?: string; kind?: string }>();
@@ -64,7 +66,7 @@ export default function ActivitiesScreen() {
           {kinds.length > 1 && <SportFilter kinds={kinds} kind={kind} onChange={(k) => router.setParams({ kind: k ?? undefined })} />}
           {vm.cost && costs.length > 0 && <ActivityCostList vm={vm.cost} items={costs} title="Recovery cost" />}
           {groups.map((g) => (
-            <Day key={g.day} g={g} today={vm.today} timeZone={timeZone} onOpen={(id) => push(activityHref(id))} />
+            <Day key={g.day} g={g} today={vm.today} timeZone={timeZone} onOpen={(id) => push(activityHref(id))} onReview={setReviewing} />
           ))}
           {!items.length && groups.length <= 1 && !vm.older && (
             <EmptyState body="No workouts in the last month. Workouts you record on your Fitbit or phone appear here after they sync." />
@@ -83,6 +85,7 @@ export default function ActivitiesScreen() {
               </Sentence>
             )
           )}
+          <ReviewSheet item={reviewing} timeZone={timeZone} onClose={() => setReviewing(null)} />
         </View>
       }
     />
@@ -160,7 +163,7 @@ function DayHead({ g, today }: { g: Group; today: string }) {
   );
 }
 
-function Day({ g, today, timeZone, onOpen }: { g: Group; today: string; timeZone: string; onOpen: (id: string) => void }) {
+function Day({ g, today, timeZone, onOpen, onReview }: { g: Group; today: string; timeZone: string; onOpen: (id: string) => void; onReview: (d: DetectedItem) => void }) {
   const c = useCalm();
   return (
     <View style={{ gap: 7 }}>
@@ -188,7 +191,7 @@ function Day({ g, today, timeZone, onOpen }: { g: Group; today: string; timeZone
                   />
                 ),
               })),
-              ...g.detected.map((d) => ({ start: d.start, row: <DetectedRow key={`detected-${d.start}`} item={d} timeZone={timeZone} /> })),
+              ...g.detected.map((d) => ({ start: d.start, row: <DetectedRow key={`detected-${d.start}`} item={d} timeZone={timeZone} onPress={() => onReview(d)} /> })),
             ]
               .sort((a, b) => b.start - a.start)
               .map((r, i) => (

@@ -24,7 +24,7 @@ function TabPreloader() {
   // Building a tab is heavy JS; on top of the launch sync it held taps back for seconds. So a sync puts it off, and the
   // tabs still to build start again one at a time once the sync has finished and its screens have refreshed.
   const syncing = useSyncProgress() != null;
-  const left = React.useRef<string[]>(["/tab-sleep", "/tab-activity", "/health"]);
+  const left = React.useRef<string[]>(["/tab-sleep", "/tab-activity", "/health", "/journal"]);
   const first = React.useRef(true);
   React.useEffect(() => {
     if (syncing || !left.current.length) return;
@@ -85,8 +85,9 @@ export default function TabsLayout() {
           <Tabs.Screen name="tab-sleep" options={{ title: "Sleep" }} />
           <Tabs.Screen name="tab-activity" options={{ title: "Activity" }} />
           <Tabs.Screen name="health" options={{ title: "Health" }} />
-          {/* Off the bar: the journal (from Today's journal card and the check-in) and More (the avatar on every tab). */}
-          <Tabs.Screen name="journal" options={{ title: "Journal", href: null }} />
+          {/* The journal: logging, the day's timeline, the check-in and behaviour insights. */}
+          <Tabs.Screen name="journal" options={{ title: "Journal" }} />
+          {/* Off the bar: More (the avatar on every tab). */}
           <Tabs.Screen name="more" options={{ title: "More", href: null }} />
         </Tabs>
       </GlassTarget>

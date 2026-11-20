@@ -4,7 +4,7 @@
 // usually does, the next-morning change on the right in green or red), what they are measured against as the list's
 // footer. The wording lives in src/queries/activityCost.ts.
 import * as React from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Activity } from "lucide-react-native";
 import { clock, formatValue, MISSING } from "@/lib/format";
 import { baselineText, bounceText, costCaption, costSentence, costTone, costValue, getActivityCost } from "@/queries/activityCost";
@@ -119,7 +119,8 @@ export function ActivityCostCard({ cost }: { cost: NonNullable<ActivityVM["cost"
  * A detected activity on the day's list: the timeline row's box, dashed and unfilled where a recorded one is solid,
  * with a faint strain chip, and no detail screen to open.
  */
-export function DetectedRow({ item, timeZone }: { item: DetectedItem; timeZone: string }) {
+/** `onPress`: opens its review (what it was, or not a workout). A confirmed one reads as its sport, the tile solid. */
+export function DetectedRow({ item, timeZone, onPress }: { item: DetectedItem; timeZone: string; onPress?: () => void }) {
   const c = useCalm();
   const Icon = item.kind === "cardio" ? Activity : ACTIVITY_ICON[item.kind];
   const s = clock(item.start, timeZone);
@@ -129,23 +130,26 @@ export function DetectedRow({ item, timeZone }: { item: DetectedItem; timeZone: 
   // workout by its dashed tile and grey name: shown for reference only.
   return (
     // The same box, lines and line heights as the timeline row it sits between, so the lists' columns hold.
-    <View
-      accessible
-      accessibilityLabel={`Detected activity, likely ${item.label.toLowerCase()}, average heart rate ${item.avgHr} bpm, ${s} to ${e}. Not a recorded workout.`}
-      style={{ minHeight: 64, paddingVertical: 10, flexDirection: "row", alignItems: "flex-start", gap: 12 }}
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityLabel={item.reviewed ? `${item.label}, detected from heart rate, ${s} to ${e}.` : `Detected activity, likely ${item.label.toLowerCase()}, average heart rate ${item.avgHr} bpm, ${s} to ${e}. Not a recorded workout.`}
+      accessibilityHint={onPress ? "Say what it was" : undefined}
+      style={({ pressed }) => ({ minHeight: 64, paddingVertical: 10, flexDirection: "row", alignItems: "flex-start", gap: 12, opacity: pressed ? 0.6 : 1 })}
     >
-      <View style={{ width: TIMELINE_TILE, height: TIMELINE_TILE, borderRadius: TIMELINE_TILE / 2, borderWidth: 1.5, borderStyle: "dashed", borderColor: c.tintInk.peach, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: TIMELINE_TILE, height: TIMELINE_TILE, borderRadius: TIMELINE_TILE / 2, borderWidth: 1.5, borderStyle: item.reviewed ? "solid" : "dashed", borderColor: c.tintInk.peach, alignItems: "center", justifyContent: "center" }}>
         <Icon size={22} color={c.tintInk.peach} strokeWidth={2} />
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 1, paddingTop: TIMELINE_TEXT_TOP }}>
-        <Txt size={16} lineHeight={21} weight={600} color={c.sub}>
-          Detected activity
+        <Txt size={16} lineHeight={21} weight={600} color={item.reviewed ? c.ink : c.sub}>
+          {item.reviewed ? item.label : "Detected activity"}
         </Txt>
         <Txt size={13} lineHeight={18} color={c.sub} style={font.numeric(500)}>
           {`${s} – ${e}`}
         </Txt>
         <Txt size={13} lineHeight={18} color={c.sub}>
-          {`${item.label} · ${item.avgHr} bpm avg${steps}`}
+          {item.reviewed ? `Detected · ${item.avgHr} bpm avg${steps}` : `${item.label} · ${item.avgHr} bpm avg${steps}`}
         </Txt>
       </View>
       <View style={{ alignItems: "flex-end", flexShrink: 0 }}>
@@ -154,9 +158,9 @@ export function DetectedRow({ item, timeZone }: { item: DetectedItem; timeZone: 
         </Txt>
         <Caption style={{ marginTop: 2 }}>Strain</Caption>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 export const DETECTED_NOTE =
-  "Detected activity: 12 minutes or more of raised heart rate with no workout recorded, labelled from your steps. It is shown for reference and adds nothing to your scores.";
+  "Detected activity: 10 minutes or more of raised heart rate with no workout recorded, labelled from your steps. Tap one to say what it was. It adds nothing to your scores.";

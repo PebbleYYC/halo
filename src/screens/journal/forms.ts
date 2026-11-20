@@ -4,7 +4,7 @@ import { DAY, formatDay } from "@/lib/format";
 import { wall } from "@/lib/time";
 import { fluidFromInput, METRIC, type Units, weightFromInput } from "@/lib/units";
 import type { LogKind, Meal } from "@/queries/log";
-import { isCountedTag } from "@/lib/behaviours";
+import { isCountedTag, isScaleTag } from "@/lib/behaviours";
 import type { FoodItemInput, LogInput } from "./actions";
 
 export type Values = Record<string, number | undefined>;
@@ -17,7 +17,7 @@ export type Values = Record<string, number | undefined>;
 export function changedEntries(values: Values, saved: Record<string, number>): [string, boolean | number | null][] {
   return Object.entries(values)
     .filter(([t, v]) => v !== saved[t])
-    .map(([t, v]) => [t, v === undefined ? null : isCountedTag(t) ? v : v > 0]);
+    .map(([t, v]) => [t, v === undefined ? null : isCountedTag(t) || isScaleTag(t) ? v : v > 0]);
 }
 
 /** The wall clock now in `timeZone`, as `YYYY-MM-DD HH:mm` (the web's datetime-local value, with a space). */
