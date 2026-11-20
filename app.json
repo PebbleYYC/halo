@@ -46,7 +46,7 @@
         "android.permission.REQUEST_INSTALL_PACKAGES",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "versionCode": 169,
+      "versionCode": 170,
       "blockedPermissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION"

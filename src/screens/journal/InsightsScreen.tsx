@@ -9,7 +9,7 @@ import { Lock } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { formatValue } from "@/lib/format";
 import { AMOUNT_MIN_DAYS } from "@/lib/behaviours";
-import { getAmountImpact, getJournalInsights, getMedicineTiming, MED_TIMING } from "@/queries/journal";
+import { getAmountImpact, getJournalInsights, getMedicineTiming } from "@/queries/journal";
 import type { ImpactMetricKey, JournalInsightsVM } from "@/queries/types";
 import { useQuery } from "@/state/app";
 import { BottomSheet, DriverList, DriverListSkeleton, Txt } from "@/ui";
@@ -266,21 +266,30 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
         <View accessibilityRole="header">
           <Title>When you take it</Title>
         </View>
-        <Sentence>{`Your next-day ${word} after earlier and later doses, split at each medicine’s usual time. From ${MED_TIMING.minDays} days with a logged time.`}</Sentence>
+        <Sentence>{`Does the time you take a medicine change your ${word} the next morning? Days you logged it earlier than usual against later, with the ${word} that followed. Green marks a clear difference. Uses the time on each dose you log.`}</Sentence>
       </View>
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
-          // Higher is better for all three outcomes.
-          const earlyWins = r.early.avg > r.late.avg;
+          // Higher is better for all three outcomes; green only for a clear difference.
+          const earlyWins = r.clear === "early";
+          const lateWins = r.clear === "late";
+          const names = [r.label, ...r.with];
+          const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : r.label;
+          const note = [
+            r.with.length ? "Always logged at the same time, so their effects can’t be told apart." : null,
+            r.clear ? null : `No clear difference yet: ${r.early.n + r.late.n} days is too few to tell from day-to-day ups and downs.`,
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <View
               key={r.tag}
               accessible
-              accessibilityLabel={`${r.label}: before ${r.split}, next-day ${word} ${v(r.early.avg)} over ${r.early.n} days; from ${r.split}, ${v(r.late.avg)} over ${r.late.n} days.`}
+              accessibilityLabel={`${title}: before ${r.split}, next-day ${word} ${v(r.early.avg)} over ${r.early.n} days; from ${r.split}, ${v(r.late.avg)} over ${r.late.n} days. ${note}`}
               style={[{ paddingVertical: 12, gap: 6 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
             >
               <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
-                {r.label}
+                {title}
               </Txt>
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1, gap: 2 }}>
@@ -291,11 +300,16 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`From ${r.split} · ${r.late.n} days`}</Txt>
-                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: !earlyWins ? c.tintInk.mint : c.ink }]}>
+                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: lateWins ? c.tintInk.mint : c.ink }]}>
                     {v(r.late.avg)}
                   </Txt>
                 </View>
               </View>
+              {note ? (
+                <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
+                  {note}
+                </Txt>
+              ) : null}
             </View>
           );
         })}

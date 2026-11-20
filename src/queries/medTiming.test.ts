@@ -20,3 +20,20 @@ describe("medicine timing", () => {
     expect(medTiming([...few, ...same], () => 70, (t) => t)).toEqual([]);
   });
 });
+
+describe("medTiming grouping and clarity", () => {
+  it("merges medicines logged together, and says when the gap isn't clear", () => {
+    const doses = Array.from({ length: 14 }, (_, i) => {
+      const day = `2026-06-${String(i + 1).padStart(2, "0")}`;
+      const minute = i % 2 ? 480 : 540;
+      return [
+        { tag: "a", day, minute },
+        { tag: "b", day, minute },
+      ];
+    }).flat();
+    const rows = medTiming(doses, (d) => 60 + (Number(d.slice(-2)) % 3), (t) => t.toUpperCase());
+    expect(rows).toHaveLength(1);
+    expect([rows[0].label, ...rows[0].with].sort()).toEqual(["A", "B"]);
+    expect(rows[0].clear).toBeNull();
+  });
+});
