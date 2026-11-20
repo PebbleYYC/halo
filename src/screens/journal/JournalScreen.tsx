@@ -82,7 +82,7 @@ export default function JournalScreen() {
       <>
         {/* Log first: a drink or a weigh-in is a two-tap job, the check-in an evening one (spec §11 LG1). */}
         <Rise index={1}>
-          <Section title="Log">{log.data ? <Log vm={log.data} /> : <LogSkeleton />}</Section>
+          <Section title="Log" action={{ label: "Medicines", onPress: () => router.push("/settings?s=medicines" as Href) }}>{log.data ? <Log vm={log.data} /> : <LogSkeleton />}</Section>
         </Rise>
 
         <Rise index={2}>

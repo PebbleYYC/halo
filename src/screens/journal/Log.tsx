@@ -440,8 +440,17 @@ export function Log({ vm }: LogProps) {
               <TextField value={form.dose as string} onChangeText={(t) => set("dose")(t)} placeholder="e.g. 3 mg" maxLength={40} accessibilityLabel="Dose" returnKeyType="done" onSubmitEditing={save} />
             </Field>
             {timeField}
-            <Sentence style={{ paddingHorizontal: 4 }}>Each medicine becomes a behaviour in your journal. From its first dose, days without one count as “no”, and the time you took it is kept, so Insights can show how both whether and when affect your next-day Recovery, HRV and Sleep.</Sentence>
-            <Pressable onPress={() => router.push("/settings?s=medicines" as Href)} accessibilityRole="link" hitSlop={6} style={{ paddingHorizontal: 4 }}>
+            <Sentence style={{ paddingHorizontal: 4 }}>The time you take it feeds Insights.</Sentence>
+            <Pressable
+              onPress={() => {
+                // The sheet sits over every screen: close it first, or the page opens behind it.
+                shut();
+                setTimeout(() => router.push("/settings?s=medicines" as Href), 250);
+              }}
+              accessibilityRole="link"
+              hitSlop={6}
+              style={{ paddingHorizontal: 4, minHeight: 44, justifyContent: "center" }}
+            >
               <Txt size={15} lineHeight={20} style={{ color: c.teal }}>
                 Doses, times and reminders
               </Txt>
