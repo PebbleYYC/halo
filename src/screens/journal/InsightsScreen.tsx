@@ -28,7 +28,7 @@ const METRICS: { key: ImpactMetricKey; label: string; word: string }[] = [
 ];
 const WORD: Record<ImpactMetricKey, string> = { recovery: "Recovery", hrv: "HRV", sleep: "sleep performance" };
 const TITLE: Record<ImpactMetricKey, string> = { recovery: "Recovery", hrv: "HRV", sleep: "Sleep" };
-const FOOTER = "Effects are differences in averages, not proof of cause. Change one habit at a time to see what it really does.";
+const FOOTER = "Averages, not proof of cause.";
 const parseMetric = (raw: string | string[] | undefined): ImpactMetricKey => {
   const v = Array.isArray(raw) ? raw[0] : raw;
   return v === "hrv" || v === "sleep" ? v : "recovery";
@@ -57,10 +57,7 @@ export default function InsightsScreen() {
         <View style={{ alignSelf: "stretch", gap: 16 }}>
           <View style={{ gap: 6 }}>
             <Title size={22} header>{`${TITLE[metric]} impact analysis`}</Title>
-            <Sentence>{`How each behaviour changed your next-day ${WORD[metric]} over the last 90 days. Tap a behaviour for details.`}</Sentence>
-            <Sentence size={13} style={{ marginTop: 2 }}>
-              Updated daily
-            </Sentence>
+            <Sentence>{`Next-day ${WORD[metric]}, last 90 days.`}</Sentence>
           </View>
           {/* Recovery / HRV / Sleep, kept in `?m=` (spec §7.12). */}
           <CalmSegmented value={metric} onChange={setMetric} on="ground" items={METRICS.map((m) => ({ value: m.key, label: m.label }))} accessibilityLabel="Outcome" />
@@ -164,7 +161,7 @@ function Unlock({ needsMore, word }: { needsMore: JournalInsightsVM["needsMore"]
         <Title header size={22}>
           Not enough days yet
         </Title>
-        <Sentence>{`Log a behaviour as Yes on at least 5 days and No on at least 5 to see how it changes your next-day ${word}.`}</Sentence>
+        <Sentence>{`Needs 5 Yes and 5 No days.`}</Sentence>
       </View>
       <View style={{ gap: 10 }}>
         {needsMore.map((n) => {
@@ -211,7 +208,7 @@ function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: 
         <View accessibilityRole="header">
           <Title>By amount</Title>
         </View>
-        <Sentence>{`Your next-day ${word} after none, a little and a lot. Each shows from ${AMOUNT_MIN_DAYS} nights logged with a count.`}</Sentence>
+        <Sentence>{`Next-day ${word} by how much.`}</Sentence>
       </View>
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
@@ -239,7 +236,7 @@ function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: 
                   </View>
                 ))}
               </View>
-              {r.unknown > 0 && <Sentence size={13}>{`${r.unknown} earlier ${r.unknown === 1 ? "night was" : "nights were"} logged as Yes without a count, and ${r.unknown === 1 ? "is" : "are"} left out here.`}</Sentence>}
+              {r.unknown > 0 && <Sentence size={13}>{`${r.unknown} ${r.unknown === 1 ? "night" : "nights"} without a count left out.`}</Sentence>}
             </View>
           );
         })}
@@ -266,7 +263,7 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
         <View accessibilityRole="header">
           <Title>When you take it</Title>
         </View>
-        <Sentence>{`Does the time of an evening dose change your ${word} the next morning? Evenings you took it earlier than usual against later, with the ${word} that followed. Only doses from 15:00 count: a morning dose is too far from the night to tell. Green marks a clear difference. Uses the time on each dose you log.`}</Sentence>
+        <Sentence>{`Evening dose time against next-day ${word}.`}</Sentence>
       </View>
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
@@ -276,8 +273,8 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
           const names = [r.label, ...r.with];
           const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : r.label;
           const note = [
-            r.with.length ? "Always logged at the same time, so their effects can’t be told apart." : null,
-            r.clear ? null : `No clear difference yet: ${r.early.n + r.late.n} days is too few to tell from day-to-day ups and downs.`,
+            r.with.length ? "Logged together." : null,
+            r.clear ? null : "No clear difference yet.",
           ]
             .filter(Boolean)
             .join(" ");

@@ -68,7 +68,7 @@ export function ActivityCostSection() {
         <View accessibilityRole="header">
           <Title>Activity cost</Title>
         </View>
-        <Sentence>How each kind of workout changes your next-day Recovery, and how many days it takes to come back.</Sentence>
+        <Sentence>Next-day Recovery by workout type.</Sentence>
       </View>
       <ActivityCostList vm={vm} />
     </View>
