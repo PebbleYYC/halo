@@ -141,7 +141,7 @@ function AlertButton({ action, row }: { action: AlertAction; row: boolean }) {
     >
       <Animated.View style={[{ minHeight: 48, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 6, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: bg }, pressed]}>
         {action.busy && <ActivityIndicator size="small" color={ink} />}
-        <Txt size={17} lineHeight={22} weight={style === "cancel" ? 500 : 600} align="center" style={{ color: ink, flexShrink: 1 }}>
+        <Txt size={17} lineHeight={22} weight={style === "cancel" ? 500 : 600} align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: ink, flexShrink: 1 }}>
           {action.label}
         </Txt>
       </Animated.View>

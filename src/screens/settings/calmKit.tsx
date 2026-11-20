@@ -334,7 +334,7 @@ export function CalmButton({
     >
       {Icon ? <Icon size={size === "sm" ? 16 : 18} color={ink} strokeWidth={2.2} /> : null}
       {typeof children === "string" || typeof children === "number" ? (
-        <Txt size={size === "sm" ? 15 : 17} lineHeight={22} weight={600} align="center" style={{ color: ink, flexShrink: 1 }}>
+        <Txt size={size === "sm" ? 15 : 17} lineHeight={22} weight={600} align="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: ink, flexShrink: 1 }}>
           {children}
         </Txt>
       ) : (
