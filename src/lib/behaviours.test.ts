@@ -37,9 +37,9 @@ describe("amountSplit", () => {
     const ys = { "2026-11-12": 70, "2026-11-13": 80, "2026-11-14": 60, "2026-11-15": 66, "2026-11-16": 60, "2026-11-17": 54, "2026-11-18": 40, "2026-11-19": 20 };
     const s = amountSplit("alcohol", answers, next(ys))!;
     expect(s.none).toEqual({ label: "None", n: 3, avg: 70 });
-    expect(s.light).toEqual({ label: "1–2 drinks", n: 3, avg: 60 });
+    expect(s.light).toMatchObject({ label: "1–2 drinks", n: 3, avg: 60 });
     // Two heavy nights are counted but not yet averaged.
-    expect(s.heavy).toEqual({ label: "3+ drinks", n: 2, avg: null });
+    expect(s.heavy).toMatchObject({ label: "3+ drinks", n: 2, avg: null, vsNone: null });
     expect(s.unknown).toBe(0);
   });
 

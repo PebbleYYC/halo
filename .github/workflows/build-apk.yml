@@ -30,6 +30,9 @@ jobs:
       EXPECTED_SHA1: FF:C1:8B:55:5B:3B:AC:39:88:5D:AB:0B:03:3B:E7:41:65:FC:F0:29
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The release notes list the changes since the last release.
+          fetch-depth: 0
 
       - name: Check the signing secret
         run: |
@@ -61,7 +64,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "Halo $(node -p 'require("./app.json").expo.version')"
-          git push
+          # Another merge may have pushed meanwhile.
+          git pull --rebase && git push
 
       - name: Generate the Android project
         run: |
@@ -92,5 +96,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v=$(node -p 'require("./app.json").expo.version')
-          gh release create "v$v" Halo.apk --target "$(git rev-parse HEAD)" --title "Halo $v" \
-            --notes "Built from $(git rev-parse --short HEAD). Install Halo.apk, or tap Update in Halo."
+          prev=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
+          # What changed: each merged change's title since the last release, without the version commits.
+          notes=$( (git log --pretty='• %s' ${prev:+$prev..}HEAD 2>/dev/null || true) | grep -v '^• Halo [0-9]' | sed -E 's/ \(#[0-9]+\)$//' | head -12)
+          [ -n "$notes" ] || notes="Fixes and improvements."
+          gh release create "v$v" Halo.apk --target "$(git rev-parse HEAD)" --title "Halo $v" --notes "$notes"
