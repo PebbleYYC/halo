@@ -2,6 +2,7 @@
 // closure (the model never names a person or a store), each a compact digest of an existing screen query. A metric
 // without a value carries its reason code instead, so the model can say "calibrating" rather than guess. No chart
 // series, ids or raw payloads.
+import { loadRpe } from "@/lib/sessionRpe";
 import { isVitalConcern } from "@/core/algorithms/healthMonitor";
 import { tool, type InferToolOutput } from "ai";
 import { z } from "zod";
@@ -153,6 +154,8 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
       inputSchema: z.object({ days: z.number().int().min(1).max(90).default(14).describe(t("tool.get_activities.days")) }),
       execute: async ({ days }) => {
         const a = await getActivities(days, ctx);
+        // How hard a strength session felt, where the person said (1–10; heart rate undercounts lifting).
+        const felt = await loadRpe().catch(() => ({}) as Record<string, number>);
         const all = a.groups.flatMap((g) =>
           g.items.map((i) => ({
             id: i.id,
@@ -161,11 +164,19 @@ export function coachTools(ctx: QueryCtx, t: Texts = defaultTexts) {
             minutes: Math.round((i.end - i.start) / 60_000),
             strain: num(i.strain, 1),
             distanceKm: i.distanceKm === null ? null : round(i.distanceKm, 1),
+            ...(felt[`w:${i.id}`] ? { feltEffort: felt[`w:${i.id}`] } : {}),
           })),
         );
         // Mobile: stretches of raised HR with no workout recorded (estimates, never scored), and each kind's recovery cost.
         const detected = a.groups.flatMap((g) =>
-          g.detected.map((d) => ({ day: g.day, likely: d.label, minutes: Math.round((d.end - d.start) / 60_000), avgHr: d.avgHr, strain: d.strain === null ? null : round(d.strain, 1) })),
+          g.detected.map((d) => ({
+            day: g.day,
+            [d.reviewed ? "confirmedAs" : "likely"]: d.label,
+            minutes: Math.round((d.end - d.start) / 60_000),
+            avgHr: d.avgHr,
+            strain: d.strain === null ? null : round(d.strain, 1),
+            ...(felt[`d:${Math.floor(d.start / 1000)}`] ? { feltEffort: felt[`d:${Math.floor(d.start / 1000)}`] } : {}),
+          })),
         );
         return {
           start: addDays(a.today, -(days - 1)),

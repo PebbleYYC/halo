@@ -19,7 +19,7 @@ import {
   stressLevel,
 } from "./_lib";
 import { insightOf as recoveryInsight } from "./recovery";
-import { insightOf as sleepInsight } from "./sleep";
+import { incompleteNight, insightOf as sleepInsight } from "./sleep";
 import { coach, coachTitle } from "./strain";
 import {
   type DayRow,
@@ -130,7 +130,7 @@ export async function getHome(day: string, ctx: QueryCtx, opts: HomeOptions = {}
     dashboard: { defaults, empty: emptyKeys(rows, day, isToday) },
     phone: phoneDay(rows, day, isToday, units, byNow),
     weeklyTeaser,
-    outlook: outlookOf(ctx, row, { recovery, strain, target }, isToday, { timeline, tonight }),
+    outlook: outlookOf(ctx, row, { recovery, strain, target }, isToday, { timeline, tonight, incomplete: !!incompleteNight(rows, day, todayOf(ctx), localMinutes(ctx.now, ctx.timeZone)) }),
     insights: isToday ? insightsOf(ctx, rows, row, day, { strain, target }) : [],
     journalWeek: journal,
     strainRecovery: Array.from({ length: 7 }, (_, k) => {
@@ -170,7 +170,7 @@ export const REVIEW_FROM_MIN = 17 * 60;
 type DayScores = { recovery: Metric<number>; strain: Metric<number>; target: [number, number] | null };
 
 /** "Your daily outlook" / "Your day in review" (outlook.ts writes the words). */
-export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, isToday: boolean, extra: { timeline: TimelineItem[]; tonight: Metric<SleepPlanVM> }): HomeVM["outlook"] {
+export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, isToday: boolean, extra: { timeline: TimelineItem[]; tonight: Metric<SleepPlanVM>; incomplete?: boolean }): HomeVM["outlook"] {
   const review = !isToday || localMinutes(ctx.now, ctx.timeZone) >= REVIEW_FROM_MIN;
   const st = row?.stress;
   const perform = extra.tonight.value?.plans.find((p) => p.key === "perform");
@@ -181,6 +181,7 @@ export function outlookOf(ctx: QueryCtx, row: DayRow | undefined, s: DayScores, 
     drivers: row?.recovery?.value != null ? row.recovery.drivers : [],
     asleepMin: row?.sleep?.main?.asleepMin ?? null,
     needMin: nightNeedMin(row?.sleep) ?? null,
+    incomplete: !!extra.incomplete,
     strain: s.strain.value ?? null,
     target: s.target,
     activities: extra.timeline
@@ -207,8 +208,10 @@ function insightsOf(ctx: QueryCtx, rows: Map<string, DayRow>, row: DayRow | unde
   }
   const r = row?.recovery;
   if (r?.value != null) out.push({ key: "recovery", title: RECOVERY_TITLE[recoveryBand(r.value)], body: recoveryInsight(r.drivers), href: "/recovery" });
-  const sl = sleepInsight(rows, day, ctx.timeZone);
-  if (sl) out.push({ key: "sleep", title: "Last night’s sleep", body: sl, href: "/sleep" });
+  const nowMin = localMinutes(ctx.now, ctx.timeZone);
+  const gap = incompleteNight(rows, day, todayOf(ctx), nowMin);
+  const sl = sleepInsight(rows, day, ctx.timeZone, todayOf(ctx), nowMin);
+  if (sl) out.push({ key: "sleep", title: gap ? "Last night may be incomplete" : "Last night’s sleep", body: sl, href: "/sleep" });
   return out;
 }
 

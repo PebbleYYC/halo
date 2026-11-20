@@ -106,7 +106,7 @@ export async function getSleep(day: string, ctx: QueryCtx): Promise<SleepVM> {
     isToday,
     performance,
     summary,
-    insight: insightOf(rows, day, ctx.timeZone),
+    insight: insightOf(rows, day, ctx.timeZone, today, localMinutes(ctx.now, ctx.timeZone)),
     stages,
     hours,
     nightHr,
@@ -192,7 +192,42 @@ export function consistencyOf(rows: Map<string, DayRow>, day: string, tz: string
   return ok({ pct, average, nights: Array.from({ length: 5 }, (_, k) => withTypical(addDays(day, k - 4))) });
 }
 
-export function insightOf(rows: Map<string, DayRow>, day: string, tz: string): string | null {
+/**
+ * Whether the night ending on `today` may not be all there yet: Fitbit writes a night into Health Connect after its
+ * own sync, sometimes in pieces, so a morning can read a fraction of it. It's flagged when it reads under 70 % of the
+ * person's typical night (the median of the last 30 with a main sleep, from 5), or under 4 h before there are 5.
+ * Only the latest night, and only in the morning (before noon): later, a short night is what it is. A night written
+ * in pieces counts all of them (the longer one is the main sleep, the others stored as naps): the pieces that end by
+ * the main sleep's morning and start after 18:00 the evening before. (NOOP Forge's "may be incomplete" rule.)
+ */
+export function incompleteNight(rows: Map<string, DayRow>, day: string, today: string, nowMin = 0): { asleepMin: number; typicalMin: number | null } | null {
+  if (day !== today || nowMin >= 12 * 60) return null;
+  const night = (d: string) => {
+    const s = rows.get(d)?.sleep;
+    if (!s?.main) return null;
+    const from = s.main.start - 12 * 3600;
+    const pieces = (s.naps ?? []).filter((n) => n.start >= from && n.end <= s.main!.end + 3600);
+    return s.main.asleepMin + pieces.reduce((t, n) => t + n.asleepMin, 0);
+  };
+  const tonight = night(day);
+  if (tonight == null) return null;
+  const prior: number[] = [];
+  for (let k = 1; k <= 30; k++) {
+    const m = night(addDays(day, -k));
+    if (m != null && m > 0) prior.push(m);
+  }
+  prior.sort((a, b) => a - b);
+  const typical = prior.length >= 5 ? prior[Math.floor(prior.length / 2)] : null;
+  const short = typical != null ? tonight < typical * 0.7 : tonight < 240;
+  return short ? { asleepMin: tonight, typicalMin: typical } : null;
+}
+
+/** What to say about a night that may be incomplete. */
+export const incompleteText = (asleepMin: number) => `Only ${minutesText(asleepMin)} of last night has reached Halo so far. Fitbit may still be syncing the rest; your sleep and Recovery update when it arrives.`;
+
+export function insightOf(rows: Map<string, DayRow>, day: string, tz: string, today?: string, nowMin?: number): string | null {
+  const gap = today ? incompleteNight(rows, day, today, nowMin) : null;
+  if (gap) return incompleteText(gap.asleepMin);
   const row = rows.get(day);
   const perf = row?.sleep?.performance;
   const main = row?.sleep?.main;

@@ -2,8 +2,9 @@
 // 30-day averages, 30 days of daily protein and calories, and today's food, Halo's entries (editable) beside those
 // read from Health Connect (logged in Fitbit). Every number is counted as the metric screens count it: the source's
 // daily roll-up plus Halo's own entries, a meal logged in both apps once (food.ts).
+import { dayBalance, todayBalance, type Balance } from "./energy";
 import { metricsWithLoggedBody } from "@/data/body";
-import { addDays, localMidnight } from "@/lib/time";
+import { addDays, localMidnight, localMinutes } from "@/lib/time";
 import { BURN_DAYS, NO_CUSTOM, resolveTargets, type CustomTargets, type Targets } from "@/nutrition/targets";
 import { type DayRow, finite, loadDays, type QueryCtx, todayOf } from "./common";
 import { countedPulse, EMPTY_TOTALS, foodEntry, mealOverlaps, roundNutrient, sumFood, type FoodEntry, type FoodVia, type Totals } from "./food";
@@ -72,7 +73,25 @@ export type NutritionVM = {
   unlisted: Totals | null;
   /** Today has food logged in Halo (some counted, some maybe repeats). */
   pulseToday: number;
+  /** Eaten against burned (energy.ts): today on course, and yesterday as it ended. */
+  balance: { today: Balance | null; yesterday: Balance | null };
 };
+
+/** Today's and yesterday's balance; the usual day's burn is the median of the 7 before today. */
+function balanceOf(rows: Map<string, DayRow>, today: string, eaten: number | null, dayFraction: number): NutritionVM["balance"] {
+  const burns: number[] = [];
+  for (let k = 1; k <= 7; k++) {
+    const v = rows.get(addDays(today, -k))?.metrics?.calories;
+    if (finite(v) && v > 0) burns.push(v);
+  }
+  burns.sort((a, b) => a - b);
+  const usual = burns.length >= 3 ? burns[Math.floor(burns.length / 2)] : null;
+  const y = rows.get(addDays(today, -1));
+  return {
+    today: todayBalance(eaten, rows.get(today)?.metrics?.calories ?? null, usual, dayFraction),
+    yesterday: dayBalance(y ? (FOOD_PICK.kcal(y) ?? null) : null, y?.metrics?.calories ?? null),
+  };
+}
 
 const MEAL_LABEL: Record<Meal | "UNKNOWN", string> = { ...(Object.fromEntries(MEALS) as Record<Meal, string>), UNKNOWN: "Other" };
 const MEAL_ORDER: (Meal | "UNKNOWN")[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACK", "UNKNOWN"];
@@ -198,6 +217,8 @@ export async function getNutrition(ctx: QueryCtx, custom: CustomTargets): Promis
     meals: mealGroups(entries),
     unlisted: more ? unlisted : null,
     pulseToday: entries.filter((e) => e.source === "pulse").length,
+    // The burn so far runs to the last sync, not to now: the rest of the day is counted from there.
+    balance: balanceOf(rows, today, totals.kcal, localMinutes(Math.max(localMidnight(today, ctx.timeZone), Math.min(ctx.now, ctx.sync.lastSyncTs ?? ctx.now)), ctx.timeZone) / 1440),
   };
 }
 

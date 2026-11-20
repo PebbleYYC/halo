@@ -9,6 +9,8 @@ export type OutlookInput = {
   recovery: number | null;
   drivers: ChargeDriver[];
   asleepMin: number | null;
+  /** Last night may not all be in yet (sleep.ts incompleteNight): no "less than you needed". */
+  incomplete?: boolean;
   needMin: number | null;
   strain: number | null;
   target: [number, number] | null;
@@ -53,7 +55,8 @@ function morning(i: OutlookInput): string[] {
     const lead = band === "green" ? "You’re well recovered" : band === "yellow" ? "You’re about at your usual level" : "Your body is still recovering";
     out.push(`${lead} (${Math.round(i.recovery)}%)${why ? `: ${why}` : ""}.`);
   }
-  if (i.asleepMin != null && i.needMin) {
+  if (i.incomplete && i.asleepMin != null) out.push(`Only ${minutesText(i.asleepMin)} of last night has arrived so far; it may still be syncing.`);
+  else if (i.asleepMin != null && i.needMin) {
     const short = i.needMin - i.asleepMin;
     out.push(short >= 30 ? `You slept ${minutesText(i.asleepMin)}, ${minutesText(short)} less than you needed.` : `You got the ${minutesText(i.asleepMin)} of sleep you needed.`);
   }

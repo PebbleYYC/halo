@@ -9,6 +9,7 @@ import type { QueryCtx } from "@/queries/ctx";
 import { coachHistory } from "./history";
 import { coachInstructions } from "./instructions";
 import { defaultTexts, type Texts } from "./texts";
+import { facts, MEMORY_RULES, memoryMessage, memoryTools } from "./memory";
 import { coachTools } from "./tools";
 
 /** What a turn can fail with before any answer streams; the screen maps each to a sentence (Coach.tsx ERRORS). */
@@ -78,7 +79,9 @@ export async function coachTurn(deps: CoachDeps, chatId: string, messages: UIMes
   const units = (await deps.units?.().catch(() => null)) ?? screen.units ?? METRIC;
 
   const texts = deps.texts ?? defaultTexts;
-  const tools = coachTools(ctx, texts);
+  // Reading tools, and the memory's two writers (chats only: the connector reads).
+  const tools = { ...coachTools(ctx, texts), ...memoryTools() };
+  const memory = memoryMessage(await facts().catch(() => []));
   const stored = await deps.load(chatId).catch(() => null);
   const valid = await validateUIMessages({ messages: withCheckpoint(messages, stored), tools }).catch(() => null);
   if (!valid || valid.at(-1)?.role !== "user") throw new Error("bad_request" satisfies CoachProblem);
@@ -86,8 +89,8 @@ export async function coachTurn(deps: CoachDeps, chatId: string, messages: UIMes
   const history = await coachHistory(valid, m.model, texts, abortSignal);
   const result = streamText({
     model: m.model,
-    instructions: coachInstructions(ctx, texts, m.instructions, units),
-    messages: history.modelMessages,
+    instructions: `${coachInstructions(ctx, texts, m.instructions, units)}${MEMORY_RULES}`,
+    messages: memory ? [{ role: "user", content: memory }, ...history.modelMessages] : history.modelMessages,
     tools,
     stopWhen: isStepCount(6),
     abortSignal,

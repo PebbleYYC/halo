@@ -3,15 +3,17 @@
 // the coach, then Change provider and the two red actions (delete every chat, turn the coach off), each confirmed by
 // an alert. With the coach off: its feature header and Set up. The groups rise into place as the page opens.
 import * as React from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { BotMessageSquare } from "lucide-react-native";
+import { BotMessageSquare, Trash2 } from "lucide-react-native";
 import { MAX_NOTES } from "@/coach/instructions";
+import { forget, forgetAll, useFacts } from "@/coach/memory";
 import { providerLabel, providerOf } from "@/coach/providers";
 import { useCoachSetup } from "@/coach/session";
 import { deleteAllChats, removeProvider, setConsent, setInstructions, type CoachSetup } from "@/coach/storage";
 import { useBack } from "@/screens/detail/nav";
-import { BottomSheet, DetailShell, Skeleton } from "@/ui";
+import { BottomSheet, DetailShell, Skeleton, Txt } from "@/ui";
+import { useCalm } from "@/ui/calm";
 import { RiseEach } from "@/ui/motion/Rise";
 import { CalmButton, CalmInput } from "@/screens/settings/calmKit";
 import { ButtonRow, HeroCard, InfoRow, InsetGroup, RowBox } from "@/screens/settings/list";
@@ -71,6 +73,7 @@ function Settings({ setup }: { setup: CoachSetup }) {
               />
           </RowBox>
         </InsetGroup>
+        <MemoryGroup />
         <InsetGroup footer="Your key is stored encrypted on this phone and never shown again. It is sent only to your provider.">
           <ButtonRow label={setup.provider ? "Change provider" : "Add key"} onPress={() => setOpen(true)} disabled={pending} />
           <ButtonRow label="Delete all chats" danger disabled={pending} onPress={() => setConfirm("chats")} />
@@ -100,6 +103,39 @@ function Settings({ setup }: { setup: CoachSetup }) {
         }
       />
     </View>
+  );
+}
+
+/** What the Coach remembers about you, newest first, each with a delete; nothing until it has saved something. */
+function MemoryGroup() {
+  const all = useFacts();
+  if (!all?.length) return null;
+  return (
+    <InsetGroup title="Memory" footer="Things you’ve told the coach that it keeps for later chats, on this phone only. Ask it to forget something, or delete it here.">
+      {[...all].reverse().map((f) => (
+        <FactRow key={f.id} text={f.text} onDelete={() => void forget(f.id).then(() => toast("Forgotten."))} />
+      ))}
+      <ButtonRow label="Forget everything" danger onPress={() => void forgetAll().then(() => toast("Memory cleared."))} />
+    </InsetGroup>
+  );
+}
+
+function FactRow({ text, onDelete }: { text: string; onDelete: () => void }) {
+  const c = useCalm();
+  return (
+    <RowBox style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 4, paddingVertical: 6 }}>
+      <Txt size={16} lineHeight={21} style={{ flex: 1, minWidth: 0, color: c.ink, paddingVertical: 6 }}>
+        {text}
+      </Txt>
+      <Pressable
+        onPress={onDelete}
+        accessibilityRole="button"
+        accessibilityLabel={`Forget: ${text}`}
+        style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? c.fill : "transparent" })}
+      >
+        <Trash2 size={18} color={c.sub} strokeWidth={2} />
+      </Pressable>
+    </RowBox>
   );
 }
 

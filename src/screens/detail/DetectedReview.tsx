@@ -5,6 +5,7 @@ import * as React from "react";
 import { View } from "react-native";
 import { Activity } from "lucide-react-native";
 import { setReview, type ReviewKind } from "@/lib/detectedReview";
+import { RPE_LEVELS, setRpe } from "@/lib/sessionRpe";
 import { clock, formatValue } from "@/lib/format";
 import { localMinutes } from "@/lib/time";
 import { getToReview } from "@/queries/activityCost";
@@ -31,10 +32,12 @@ const summary = (it: DetectedItem, timeZone: string) =>
 export function ReviewSheet({ item, timeZone, onClose }: { item: DetectedItem | null; timeZone: string; onClose: () => void }) {
   const app = useApp();
   const [sport, setSport] = React.useState<ReviewKind>(item?.kind ?? "cardio");
+  const [rpe, setRpeChoice] = React.useState<number | null>(null);
   const [shown, setShown] = React.useState(item);
   if (item && item !== shown) {
     setShown(item);
     setSport(item.kind);
+    setRpeChoice(null);
   }
   const it = item ?? shown;
   const done = async (verdict: "workout" | "not") => {
@@ -44,6 +47,7 @@ export function ReviewSheet({ item, timeZone, onClose }: { item: DetectedItem | 
       start,
       verdict === "workout" ? { verdict, kind: sport } : { verdict, detected: it.detected, startMin: localMinutes(start, timeZone), minutes: it.minutes },
     );
+    if (verdict === "workout" && sport === "strength" && rpe != null) await setRpe(`d:${start}`, rpe);
     onClose();
     app.dataChanged();
     toast(verdict === "workout" ? "Saved" : "Dismissed");
@@ -52,6 +56,9 @@ export function ReviewSheet({ item, timeZone, onClose }: { item: DetectedItem | 
     <BottomSheet open={!!item} onClose={onClose} title="What was this?" description={it ? summary(it, timeZone) : undefined} done={{ label: "Confirm", onPress: () => void done("workout") }}>
       <View style={{ gap: 18, paddingTop: 4 }}>
         <Chips label="Sport" options={SPORTS} value={sport} onChange={(v) => typeof v === "string" && v && setSport(v as ReviewKind)} />
+        {sport === "strength" && (
+          <Chips label="How hard did it feel?" options={RPE_LEVELS.map(([v, l]) => [String(v), l] as const)} value={rpe == null ? "" : String(rpe)} onChange={(v) => setRpeChoice(typeof v === "string" && v ? Number(v) : null)} />
+        )}
         <CalmButton variant="danger" onPress={() => void done("not")} style={{ alignSelf: "stretch" }}>
           Not a workout
         </CalmButton>
