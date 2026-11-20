@@ -12,6 +12,8 @@ import { AMOUNT_MIN_DAYS } from "@/lib/behaviours";
 import { getAmountImpact, getJournalInsights, getMedicineTiming } from "@/queries/journal";
 import type { ImpactMetricKey, JournalInsightsVM } from "@/queries/types";
 import { useQuery } from "@/state/app";
+import { useMedicines } from "@/state/medicines";
+import { medicineTag } from "@/lib/medicine";
 import { BottomSheet, DriverList, DriverListSkeleton, Txt } from "@/ui";
 import { font } from "@/ui/fonts";
 import { ActivityCostSection } from "@/screens/detail/ActivityCost";
@@ -252,11 +254,18 @@ function AmountSection({ metric, version }: { metric: ImpactMetricKey; version: 
 function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; version: number }) {
   const c = useCalm();
   const q = useQuery((ctx) => getMedicineTiming(metric, ctx), [metric, version]);
+  const meds = useMedicines();
   const rows = q.data;
   if (!rows?.length) return null;
   const sd = metric === "hrv";
   const v = (x: number) => (sd ? `${formatValue("signed1", x)} SD` : `${formatValue("int", x)}%`);
   const word = WORD[metric];
+  const Word = word.charAt(0).toUpperCase() + word.slice(1);
+  // The evening time a medicine is scheduled for (Settings › Medicines), to say what the better time replaces.
+  const scheduled = (tags: string[]) => {
+    const m = meds.find((x) => tags.includes(medicineTag(x.name)));
+    return m?.times.filter((t) => t >= "15:00").pop() ?? null;
+  };
   return (
     <View style={{ gap: 12 }}>
       <View style={{ gap: 4, paddingHorizontal: 4 }}>
@@ -267,46 +276,35 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
       </View>
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {
-          // Higher is better for all three outcomes; green only for a clear difference.
-          const earlyWins = r.clear === "early";
-          const lateWins = r.clear === "late";
           const names = [r.label, ...r.with];
           const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : r.label;
-          const note = [
-            r.with.length ? "Logged together." : null,
-            r.clear ? null : "No clear difference yet.",
-          ]
-            .filter(Boolean)
-            .join(" ");
+          const late = r.clear === "late";
+          const gap = Math.abs(r.late.avg - r.early.avg);
+          const amount = sd ? `${(Math.round(gap * 10) / 10).toFixed(1)} SD` : `${formatValue("int", gap)} points`;
+          const sched = scheduled([r.tag, ...r.with.map(medicineTag)]);
+          // The schedule is only named when it sits on the worse side of the split.
+          const instead = sched && (late ? sched < r.split : sched >= r.split) ? ` instead of ${sched} as scheduled` : "";
+          const headline = r.clear ? `${Word} is ${amount} higher when you take it ${late ? "after" : "before"} ${r.split}${instead}.` : `No clear difference yet between before and after ${r.split}.`;
+          const [win, lose] = late ? [r.late, r.early] : [r.early, r.late];
+          const detail = r.clear
+            ? `${v(win.avg)} ${late ? "after" : "before"} · ${v(lose.avg)} ${late ? "before" : "after"} · ${r.early.n + r.late.n} evenings${r.with.length ? " · logged together" : ""}`
+            : `${v(r.early.avg)} before · ${v(r.late.avg)} after · ${r.early.n + r.late.n} evenings${r.with.length ? " · logged together" : ""}`;
           return (
             <View
               key={r.tag}
               accessible
-              accessibilityLabel={`${title}: before ${r.split}, next-day ${word} ${v(r.early.avg)} over ${r.early.n} days; from ${r.split}, ${v(r.late.avg)} over ${r.late.n} days. ${note}`}
-              style={[{ paddingVertical: 12, gap: 6 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
+              accessibilityLabel={`${title}. ${headline} ${detail}.`}
+              style={[{ paddingVertical: 12, gap: 4 }, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
             >
-              <Txt size={17} lineHeight={22} weight={600} style={{ color: c.ink }}>
+              <Txt size={15} lineHeight={20} weight={600} style={{ color: c.sub }}>
                 {title}
               </Txt>
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`Before ${r.split} · ${r.early.n} days`}</Txt>
-                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: earlyWins ? c.tintInk.mint : c.ink }]}>
-                    {v(r.early.avg)}
-                  </Txt>
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Txt size={13} lineHeight={18} style={{ color: c.sub }}>{`From ${r.split} · ${r.late.n} days`}</Txt>
-                  <Txt size={22} lineHeight={28} style={[font.numberAt(22), { color: lateWins ? c.tintInk.mint : c.ink }]}>
-                    {v(r.late.avg)}
-                  </Txt>
-                </View>
-              </View>
-              {note ? (
-                <Txt size={13} lineHeight={18} style={{ color: c.sub }}>
-                  {note}
-                </Txt>
-              ) : null}
+              <Txt size={17} lineHeight={22} weight={600} style={{ color: r.clear ? c.tintInk.mint : c.ink }}>
+                {headline}
+              </Txt>
+              <Txt size={13} lineHeight={18} style={[font.numeric(500), { color: c.sub }]}>
+                {detail}
+              </Txt>
             </View>
           );
         })}
