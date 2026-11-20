@@ -266,7 +266,7 @@ function MedTimingSection({ metric, version }: { metric: ImpactMetricKey; versio
         <View accessibilityRole="header">
           <Title>When you take it</Title>
         </View>
-        <Sentence>{`Does the time you take a medicine change your ${word} the next morning? Days you logged it earlier than usual against later, with the ${word} that followed. Green marks a clear difference. Uses the time on each dose you log.`}</Sentence>
+        <Sentence>{`Does the time of an evening dose change your ${word} the next morning? Evenings you took it earlier than usual against later, with the ${word} that followed. Only doses from 15:00 count: a morning dose is too far from the night to tell. Green marks a clear difference. Uses the time on each dose you log.`}</Sentence>
       </View>
       <Surface padding={16} gap={0}>
         {rows.map((r, i) => {

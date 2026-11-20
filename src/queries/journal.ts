@@ -257,7 +257,7 @@ export async function getJournalInsights(metric: ImpactMetricKey = "recovery", c
 export type MedTimingRow = {
   tag: string;
   label: string;
-  /** The split, "21:15": earlier days took their first dose before it. */
+  /** The split, "21:15": earlier evenings' dose came before it. */
   split: string;
   early: { n: number; avg: number };
   late: { n: number; avg: number };
@@ -272,6 +272,24 @@ export const MED_TIMING = { minDays: 10, minSide: 4, minGapMin: 30 } as const;
 
 /** Minutes of the day as "HH:MM"; a late dose counted past midnight (1 470 = 00:30) wraps back onto the clock. */
 const hhmm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`;
+
+/**
+ * Next-day timing reads only the evening dose: one taken from 15:00 (or after midnight, counted onto the evening before),
+ * the last of the day. A morning dose is a whole day away from the night it would be judged on, with everything that
+ * day held in between, so it says nothing reliable about the next morning's Recovery; a morning-only medicine isn't
+ * timed at all.
+ */
+export const EVENING_FROM_MIN = 15 * 60;
+export function eveningDoses(doses: readonly { tag: string; day: string; minute: number }[]): Map<string, Map<string, number>> {
+  const out = new Map<string, Map<string, number>>();
+  for (const d of doses) {
+    if (d.minute < EVENING_FROM_MIN) continue;
+    const days = out.get(d.tag) ?? new Map<string, number>();
+    days.set(d.day, Math.max(days.get(d.day) ?? -Infinity, d.minute));
+    out.set(d.tag, days);
+  }
+  return out;
+}
 
 /** A dose before this minute of the day belongs to the evening before (a bedtime medicine taken at 00:20 is "late", not "early"). */
 const NIGHT_END_MIN = 4 * 60;
@@ -301,7 +319,7 @@ export function timedDoses(entries: readonly LoggedDose[], from: string, timeZon
 
 /**
  * "When you take it" (mobile): for each medicine with at least 10 timed doses in 90 days, the days split at the median
- * time of their first dose, and the next day's outcome (Recovery, HRV or Sleep, as Insights' metric) averaged on each
+ * time of their evening dose (eveningDoses), and the next day's outcome (Recovery, HRV or Sleep, as Insights' metric) averaged on each
  * side. Medicines whose doses all fall within half an hour of each other are left out: there's no "when" to compare.
  */
 export function medTiming(
@@ -309,12 +327,7 @@ export function medTiming(
   outcome: (day: string) => number | null | undefined,
   labelOf: (tag: string) => string,
 ): MedTimingRow[] {
-  const first = new Map<string, Map<string, number>>();
-  for (const d of doses) {
-    const days = first.get(d.tag) ?? new Map<string, number>();
-    days.set(d.day, Math.min(days.get(d.day) ?? Infinity, d.minute));
-    first.set(d.tag, days);
-  }
+  const first = eveningDoses(doses);
   const out: MedTimingRow[] = [];
   for (const [tag, days] of first) {
     const rows = [...days].map(([day, minute]) => ({ minute, next: outcome(addDays(day, 1)) })).filter((r): r is { minute: number; next: number } => finite(r.next));
@@ -382,7 +395,7 @@ export async function getMedicineTiming(metric: ImpactMetricKey = "recovery", ct
 export type DoseTimingItem = {
   tag: string;
   label: string;
-  /** The split, "08:30": earlier days took their first dose before it. */
+  /** The split, "08:30": earlier evenings' dose came before it. */
   split: string;
   early: { n: number; avg: number; from: string; to: string };
   late: { n: number; avg: number; from: string; to: string };
@@ -398,7 +411,7 @@ export type DoseTimingVM = { metric: ImpactMetricKey; unit: string; items: DoseT
 /**
  * Like medTiming, but keeps the medicines it can't split and says why (for the Coach's "when" answer), and adds a
  * bootstrap CI so the early-vs-late difference carries the same uncertainty as the yes/no impacts. The split is each
- * day's first dose; a medicine needs enough timed days, enough on each side, and the two halves at least half an hour
+ * day's evening dose (eveningDoses); a medicine needs enough timed days, enough on each side, and the two halves at least half an hour
  * apart — doses all around one time have no "when" to compare.
  */
 export function doseTiming(
@@ -406,12 +419,7 @@ export function doseTiming(
   outcome: (day: string) => number | null | undefined,
   labelOf: (tag: string) => string,
 ): { items: DoseTimingItem[]; needsMore: DoseTimingReason[] } {
-  const first = new Map<string, Map<string, number>>();
-  for (const d of doses) {
-    const days = first.get(d.tag) ?? new Map<string, number>();
-    days.set(d.day, Math.min(days.get(d.day) ?? Infinity, d.minute));
-    first.set(d.tag, days);
-  }
+  const first = eveningDoses(doses);
   const items: DoseTimingItem[] = [];
   const needsMore: DoseTimingReason[] = [];
   for (const [tag, days] of first) {

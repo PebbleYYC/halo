@@ -160,14 +160,14 @@ describe("coach tools", () => {
   });
 
   it("answers a dosing-time question by comparing early vs late dose days, scoped to the medicine", async () => {
-    // A fresh seeded phone, plus 14 days of a medicine dosed alternately at 08:00 and 11:00.
+    // A fresh seeded phone, plus 14 days of a medicine dosed alternately at 20:00 and 23:00.
     const store = new MemoryStore();
     await seedDemo(store, { today: TODAY, timeZone: TZ, now: NOW });
     await runPipeline(store, PROFILE, { today: TODAY });
     const rows = [];
     for (let i = 0; i < 14; i++) {
       const day = addDays("2026-09-17", i);
-      const ts = fromWall(`${day}T${i % 2 ? "11" : "08"}:00`, TZ);
+      const ts = fromWall(`${day}T${i % 2 ? "23" : "20"}:00`, TZ);
       rows.push({ id: `d${i}`, type: "medication", ts, day, data: { name: "Bupropion XL" }, createdAt: ts, source: "pulse" as const });
     }
     await store.addLoggedEntries(rows);
