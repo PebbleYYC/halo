@@ -111,7 +111,12 @@ function tailFill<T extends Classified>(type: ReadType, records: T[], kept: T[],
   const startOf = (r: T) => Date.parse(r.startTime ?? r.time ?? "") / 1000;
   const endOf = (r: T) => Date.parse(r.endTime ?? r.time ?? r.startTime ?? "") / 1000;
   let lastEnd = -Infinity;
-  for (const r of kept) if (isFitbit(type, r) && dayOf(type, r, tz) === today) lastEnd = Math.max(lastEnd, endOf(r));
+  let band: Classified["metadata"] | undefined;
+  for (const r of kept)
+    if (isFitbit(type, r) && dayOf(type, r, tz) === today && endOf(r) > lastEnd) {
+      lastEnd = endOf(r);
+      band = r.metadata;
+    }
   const bySource = new Map<string, { total: number; rs: T[] }>();
   for (const r of records) {
     if (isFitbit(type, r) || dayOf(type, r, tz) !== today || !(startOf(r) >= lastEnd)) continue;
@@ -124,7 +129,11 @@ function tailFill<T extends Classified>(type: ReadType, records: T[], kept: T[],
   const best = [...bySource.values()].sort((a, b) => b.total - a.total)[0];
   if (!best) return kept;
   const have = new Set(kept);
-  return [...kept, ...best.rs.filter((r) => !have.has(r))];
+  // Filed under the band's source: the importer takes each source's day total and keeps the largest, so the tail must
+  // add to the band's steps, not stand beside them as a second, smaller day.
+  // The band's own origin and device (the importer's source key), or the plain Fitbit app when it has none today.
+  const asBand = (r: T): T => ({ ...r, metadata: { ...r.metadata, dataOrigin: band?.dataOrigin ?? FITBIT_PACKAGES[0], device: band ? band.device : null }, tail: true });
+  return [...kept, ...best.rs.filter((r) => !have.has(r)).map(asBand)];
 }
 
 type Classified = {
