@@ -117,3 +117,25 @@ describe("the stored choice", () => {
     expect(storage.has(IMPORT_STATE_KEY)).toBe(false);
   });
 });
+
+describe("today's tail (steps)", () => {
+  const now = Date.parse("2026-11-21T03:20:00Z") / 1000; // 21:20 in Regina
+  const tz = "America/Regina";
+  const rec = (origin: string, device: number, start: string, end: string, count: number) => ({ metadata: { dataOrigin: origin, device: { type: device } }, startTime: start, endTime: end, count });
+  const fitbit = (s: string, e: string, n: number) => rec("com.fitbit.FitbitMobile", 0, s, e, n);
+  it("fills after the band's last record from the larger phone source, once", () => {
+    const records = [
+      fitbit("2026-11-20T15:00:00Z", "2026-11-20T15:10:00Z", 500),
+      fitbit("2026-11-20T20:30:00Z", "2026-11-20T20:42:00Z", 300), // 14:42 local
+      rec("com.google.android.apps.fitness", 2, "2026-11-20T20:00:00Z", "2026-11-20T20:10:00Z", 400), // before: dropped
+      rec("com.google.android.apps.fitness", 2, "2026-11-20T22:00:00Z", "2026-11-20T23:00:00Z", 5000),
+      rec("android", 2, "2026-11-20T22:00:00Z", "2026-11-20T23:00:00Z", 4800),
+    ];
+    const kept = applySourcePolicy("Steps", records, "fitbit_only", tz, now);
+    expect(kept.map((r) => r.count)).toEqual([500, 300, 5000]);
+  });
+  it("leaves other days and types alone", () => {
+    const yesterday = [fitbit("2026-11-19T20:30:00Z", "2026-11-19T20:42:00Z", 300), rec("com.google.android.apps.fitness", 2, "2026-11-19T22:00:00Z", "2026-11-19T23:00:00Z", 5000)];
+    expect(applySourcePolicy("Steps", yesterday, "fitbit_only", tz, now).map((r) => r.count)).toEqual([300]);
+  });
+});

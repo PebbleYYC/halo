@@ -91,7 +91,41 @@ export async function setSourcePolicy(policy: SourcePolicy): Promise<void> {
 }
 
 /** Origins to pass to Health Connect's dataOriginFilter (cheaper than filtering after the read), or none. */
-export const originFilter = (policy: SourcePolicy): string[] | undefined => (policy === "fitbit_only" ? [...FITBIT_PACKAGES] : undefined);
+export const originFilter = (policy: SourcePolicy, type?: ReadType): string[] | undefined =>
+  policy === "fitbit_only" && !(type && TAIL_TYPES.has(type)) ? [...FITBIT_PACKAGES] : undefined;
+
+/**
+ * Today's tail: the Google Health app writes the band's steps into Health Connect only now and then, so by evening it
+ * may hold the band's steps to mid-afternoon while the phone's own count runs to now. For steps and distance, today
+ * only, the phone's records after the band's last one fill the gap, from one source (the one with the most, so two
+ * phone counters never add up). When the band's records catch up, their end passes the filled ones and those drop out.
+ */
+export const TAIL_TYPES = new Set<ReadType>(["Steps", "Distance"]);
+
+function amountOf(r: Classified & { count?: number; distance?: { inMeters?: number } }): number {
+  return r.count ?? r.distance?.inMeters ?? 0;
+}
+
+function tailFill<T extends Classified>(type: ReadType, records: T[], kept: T[], tz: string, nowS: number): T[] {
+  const today = localDay(nowS, tz);
+  const startOf = (r: T) => Date.parse(r.startTime ?? r.time ?? "") / 1000;
+  const endOf = (r: T) => Date.parse(r.endTime ?? r.time ?? r.startTime ?? "") / 1000;
+  let lastEnd = -Infinity;
+  for (const r of kept) if (isFitbit(type, r) && dayOf(type, r, tz) === today) lastEnd = Math.max(lastEnd, endOf(r));
+  const bySource = new Map<string, { total: number; rs: T[] }>();
+  for (const r of records) {
+    if (isFitbit(type, r) || dayOf(type, r, tz) !== today || !(startOf(r) >= lastEnd)) continue;
+    const key = `${r.metadata?.dataOrigin ?? "?"}/${r.metadata?.device?.type ?? "?"}`;
+    const g = bySource.get(key) ?? { total: 0, rs: [] };
+    g.total += amountOf(r);
+    g.rs.push(r);
+    bySource.set(key, g);
+  }
+  const best = [...bySource.values()].sort((a, b) => b.total - a.total)[0];
+  if (!best) return kept;
+  const have = new Set(kept);
+  return [...kept, ...best.rs.filter((r) => !have.has(r))];
+}
 
 type Classified = {
   metadata?: { dataOrigin?: string; device?: { type?: number } | null; recordingMethod?: number };
@@ -138,14 +172,17 @@ function dayOf(type: ReadType, r: Classified, tz: string): string | null {
  * Fitbit records when that day has any of this type, else all of that day's. "all": everything (the importer then
  * takes the largest source for measured totals).
  */
-export function applySourcePolicy<T extends Classified>(type: ReadType, records: T[], policy: SourcePolicy, tz: string): T[] {
-  return finish(applySourcePolicySteps(type, records, policy, tz));
+export function applySourcePolicy<T extends Classified>(type: ReadType, records: T[], policy: SourcePolicy, tz: string, nowS?: number): T[] {
+  return finish(applySourcePolicySteps(type, records, policy, tz, nowS));
 }
 
 /** applySourcePolicy, pausing as it goes (src/lib/yield.ts): "fitbit_first" reads a local day per record, an Intl call each. */
-export function* applySourcePolicySteps<T extends Classified>(type: ReadType, records: T[], policy: SourcePolicy, tz: string): Steps<T[]> {
+export function* applySourcePolicySteps<T extends Classified>(type: ReadType, records: T[], policy: SourcePolicy, tz: string, nowS = Math.floor(Date.now() / 1000)): Steps<T[]> {
   if (policy === "all") return records;
-  if (policy === "fitbit_only") return records.filter((r) => isFitbit(type, r));
+  if (policy === "fitbit_only") {
+    const kept = records.filter((r) => isFitbit(type, r));
+    return TAIL_TYPES.has(type) ? tailFill(type, records, kept, tz, nowS) : kept;
+  }
   const fitbitDays = new Set<string | null>();
   let n = 0;
   for (const r of records) {
@@ -157,7 +194,7 @@ export function* applySourcePolicySteps<T extends Classified>(type: ReadType, re
     if (++n % PAUSE_EVERY === 0) yield;
     if (isFitbit(type, r) || !fitbitDays.has(dayOf(type, r, tz))) out.push(r);
   }
-  return out;
+  return TAIL_TYPES.has(type) ? tailFill(type, records, out, tz, nowS) : out;
 }
 
 /** "app/device: count" per origin and device type, most records first, for the diagnostics list. */

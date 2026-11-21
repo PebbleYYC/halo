@@ -29,7 +29,7 @@ import { addDays, daysBetween, localDay, localMidnight } from "@/lib/time";
 import { slice, sliced } from "@/lib/yield";
 import { resolveMaxHr } from "@/pipeline/index";
 import { forgetChanges, readImportState, TOKEN_KEY, TYPES_KEY, writeImportState } from "@/health/importState";
-import { applySourcePolicySteps, getSourcePolicy, originBreakdown, originFilter, type SourcePolicy } from "@/health/sourcePolicy";
+import { applySourcePolicySteps, getSourcePolicy, originBreakdown, originFilter, TAIL_TYPES, type SourcePolicy } from "@/health/sourcePolicy";
 
 export { forgetChanges };
 
@@ -349,7 +349,7 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       for (const type of WINDOW_TYPES) {
         step(`read:${type}`, done, total);
         if (granted.has(type)) {
-          const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, origins, alive(type)), policy, tz));
+          const records = await sliced(applySourcePolicySteps(type, await readAll(type, range(type), undefined, TAIL_TYPES.has(type) ? undefined : origins, alive(type)), policy, tz));
           (input as Record<string, unknown[]>)[type] = records;
           counts[`read:${type}`] = records.length;
           recordsKept += records.length;
@@ -395,11 +395,11 @@ export async function syncHealthConnect(store: Store, opts: SyncOptions): Promis
       const spill: { HeartRate: HeartRateRecords; Steps: StepsRecords } = { HeartRate: [], Steps: [] };
       /** The day's records of `type`: those begun on it, and those begun before it that run past its midnight. */
       const dayRecords = async <T extends "HeartRate" | "Steps">(type: T, i: number, dayStart: number, dayRange: { start: Date; end: Date }) => {
-        const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, origins, alive(type)), policy, tz));
+        const read = await sliced(applySourcePolicySteps(type, await readAll(type, dayRange, undefined, TAIL_TYPES.has(type) ? undefined : origins, alive(type)), policy, tz));
         recordsKept += read.length;
         const before =
           i === 0
-            ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, origins, alive(type)), policy, tz))
+            ? await sliced(applySourcePolicySteps(type, await readAll(type, { start: new Date((dayStart - READ_LEAD_S) * 1000), end: dayRange.start }, undefined, TAIL_TYPES.has(type) ? undefined : origins, alive(type)), policy, tz))
             : spill[type];
         return uniqueRecords([...before.filter((r) => ts(r.endTime) > dayStart), ...read]) as RecordsOf<T>;
       };
