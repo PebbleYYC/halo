@@ -133,7 +133,8 @@ describe("syncHealthConnect re-import", () => {
     expect((await store.readSteps(sec("2026-10-06T00:00:00Z"), sec("2026-10-07T00:00:00Z"))).map((s) => s.v)).toEqual([120, 120, 120, 120, 120]);
     expect(JSON.parse(storage.get(IMPORT_STATE_KEY)!)).toEqual({ version: IMPORT_VERSION, policy: "fitbit_only" });
     // Health Connect was asked for the Fitbit app's records only.
-    expect(hc.readAll.mock.calls.every((c) => JSON.stringify(c[3]) === JSON.stringify([FITBIT]))).toBe(true);
+    // Every read is filtered to Fitbit, except steps and distance (today's tail may come from the phone).
+    expect(hc.readAll.mock.calls.every((c) => (c[0] === "Steps" || c[0] === "Distance" ? c[3] === undefined : JSON.stringify(c[3]) === JSON.stringify([FITBIT])))).toBe(true);
   });
 
   it("keeps the old history when a re-import is cut short: it clears as it goes, not all at once", async () => {
