@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/time";
 import type { DayRow } from "./common";
-import { buildVariables, clockOf, passes, runTest, screen, tTwoSided, weekdayOf, type DiscoveryData } from "./discovery";
+import { buildVariables, clockOf, passes, runTest, screen, screenPairs, tTwoSided, weekdayOf, type DiscoveryData } from "./discovery";
 
 const START = "2026-06-01"; // a Monday
 const TZ = "UTC";
@@ -92,5 +92,23 @@ describe("screen", () => {
     const t = runTest(vars, "bedtime", "recovery", 1, 2);
     expect(t?.id).toBe("bedtime>recovery@1/2");
     expect(t!.hi.n + t!.lo.n).toBeLessThanOrEqual(16);
+  });
+});
+
+describe("workouts as variables", () => {
+  it("turns a recurring workout into a yes/no day and tests it against that evening's bedtime", () => {
+    const add = addDays;
+    const build = buildVariables;
+    const rows = Array.from({ length: 70 }, (_, i) => {
+      const day = add("2026-06-01", i);
+      const start = Date.parse(`${add(day, -1)}T23:00:00Z`) / 1000;
+      return { day, recovery: { value: 60, hrvZ: 0, inputs: { rhr: 55 } }, sleep: { performance: 80, main: { start, end: start + 28800, asleepMin: 440 } } } as never;
+    });
+    const workouts = rows.filter((_, i) => i % 7 === 2).map((r: { day: string }) => ({ day: r.day, name: "Basketball" }));
+    const vars = build({ rows, journal: [], tagLabel: (t) => t, doses: [], doseLabel: (t) => t, workouts, timeZone: "UTC", lastDay: add("2026-06-01", 68) });
+    const v = vars.find((x) => x.key === "workout:basketball");
+    expect(v).toMatchObject({ label: "Basketball day", group: "day", flag: true });
+    expect(screenPairs(vars)).toContainEqual({ x: "workout:basketball", y: "bedtime", lag: 0 });
+    expect(screenPairs(vars)).toContainEqual({ x: "workout:basketball", y: "recovery", lag: 1 });
   });
 });

@@ -1,5 +1,6 @@
 // The source policy on plain record objects: which Health Connect records the import keeps.
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { stepsPerDay } from "./import";
 
 const storage = new Map<string, string>();
 vi.mock("@react-native-async-storage/async-storage", () => ({
@@ -142,7 +143,6 @@ describe("today's tail (steps)", () => {
   });
 });
 
-import { stepsPerDay } from "./import";
 describe("today's tail adds to the band's day", () => {
   it("sums band and tail into one day total", () => {
     const now = Date.parse("2026-11-21T03:20:00Z") / 1000;

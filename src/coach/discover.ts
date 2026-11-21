@@ -3,7 +3,7 @@
 // that hold up kept in AsyncStorage for Home's card and the weekly notification. No React here, so the background task
 // runs it after a sync and the app runs it when Home opens on a day without one. Never throws.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { generateText, isStepCount } from "ai";
+import { isStepCount, streamText } from "ai";
 import { loadDiscovery, passes, screen } from "@/queries/discovery";
 import type { QueryCtx } from "@/queries/ctx";
 import { checkFindings, DISCOVER_INSTRUCTIONS, discoverPrompt, discoverTools, proposedCount, shortlistOf, TestFamily, type Finding } from "./discoverText";
@@ -89,7 +89,9 @@ async function run(ctx: QueryCtx, force: boolean): Promise<SavedFindings | null>
     const timer = setTimeout(() => ctl.abort(), 90_000);
     let next: SavedFindings;
     try {
-      const result = await generateText({
+      // Streamed like the chat (the same path on the phone's fetch); the answer is the last step's text.
+      let failure: unknown = null;
+      const result = streamText({
         model,
         instructions: DISCOVER_INSTRUCTIONS,
         prompt: discoverPrompt(vars, shortlistOf(screened), s.instructions),
@@ -98,22 +100,27 @@ async function run(ctx: QueryCtx, force: boolean): Promise<SavedFindings | null>
         maxOutputTokens: 4000,
         maxRetries: 0,
         abortSignal: ctl.signal,
+        onError: ({ error }) => {
+          failure ??= error;
+        },
       });
+      const text = await result.text;
+      if (failure) throw failure;
       // Out of steps while still testing: no answer, which isn't "nothing found".
-      if (!result.text.trim()) throw new Error("no answer");
-      const findings = checkFindings(result.text, family);
+      if (!text.trim()) throw new Error("no answer");
+      const findings = checkFindings(text, family);
       const all = family.results;
       next = {
         day: ctx.today,
         at: Date.now(),
         findings,
         tried: ctx.today,
-        stats: { at: Date.now(), variables: vars.length, tested: all.length, cleared: all.filter(passes).length, proposed: proposedCount(result.text), kept: findings.length },
+        stats: { at: Date.now(), variables: vars.length, tested: all.length, cleared: all.filter(passes).length, proposed: proposedCount(text), kept: findings.length },
       };
     } catch (e) {
-      console.warn("[discover]", e instanceof Error ? e.name : "error");
+      console.warn("[discover]", e instanceof Error ? `${e.name}: ${e.message}` : "error");
       // Keep the last findings, still dated when they were made; mark the attempt so the retry waits.
-      const why = e instanceof Error ? (e.name === "Error" ? e.message : e.name) : "error";
+      const why = whyFailed(e);
       next = { day: saved?.day ?? "", at: saved?.at ?? Date.now(), findings: saved?.findings ?? [], tried: ctx.today, failedAt: Date.now(), error: why.slice(0, 80), stats: { at: Date.now(), variables: vars.length, tested: family.results.length, cleared: family.results.filter(passes).length, proposed: 0, kept: 0 } };
     } finally {
       clearTimeout(timer);
@@ -125,6 +132,19 @@ async function run(ctx: QueryCtx, force: boolean): Promise<SavedFindings | null>
     console.warn("[discover]", e instanceof Error ? e.message : String(e));
     return null;
   }
+}
+
+/** A failed look in a few plain words: the kind of failure, never the provider's raw reply (it can echo the request). */
+export function whyFailed(e: unknown): string {
+  if (!(e instanceof Error)) return "something went wrong";
+  const status = (e as { statusCode?: number }).statusCode;
+  if (e.name === "AbortError" || /abort/i.test(e.message)) return "took too long";
+  if (status === 429) return "the provider’s rate limit";
+  if (status === 401 || status === 403) return "the key was refused";
+  if (status != null && status >= 500) return "the provider had an error";
+  if (/network|failed to fetch|connection/i.test(e.message)) return "no connection";
+  if (e.message === "no answer") return "no answer";
+  return `${e.name}: ${e.message}`.slice(0, 80);
 }
 
 /** Keys dismissed and still inside their DISMISS_DAYS, with when each ends (unix seconds). */

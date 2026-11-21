@@ -11,8 +11,10 @@
 //   day      what happened during D (Strain, steps, stress);
 //   evening  the evening of D (getting into bed that night, a medicine's evening dose, from 15:00);
 //   journal  D's check-in answers (yes/no, or a count);
+//   workouts (group day) D had a recorded workout of that kind (Basketball, Run), or any workout;
 //   weekday  D is that weekday.
 // A test pairs x on D with y on D + lag (lag 1: the night after; lag 0: the same day).
+import { workoutName } from "@/lib/activityTypes";
 import { addDays, localMinutes } from "@/lib/time";
 import { withMedicineNoDays } from "@/lib/medicine";
 import { finite, loadDays, type DayRow, type QueryCtx, toStrain } from "./common";
@@ -84,6 +86,8 @@ export type DiscoveryData = {
   tagLabel: (tag: string) => string;
   doses: readonly { tag: string; day: string; minute: number }[];
   doseLabel: (tag: string) => string;
+  /** Recorded workouts by name ("Basketball"): each recurring kind becomes a yes/no day variable. */
+  workouts?: readonly { day: string; name: string }[];
   timeZone: string;
   /** The last finished day: the medicine no-days end here, and a day's own totals count up to it. */
   lastDay: string;
@@ -140,6 +144,20 @@ export function buildVariables(d: DiscoveryData): Variable[] {
     const yes = [...m.values()].filter((v) => v > 0).length;
     if (yes >= DISCOVERY.minArm && m.size - yes >= DISCOVERY.minArm) add({ key: `tag:${tag}`, label: d.tagLabel(tag), unit: "flag", group: "journal", flag: true }, m);
   }
+  // Workouts: a kind that recurs (8 days with, 8 without) is its own yes/no; any workout at all is one more.
+  const finished = d.rows.map((r) => r.day).filter((day) => day <= d.lastDay);
+  const kinds = new Map<string, Set<string>>();
+  for (const w of d.workouts ?? []) {
+    const name = w.name.trim();
+    if (!name || w.day > d.lastDay) continue;
+    kinds.set(name, (kinds.get(name) ?? new Set()).add(w.day));
+  }
+  const workoutVar = (key: string, label: string, on: Set<string>) => {
+    const yes = finished.filter((day) => on.has(day)).length;
+    if (yes >= DISCOVERY.minArm && finished.length - yes >= DISCOVERY.minArm) add({ key, label, unit: "flag", group: "day", flag: true }, new Map(finished.map((day) => [day, on.has(day) ? 1 : 0])));
+  };
+  for (const [name, on] of kinds) workoutVar(`workout:${name.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`, `${name} day`, on);
+  if (kinds.size) workoutVar("workout:any", "Any workout day", new Set([...kinds.values()].flatMap((s) => [...s])));
   const days = d.rows.map((r) => r.day);
   for (let w = 0; w < 7; w++) add({ key: `weekday:${w}`, label: `${WEEKDAYS[w]}`, unit: "flag", group: "weekday", flag: true }, new Map(days.map((day) => [day, weekdayOf(day) === w ? 1 : 0])));
   return out;
@@ -297,10 +315,13 @@ export function runTest(vars: ReadonlyMap<string, Variable>, x: string, y: strin
 export function screenPairs(vars: readonly Variable[]): { x: string; y: string; lag: 0 | 1 }[] {
   const outcomesNight = vars.filter((v) => v.group === "night" && v.key !== "wake");
   const outcomesDay = vars.filter((v) => v.key === "stress" || v.key === "strain");
+  // Bedtime is the evening of the same day: what you did that day can push it later.
+  const bedtime = vars.find((v) => v.key === "bedtime");
   const out: { x: string; y: string; lag: 0 | 1 }[] = [];
   for (const x of vars) {
     if (x.group === "day" || x.group === "evening" || x.group === "journal" || x.group === "weekday") for (const y of outcomesNight) out.push({ x: x.key, y: y.key, lag: 1 });
     if (x.group === "night" || x.group === "weekday") for (const y of outcomesDay) out.push({ x: x.key, y: y.key, lag: 0 });
+    if (bedtime && (x.group === "day" || x.group === "journal" || x.group === "weekday")) out.push({ x: x.key, y: bedtime.key, lag: 0 });
   }
   return out;
 }
@@ -344,7 +365,13 @@ export function numbersOf(r: TestResult, vars: ReadonlyMap<string, Variable>): s
 /** The day's variables from the store. */
 export async function loadDiscovery(ctx: QueryCtx): Promise<Variable[]> {
   const from = addDays(ctx.today, -DISCOVERY.days);
-  const [rows, journal, tags, entries] = await Promise.all([loadDays(ctx, from, ctx.today), ctx.store.allJournal(), tagRows(ctx.store), ctx.store.loggedEntries(ctx.now - (DISCOVERY.days + 1) * 86_400, 8000)]);
+  const [rows, journal, tags, entries, exercises] = await Promise.all([
+    loadDays(ctx, from, ctx.today),
+    ctx.store.allJournal(),
+    tagRows(ctx.store),
+    ctx.store.loggedEntries(ctx.now - (DISCOVERY.days + 1) * 86_400, 8000),
+    ctx.store.allExercises(),
+  ]);
   const label = new Map(tags.map((t) => [t.tag, t.label]));
   const { doses, nameByTag } = timedDoses(entries, from, ctx.timeZone);
   return buildVariables({
@@ -353,6 +380,7 @@ export async function loadDiscovery(ctx: QueryCtx): Promise<Variable[]> {
     tagLabel: (t) => label.get(t) ?? t,
     doses,
     doseLabel: (t) => label.get(t) ?? nameByTag.get(t) ?? t,
+    workouts: exercises.filter((e) => e.day >= from && e.day <= ctx.today).map((e) => ({ day: e.day, name: workoutName(e) })),
     timeZone: ctx.timeZone,
     lastDay: addDays(ctx.today, -1),
   });

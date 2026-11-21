@@ -150,16 +150,17 @@ function PatternsGroup() {
   );
 }
 
-/** What the Coach remembers about you, newest first, each with a delete; nothing until it has saved something. */
+/** What the Coach remembers about you, newest first, each with a delete; says so when there's nothing yet. */
 function MemoryGroup() {
-  const all = useFacts();
-  if (!all?.length) return null;
+  const all = useFacts() ?? [];
   return (
-    <InsetGroup title="Memory" footer="Things you’ve told the coach that it keeps for later chats, on this phone only. Ask it to forget something, or delete it here.">
-      {[...all].reverse().map((f) => (
-        <FactRow key={f.id} text={f.text} onDelete={() => void forget(f.id).then(() => toast("Forgotten."))} />
-      ))}
-      <ButtonRow label="Forget everything" danger onPress={() => void forgetAll().then(() => toast("Memory cleared."))} />
+    <InsetGroup title="Memory" footer="What the coach keeps between chats, on this phone only. Tell it “remember that…” in a chat, or ask it to forget.">
+      {all.length ? (
+        [...all].reverse().map((f) => <FactRow key={f.id} text={f.text} onDelete={() => void forget(f.id).then(() => toast("Forgotten."))} />)
+      ) : (
+        <InfoRow label="Nothing saved yet" value="" />
+      )}
+      {all.length ? <ButtonRow label="Forget everything" danger onPress={() => void forgetAll().then(() => toast("Memory cleared."))} /> : null}
     </InsetGroup>
   );
 }

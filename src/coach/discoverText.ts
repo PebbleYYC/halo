@@ -11,8 +11,8 @@ export type Finding = { key: string; title: string; body: string; ask: string; s
 
 export const DISCOVER_INSTRUCTIONS = [
   "You are Halo's health coach, looking through one person's own wearable and journal data for patterns worth telling them about before they ask.",
-  "You get the list of daily variables and the strongest results of a screen that tested every pairing of something they do (a day's strain, steps or stress, their bedtime, a medicine's dose time, a journal answer, the weekday) against the night after, and every night against the day it starts.",
-  "Use test_relationship to check your own ideas: any two variables, lag 1 (x on a day, y the night after) or lag 0 (same day), optionally only on one weekday (for example steps against the next night's REM sleep, only on Saturdays). At lag 0, x must be a night or weekday variable, so the cause comes first. Each test is added to the same multiple-comparison correction, so test what you think is plausible, not everything.",
+  "You get the list of daily variables and the strongest results of a screen that tested every pairing of something they do (a day's strain, steps or stress, a recorded workout such as a sport they play, their bedtime, a medicine's dose time, a journal answer, the weekday) against the night after, every night against the day it starts, and every day against that evening's bedtime.",
+  "Use test_relationship to check your own ideas: any two variables, lag 1 (x on a day, y the night after) or lag 0 (same day), optionally only on one weekday (for example steps against the next night's REM sleep, only on Saturdays). At lag 0, x must be a night or weekday variable, or y must be the bedtime, so the cause comes first. Each test is added to the same multiple-comparison correction, so test what you think is plausible, not everything.",
   "Then pick at most 3 findings that are actionable and not obvious (time asleep raising the sleep score is obvious; a weekday that runs low, a behaviour, a timing, or a habit with a clear effect is not). Prefer findings with large effects, and combine tests when one explains another.",
   "Only cite results whose clearsBar is true. State only numbers that appear in the cited results, exactly as given, with their units. No diagnoses, no promises, no other numbers or dates.",
   'Finish with JSON only: [{"tests": ["<id>", ...], "title": "<at most 7 words, what to do>", "body": "<at most 2 sentences, second person>", "ask": "<a question they could ask you to dig deeper>"}]. The first test id is the main evidence. Reply [] if nothing clears the bar or is worth saying.',
@@ -58,7 +58,8 @@ export class TestFamily {
   test(x: string, y: string, lag: 0 | 1, weekday: number | null): ReturnType<typeof describeResult> | { error: string } {
     const vx = this.byKey.get(x);
     if (!vx || !this.byKey.has(y)) return { error: "Unknown variable key: use one from the list." };
-    if (lag === 0 && vx.group !== "night" && vx.group !== "weekday") return { error: "At lag 0 the outcome comes before x: use lag 1, or a night or weekday x." };
+    const vy = this.byKey.get(y)!;
+    if (lag === 0 && vx.group !== "night" && vx.group !== "weekday" && !(vy.group === "evening" && vx.group !== "evening")) return { error: "At lag 0 the outcome comes before x: use lag 1, a night or weekday x, or bedtime as y." };
     const r = runTest(this.byKey, x, y, lag, weekday);
     if (!r) return { error: "Not enough days on each side to compare (8 needed)." };
     if (!this.all.has(r.id)) {
