@@ -6,7 +6,7 @@
 // web mounts it in the app layout).
 import * as React from "react";
 import { InteractionManager } from "react-native";
-import { Tabs, useRouter, type Href } from "expo-router";
+import { Tabs, usePathname, useRouter, type Href } from "expo-router";
 import { useHasCoachKey } from "@/coach/session";
 import { CheckInSheetHost, useCheckInAction } from "@/screens/journal/CheckInSheet";
 import { useSyncProgress } from "@/state/app";
@@ -26,6 +26,14 @@ function TabPreloader() {
   const syncing = useSyncProgress() != null;
   const left = React.useRef<string[]>(["/tab-sleep", "/tab-activity", "/health", "/journal"]);
   const first = React.useRef(true);
+  // A tab already opened is built: prefetching the one on screen swapped it for a hidden preloaded copy (the Journal went
+  // black when a log's sync finished while it was open). Opened tabs leave the list, and the one showing is skipped.
+  const path = usePathname();
+  const here = React.useRef(path);
+  React.useEffect(() => {
+    here.current = path;
+    left.current = left.current.filter((h) => h !== path);
+  }, [path]);
   React.useEffect(() => {
     if (syncing || !left.current.length) return;
     let cancelled = false;
@@ -36,7 +44,7 @@ function TabPreloader() {
       left.current.forEach((href, i) => {
         timers.push(
           setTimeout(() => {
-            if (cancelled) return;
+            if (cancelled || here.current === href || !left.current.includes(href)) return;
             // A transition, so React builds the tab in slices and a tap meanwhile isn't held behind it.
             React.startTransition(() => router.prefetch(href as Href));
             left.current = left.current.filter((h) => h !== href);
