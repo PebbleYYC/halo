@@ -30,7 +30,7 @@ import { unitsKey } from "@/lib/units";
 import type { QueryCtx } from "@/queries/ctx";
 import { useAfterTransition } from "@/ui/components/AfterTransition";
 // Live heart rate over Bluetooth (display-only; never written to the Store), available to every screen.
-import { syncedRecently } from "./launchSync";
+import { OPEN_SYNC_S, syncedRecently } from "./launchSync";
 import { LiveBleProvider } from "./liveBle";
 // The person's display units (Settings › Units), part of the query context and the view-model cache's stamp.
 import { useUnits } from "./units";
@@ -317,7 +317,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void run(store, state.profile, state.source);
   }, [timeZone, store, state.profile, state.source, state.status, run]);
 
-  // Coming back to the foreground after 10 minutes away re-imports (Health Connect gets new nights while the app sleeps).
+  // Coming back to the foreground re-imports unless the last import is under two minutes old (Health Connect gets new
+  // data while the app sleeps, and Fitbit writes it there every few minutes).
+  const lastSync = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    lastSync.current = state.sync.lastSyncTs;
+  }, [state.sync.lastSyncTs]);
   React.useEffect(() => {
     let backgroundAt: number | null = null;
     const sub = RNAppState.addEventListener("change", (next) => {
@@ -328,9 +333,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         backgroundAt ??= Date.now();
         return;
       }
-      const away = backgroundAt === null ? 0 : Date.now() - backgroundAt;
+      const wasAway = backgroundAt !== null;
       backgroundAt = null;
-      if (away > 10 * 60_000 && store && state.profile && state.source) return void run(store, state.profile, state.source);
+      if (wasAway && store && state.profile && state.source && !syncedRecently(lastSync.current, zone.current)) return void run(store, state.profile, state.source);
       // Back sooner than that: no sync of our own, but the background task may have scored new data meanwhile (inside
       // this very process, without the screens hearing of it). If it has, every screen reads again.
       const st = store;
@@ -353,6 +358,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     scoredDay.current = today;
     if (store && state.profile && state.source && state.status === "ready") void run(store, state.profile, state.source);
   }, [today, store, state.profile, state.source, state.status, run]);
+
+  // Open and on screen: an import older than five minutes is redone, so new data shows without leaving the app.
+  React.useEffect(() => {
+    if (!store || !state.profile || !state.source || state.source === "demo" || state.status !== "ready") return;
+    const id = setInterval(() => {
+      if (RNAppState.currentState !== "active" || running.current) return;
+      if (lastSync.current != null && Date.now() / 1000 - lastSync.current < OPEN_SYNC_S) return;
+      void run(store, state.profile!, state.source!);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [store, state.profile, state.source, state.status, run]);
 
   /**
    * The live reading: one short Health Connect read (the Store alone in demo), no scoring run. Skipped while a full
