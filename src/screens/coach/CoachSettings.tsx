@@ -8,6 +8,9 @@ import { useRouter, type Href } from "expo-router";
 import { BotMessageSquare, Trash2 } from "lucide-react-native";
 import { MAX_NOTES } from "@/coach/instructions";
 import { forget, forgetAll, useFacts } from "@/coach/memory";
+import { discover, savedFindings, subscribeFindings, type SavedFindings } from "@/coach/discover";
+import { clock } from "@/lib/format";
+import { useApp, useQueryCtx } from "@/state/app";
 import { providerLabel, providerOf } from "@/coach/providers";
 import { useCoachSetup } from "@/coach/session";
 import { deleteAllChats, removeProvider, setConsent, setInstructions, type CoachSetup } from "@/coach/storage";
@@ -73,6 +76,7 @@ function Settings({ setup }: { setup: CoachSetup }) {
               />
           </RowBox>
         </InsetGroup>
+        <PatternsGroup />
         <MemoryGroup />
         <InsetGroup footer="Your key is stored encrypted on this phone and never shown again. It is sent only to your provider.">
           <ButtonRow label={setup.provider ? "Change provider" : "Add key"} onPress={() => setOpen(true)} disabled={pending} />
@@ -103,6 +107,46 @@ function Settings({ setup }: { setup: CoachSetup }) {
         }
       />
     </View>
+  );
+}
+
+/**
+ * The Coach's daily look for patterns (src/coach/discover.ts): when it last looked, what it compared and what held up,
+ * or why it didn't finish, and Look now. So "nothing on Home" can be told apart from "nothing found".
+ */
+function PatternsGroup() {
+  const ctx = useQueryCtx();
+  const { timeZone } = useApp();
+  const [saved, setSaved] = React.useState<SavedFindings | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => {
+    const read = () => void savedFindings().then(setSaved);
+    read();
+    return subscribeFindings(read);
+  }, []);
+  const st = saved?.stats;
+  const when = st ? `${saved?.tried === ctx?.today ? "Today" : (saved?.tried ?? "")} ${clock(st.at, timeZone)}`.trim() : "Not yet";
+  const result = saved?.error
+    ? `Didn’t finish (${saved.error}). It tries again in a few hours, or tap Look now.`
+    : st
+      ? st.kept
+        ? `${st.kept} ${st.kept === 1 ? "pattern" : "patterns"} on Today, from ${st.tested.toLocaleString("en-US")} comparisons across ${st.variables} measures.`
+        : `${st.tested.toLocaleString("en-US")} comparisons across ${st.variables} measures; ${st.cleared} cleared the bar${st.proposed ? `, and none of the Coach’s ${st.proposed} write-ups held up to the numbers` : ""}. Nothing to show yet.`
+      : "The Coach looks once a day after a sync.";
+  return (
+    <InsetGroup title="Patterns" footer="Once a day the Coach compares your nights, days and journal for patterns that are clear in your own data, and puts the best on Today. More logged days, and behaviours like a sport you play, give it more to find.">
+      <InfoRow label="Last look" value={when} detail={result} />
+      <ButtonRow
+        label={busy ? "Looking…" : "Look now"}
+        disabled={busy || !ctx}
+        busy={busy}
+        onPress={() => {
+          if (!ctx) return;
+          setBusy(true);
+          void discover({ ...ctx, now: Math.floor(Date.now() / 1000) }, true).finally(() => setBusy(false));
+        }}
+      />
+    </InsetGroup>
   );
 }
 

@@ -92,6 +92,9 @@ export const numbersIn = (s: string): string[] => s.match(/\d+(?:[.:]\d+)?/g) ??
 const SUBJECT: Record<string, FindingSubject> = { recovery: "recovery", hrv: "recovery", rhr: "recovery", strain: "strain", stress: "stress" };
 const HREF: Record<FindingSubject, string> = { recovery: "/recovery", sleep: "/sleep", strain: "/strain", stress: "/health/stress" };
 
+/** How many findings the model proposed (before the checks), for Settings' status line. */
+export const proposedCount = (raw: string) => lastArray(raw)?.length ?? 0;
+
 /** The last JSON array in a text (the model may write a few words before it, brackets included). */
 function lastArray(raw: string): unknown[] | null {
   const end = raw.lastIndexOf("]");
