@@ -4,9 +4,9 @@
 // runs it after a sync and the app runs it when Home opens on a day without one. Never throws.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generateText, isStepCount } from "ai";
-import { loadDiscovery, screen } from "@/queries/discovery";
+import { loadDiscovery, passes, screen } from "@/queries/discovery";
 import type { QueryCtx } from "@/queries/ctx";
-import { checkFindings, DISCOVER_INSTRUCTIONS, discoverPrompt, discoverTools, shortlistOf, TestFamily, type Finding } from "./discoverText";
+import { checkFindings, DISCOVER_INSTRUCTIONS, discoverPrompt, discoverTools, proposedCount, shortlistOf, TestFamily, type Finding } from "./discoverText";
 import { deviceFetch } from "./net";
 import { modelFor } from "./providers";
 import { apiKey, coachSetup } from "./storage";
@@ -21,7 +21,17 @@ const RETRY_MS = 6 * 3600_000;
 export const SHOW_DAYS = 7;
 
 /** `day` the findings were made; `tried` the last day a run was attempted, `failedAt` when it failed (ms). */
-export type SavedFindings = { day: string; at: number; findings: Finding[]; tried?: string; failedAt?: number };
+export type SavedFindings = {
+  day: string;
+  at: number;
+  findings: Finding[];
+  tried?: string;
+  failedAt?: number;
+  /** The last look, for Settings › Coach: what was compared, what cleared the bar, what the model proposed and kept. */
+  stats?: { at: number; variables: number; tested: number; cleared: number; proposed: number; kept: number };
+  /** Why the last look failed (an error's name or message), cleared on success. */
+  error?: string;
+};
 
 /** Whether today needs no run: it already succeeded, or failed less than RETRY_MS ago. */
 export const lookedToday = (s: SavedFindings | null, today: string, nowMs = Date.now()) =>
@@ -56,18 +66,18 @@ let inflight: Promise<SavedFindings | null> | null = null;
 let ranOn = { day: "", at: 0 };
 
 /** Today's findings: the saved ones when today already ran (or failed recently), else one run now. */
-export function discover(ctx: QueryCtx): Promise<SavedFindings | null> {
-  inflight ??= run(ctx).finally(() => {
+export function discover(ctx: QueryCtx, force = false): Promise<SavedFindings | null> {
+  inflight ??= run(ctx, force).finally(() => {
     inflight = null;
     ranOn = { day: ctx.today, at: Date.now() };
   });
   return inflight;
 }
 
-async function run(ctx: QueryCtx): Promise<SavedFindings | null> {
+async function run(ctx: QueryCtx, force: boolean): Promise<SavedFindings | null> {
   try {
     const saved = await savedFindings();
-    if (lookedToday(saved, ctx.today) || (ranOn.day === ctx.today && Date.now() - ranOn.at < RETRY_MS)) return saved;
+    if (!force && (lookedToday(saved, ctx.today) || (ranOn.day === ctx.today && Date.now() - ranOn.at < RETRY_MS))) return saved;
     const s = await coachSetup();
     const key = s.consent && s.provider && s.model ? await apiKey() : null;
     const model = key && s.provider && s.model ? modelFor(s.provider, s.model, key, deviceFetch) : null;
@@ -91,11 +101,20 @@ async function run(ctx: QueryCtx): Promise<SavedFindings | null> {
       });
       // Out of steps while still testing: no answer, which isn't "nothing found".
       if (!result.text.trim()) throw new Error("no answer");
-      next = { day: ctx.today, at: Date.now(), findings: checkFindings(result.text, family), tried: ctx.today };
+      const findings = checkFindings(result.text, family);
+      const all = family.results;
+      next = {
+        day: ctx.today,
+        at: Date.now(),
+        findings,
+        tried: ctx.today,
+        stats: { at: Date.now(), variables: vars.length, tested: all.length, cleared: all.filter(passes).length, proposed: proposedCount(result.text), kept: findings.length },
+      };
     } catch (e) {
       console.warn("[discover]", e instanceof Error ? e.name : "error");
       // Keep the last findings, still dated when they were made; mark the attempt so the retry waits.
-      next = { day: saved?.day ?? "", at: saved?.at ?? Date.now(), findings: saved?.findings ?? [], tried: ctx.today, failedAt: Date.now() };
+      const why = e instanceof Error ? (e.name === "Error" ? e.message : e.name) : "error";
+      next = { day: saved?.day ?? "", at: saved?.at ?? Date.now(), findings: saved?.findings ?? [], tried: ctx.today, failedAt: Date.now(), error: why.slice(0, 80), stats: { at: Date.now(), variables: vars.length, tested: family.results.length, cleared: family.results.filter(passes).length, proposed: 0, kept: 0 } };
     } finally {
       clearTimeout(timer);
     }
