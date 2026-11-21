@@ -133,9 +133,23 @@ describe("today's tail (steps)", () => {
     ];
     const kept = applySourcePolicy("Steps", records, "fitbit_only", tz, now);
     expect(kept.map((r) => r.count)).toEqual([500, 300, 5000]);
+    // Filed under the band, so the day's total adds them.
+    expect(kept[2].metadata.dataOrigin).toBe("com.fitbit.FitbitMobile");
   });
   it("leaves other days and types alone", () => {
     const yesterday = [fitbit("2026-11-19T20:30:00Z", "2026-11-19T20:42:00Z", 300), rec("com.google.android.apps.fitness", 2, "2026-11-19T22:00:00Z", "2026-11-19T23:00:00Z", 5000)];
     expect(applySourcePolicy("Steps", yesterday, "fitbit_only", tz, now).map((r) => r.count)).toEqual([300]);
+  });
+});
+
+import { stepsPerDay } from "./import";
+describe("today's tail adds to the band's day", () => {
+  it("sums band and tail into one day total", () => {
+    const now = Date.parse("2026-11-21T03:20:00Z") / 1000;
+    const tz = "America/Regina";
+    const band = { metadata: { dataOrigin: "com.fitbit.FitbitMobile", device: null }, startTime: "2026-11-20T20:30:00Z", endTime: "2026-11-20T20:42:00Z", count: 4519 };
+    const phone = { metadata: { dataOrigin: "com.google.android.apps.fitness", device: { type: 2 } }, startTime: "2026-11-20T22:00:00Z", endTime: "2026-11-20T23:00:00Z", count: 5703 };
+    const kept = applySourcePolicy("Steps", [band, phone], "fitbit_only", tz, now);
+    expect(stepsPerDay(kept as never, tz).get("2026-11-20")).toBeCloseTo(10222, 3);
   });
 });
