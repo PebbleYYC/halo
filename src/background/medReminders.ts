@@ -40,6 +40,24 @@ const contentOf = (m: Pick<MedSchedule, "id" | "name" | "dose">): Notifications.
   categoryIdentifier: MED_CATEGORY,
 });
 
+/**
+ * A dose was logged (from anywhere: a stack, the sheet, Log anything, the Coach): its reminder showing in the shade
+ * goes, and so does a snooze still waiting. Matched by the medicine's name. Never throws.
+ */
+export async function clearMedReminder(name: string): Promise<void> {
+  const key = name.trim().toLowerCase();
+  const isIt = (data: unknown) => String((data as Partial<MedData> | undefined)?.med?.name ?? "").trim().toLowerCase() === key;
+  try {
+    const [shown, waiting] = await Promise.all([Notifications.getPresentedNotificationsAsync(), Notifications.getAllScheduledNotificationsAsync()]);
+    await Promise.all([
+      ...shown.filter((n) => n.request.identifier.startsWith(ID_PREFIX) && isIt(n.request.content.data)).map((n) => Notifications.dismissNotificationAsync(n.request.identifier)),
+      ...waiting.filter((n) => n.identifier.startsWith(`${ID_PREFIX}snooze.`) && isIt(n.content.data)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    ]);
+  } catch {
+    // Best effort: the reminder stays until swiped.
+  }
+}
+
 /** Replaces every scheduled reminder to match `list`: daily, or weekly on chosen days. Never throws; false on failure. */
 export async function syncMedReminders(list?: MedSchedule[]): Promise<boolean> {
   try {

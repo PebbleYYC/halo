@@ -8,7 +8,7 @@
 // ("2026-10-07 14:30", "2026-10-07"): the app ships no native date picker. Food has a sheet of its own
 // (src/screens/nutrition/FoodSheet.tsx): a photo or a few words estimated by the person's AI provider, or typed in.
 import * as React from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { CalendarHeart, Droplet, FlaskConical, HeartPulse, Layers, PenLine, Pill, Scale, Smile, Thermometer, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
@@ -163,32 +163,32 @@ function AnythingField({ onPress }: { onPress: () => void }) {
   );
 }
 
-/** The one-tap row: capsules that scroll sideways, each logging now. Nothing shows until there is something usual. */
-function QuickRow({ items, onLog }: { items: QuickItem[]; onLog: (q: QuickItem) => void }) {
+/** A one-tap log in the grid, shaped like the other tiles: logs now (a stack, a usual medicine, water). */
+function QuickTile({ q, onLog }: { q: QuickItem; onLog: (q: QuickItem) => void }) {
   const c = useCalm();
-  if (!items.length) return null;
+  const press = usePress();
+  const pressed = usePressStyle(press, { dim: 0.85 });
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-      {items.map((q) => (
-        <Pressable
-          key={q.key}
-          onPress={() => onLog(q)}
-          accessibilityRole="button"
-          accessibilityLabel={`Log ${q.said} now`}
-          style={({ pressed }) => ({ minHeight: 44, borderRadius: 22, backgroundColor: c.card, flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 8, paddingRight: 14, opacity: pressed ? 0.6 : 1 })}
-        >
-          <IconTile icon={q.icon} tint={q.tint} size={28} />
-          <Txt size={15} lineHeight={20} weight={600} numberOfLines={1} style={{ color: c.ink }}>
-            {q.label}
+    <PressableView
+      onPress={() => onLog(q)}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      accessibilityRole="button"
+      accessibilityLabel={`Log ${q.said} now`}
+      style={[{ flex: 1, minWidth: 0, minHeight: TILE_HEIGHT, borderRadius: 20, backgroundColor: c.card, padding: 14, gap: 10 }, pressed]}
+    >
+      <View style={{ minHeight: 34, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <IconTile icon={q.icon} tint={q.tint} size={34} />
+        {q.detail ? (
+          <Txt size={13} lineHeight={17} align="right" numberOfLines={1} style={{ color: c.sub, flexShrink: 1 }}>
+            {q.detail}
           </Txt>
-          {q.detail ? (
-            <Txt size={13} lineHeight={18} style={{ color: c.sub, fontVariant: ["tabular-nums"] }}>
-              {q.detail}
-            </Txt>
-          ) : null}
-        </Pressable>
-      ))}
-    </ScrollView>
+        ) : null}
+      </View>
+      <Txt size={16} lineHeight={21} weight={600} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: c.ink }}>
+        {q.label}
+      </Txt>
+    </PressableView>
   );
 }
 
@@ -326,7 +326,7 @@ export function Log({ vm, day }: LogProps) {
     for (const [t, ms] of [...byTime].sort(([a], [b]) => (a < b ? -1 : 1))) {
       if (ms.length < 2) continue;
       ms.forEach((m) => stacked.add(m.name.toLowerCase()));
-      out.push({ key: `stack-${t}`, label: `${t} stack`, detail: `${ms.length}`, icon: Layers, tint: "mint", inputs: ms.map((m) => ({ kind: "medicine" as const, name: m.name, dose: m.dose || undefined })), said: ms.map((m) => m.name).join(", ") });
+      out.push({ key: `stack-${t}`, label: `${t} stack`, detail: `${ms.length} medicines`, icon: Layers, tint: "mint", inputs: ms.map((m) => ({ kind: "medicine" as const, name: m.name, dose: m.dose || undefined })), said: ms.map((m) => m.name).join(", ") });
     }
     const count = new Map<string, { n: number; input: LogInput; label: string; icon: LucideIcon; tint: CalmTint }>();
     for (const e of vm.recent) {
@@ -340,10 +340,10 @@ export function Log({ vm, day }: LogProps) {
       }
     }
     const usual = [...count.entries()].filter(([, v]) => v.n >= 2).sort((a, b) => b[1].n - a[1].n).slice(0, 3);
-    for (const [k, v] of usual) out.push({ key: k, label: v.label, icon: v.icon, tint: v.tint, inputs: [v.input], said: v.label });
+    for (const [k, v] of usual) out.push({ key: k, label: v.label, detail: "Usual", icon: v.icon, tint: v.tint, inputs: [v.input], said: v.label });
     if (vm.recent.some((e) => e.type === "hydration-log" && e.source === "pulse")) {
       const ml = steps[0].ml;
-      out.push({ key: "water", label: `+${steps[0].label} ${waterUnit}`, icon: Droplet, tint: "sky", inputs: [{ kind: "water", ml }], said: "Water" });
+      out.push({ key: "water", label: `+${steps[0].label} ${waterUnit}`, detail: "Water", icon: Droplet, tint: "sky", inputs: [{ kind: "water", ml }], said: "Water" });
     }
     return out;
   }, [schedules, vm.recent, steps, waterUnit]);
@@ -384,14 +384,17 @@ export function Log({ vm, day }: LogProps) {
   return (
     <>
       <AnythingField onPress={() => setAnything(true)} />
-      <QuickRow items={quick} onLog={(q) => void logQuick(q)} />
-      {/* Two columns of white tiles: every label whole, on one line. */}
+      {/* Two columns of tiles: each kind's sheet, then the one-tap logs (stacks, usual medicines) filling the rows after. */}
       <View accessibilityLabel="Log" style={{ gap: TILE_GAP }}>
-        {pairs(vm.kinds).map((row) => (
-          <View key={row.join("-")} style={{ flexDirection: "row", gap: TILE_GAP }}>
-            {row.map((k) => (
-              <Tile key={k} kind={k} today={k === "water" ? waterToday : k === "food" ? vm.foodToday.kcal : null} unit={k === "water" ? waterUnit : undefined} onPress={() => open(k)} />
-            ))}
+        {pairs<LogKind | QuickItem>([...vm.kinds, ...quick]).map((row) => (
+          <View key={row.map((t) => (typeof t === "string" ? t : t.key)).join("-")} style={{ flexDirection: "row", gap: TILE_GAP }}>
+            {row.map((k) =>
+              typeof k === "string" ? (
+                <Tile key={k} kind={k} today={k === "water" ? waterToday : k === "food" ? vm.foodToday.kcal : null} unit={k === "water" ? waterUnit : undefined} onPress={() => open(k)} />
+              ) : (
+                <QuickTile key={k.key} q={k} onLog={(q) => void logQuick(q)} />
+              ),
+            )}
             {row.length === 1 && <View style={{ flex: 1 }} />}
           </View>
         ))}
