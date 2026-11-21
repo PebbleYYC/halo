@@ -2,3 +2,5 @@
 import { ActivityTab } from "@/screens/detail/StrainScreen";
 
 export default ActivityTab;
+
+export { RouteError as ErrorBoundary } from "@/ui/components/RouteError";

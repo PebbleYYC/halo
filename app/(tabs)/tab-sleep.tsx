@@ -2,3 +2,5 @@
 import { SleepTab } from "@/screens/detail/SleepScreen";
 
 export default SleepTab;
+
+export { RouteError as ErrorBoundary } from "@/ui/components/RouteError";

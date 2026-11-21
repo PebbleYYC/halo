@@ -404,7 +404,14 @@ export function BottomSheet({ open, onClose, title, description, children, foote
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const ref = React.useRef<BottomSheetModal>(null);
-  const tall = size === "tall";
+  // The size is taken when the sheet opens and kept until it opens again: switching gorhom between content sizing and a
+  // fixed height while it's presented or closing can leave it (and its backdrop) stuck over the screen.
+  const [tall, setTall] = React.useState(size === "tall");
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open && tall !== (size === "tall")) setTall(size === "tall");
+  }
   const topInset = insets.top + 8;
   const maxH = Math.round(height * 0.92);
 
