@@ -8,7 +8,7 @@
 // rolling into place in its middle) beside capsule meters for protein, carbs and fat (each growing in its own colour),
 // then "Add food", today's food as inset grouped lists by meal, the targets as an iOS list with "Edit", the averages as
 // Health cards and the month as Apple Health's bars. The food and targets sheets are iOS sheets.
-import { balanceWords } from "@/queries/energy";
+import { balanceWords, type Balance } from "@/queries/energy";
 import * as React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Camera, ChartColumn, Pencil, PencilLine, Plus, Trash2, TriangleAlert, Utensils, type LucideIcon } from "lucide-react-native";
@@ -76,6 +76,45 @@ function MacroBar({ macro, label, value, target }: { macro: keyof typeof MACRO_T
   );
 }
 
+/** Eaten against burned by the end of today, as two bars and the difference. Only as complete as the food logged. */
+function EnergyBalance({ eaten, b, yesterday }: { eaten: number; b: Balance; yesterday: Balance | null }) {
+  const c = useCalm();
+  const burn = Math.round(b.burn / 10) * 10;
+  const top = Math.max(eaten, burn, 1);
+  const net = Math.round(b.balance / 50) * 50;
+  const word = b.verdict === "early" ? "Too early to call" : b.verdict === "maintenance" ? "About even" : b.verdict === "deficit" ? "Deficit" : "Surplus";
+  const row = (label: string, v: number, color: string) => (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Txt size={13} lineHeight={18} style={{ color: c.sub, width: 56 }}>
+        {label}
+      </Txt>
+      <View style={{ flex: 1 }}>
+        <CapsuleMeter frac={v / top} color={color} height={8} track={c.fill} grow />
+      </View>
+      <Txt size={13} lineHeight={18} style={[font.numeric(600), { color: c.ink, minWidth: 48, textAlign: "right" }]}>
+        {grouped(v)}
+      </Txt>
+    </View>
+  );
+  return (
+    <View accessible accessibilityLabel={`Energy balance: eaten ${grouped(eaten)} kcal, burned about ${grouped(burn)} kcal by the end of today. ${word}${b.verdict === "deficit" || b.verdict === "surplus" ? ` of about ${grouped(Math.abs(net))} kcal` : ""}.`} style={{ gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+        <Txt size={15} lineHeight={20} weight={600} style={{ color: c.ink }}>
+          Energy balance
+        </Txt>
+        <Txt size={15} lineHeight={20} style={[font.numeric(700), { color: c.ink }]}>
+          {b.verdict === "early" ? word : b.verdict === "maintenance" ? word : `${net > 0 ? "+" : "−"}${grouped(Math.abs(net))} kcal`}
+        </Txt>
+      </View>
+      {row("Eaten", eaten, c.tintInk.sand)}
+      {row("Burned", burn, c.sub)}
+      <Txt size={12} lineHeight={16} style={{ color: c.faint }}>
+        {`Burned by the end of today; eaten from food you’ve logged.${yesterday ? ` Yesterday: ${balanceWords(yesterday)}.` : ""}`}
+      </Txt>
+    </View>
+  );
+}
+
 /** The calories ring's size. */
 const RING = 132;
 
@@ -117,9 +156,8 @@ function TodayCard({ vm }: { vm: NutritionVM }) {
       <View style={{ gap: 2 }}>
         <Sentence>{left === 0 ? "Calorie target reached" : `Calories: ${leftText(left, "kcal")}`}</Sentence>
         <Sentence>{proteinLeft === 0 ? "Protein target reached" : `Protein: ${proteinLeft > 0 ? `${grams(proteinLeft)} g to go` : `${grams(-proteinLeft)} g over your target`}`}</Sentence>
-        {vm.balance.today && <Sentence>{vm.balance.today.verdict === "early" ? "Balance: too early to call" : `Balance: on course for ${balanceWords(vm.balance.today)}`}</Sentence>}
-        {vm.balance.yesterday && <Sentence>{`Yesterday: ${balanceWords(vm.balance.yesterday)}`}</Sentence>}
       </View>
+      {vm.balance.today && t.kcal !== null && <EnergyBalance eaten={t.kcal} b={vm.balance.today} yesterday={vm.balance.yesterday} />}
       {t.fiber !== null && (
         <View accessible style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 6 }}>
           <Txt size={15} lineHeight={20} weight={600} style={{ color: c.ink }}>
