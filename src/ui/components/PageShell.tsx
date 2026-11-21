@@ -50,6 +50,9 @@ export const QUIET_SCROLL = 200;
  * inset, laid out in flow under the tab screens (they end at its top edge).
  */
 export const TAB_BAR_HEIGHT = 62;
+/** The bar's lift off the safe-area inset, and the fade above it that dims what scrolls under it. */
+export const TAB_BAR_LIFT = 6;
+export const TAB_BAR_FADE = 28;
 
 /**
  * Bottom padding for a scroll view, so its last content scrolls clear of what sits at the screen's foot: on a tab root
@@ -59,13 +62,13 @@ export const TAB_BAR_HEIGHT = 62;
 export function useBottomClearance(kind: "tabs" | "detail"): number {
   const { bottom } = useSafeAreaInsets();
   // A tab page runs under the floating, frosted bar: its last card scrolls clear of the bar with 24 px of air.
-  return kind === "tabs" ? bottom + TAB_BAR_HEIGHT + 24 : Math.max(96, bottom + 72);
+  return kind === "tabs" ? bottom + TAB_BAR_LIFT + TAB_BAR_HEIGHT + TAB_BAR_FADE + 16 : Math.max(96, bottom + 72);
 }
 
 /** The tab bar's footprint from the screen's bottom edge: its height plus the safe-area inset under it. */
 export function useTabBarTop(): number {
   const { bottom } = useSafeAreaInsets();
-  return bottom + TAB_BAR_HEIGHT;
+  return bottom + TAB_BAR_LIFT + TAB_BAR_HEIGHT;
 }
 
 export type PageShellProps = {

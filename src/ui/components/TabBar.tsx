@@ -18,7 +18,7 @@ import { reduceMotionNow } from "@/ui/motion/system";
 import { Mark } from "./Mark";
 import { ScrollEdgeFade } from "./ScrollEdgeFade";
 import { useTheme } from "@/ui/ThemeProvider";
-import { TAB_BAR_HEIGHT } from "./PageShell";
+import { TAB_BAR_FADE, TAB_BAR_HEIGHT, TAB_BAR_LIFT } from "./PageShell";
 import { Txt } from "./Text";
 import { usePress } from "./press";
 
@@ -78,7 +78,7 @@ const BAR_H = TAB_BAR_HEIGHT;
 /** From the screen's sides, between the capsule and the button, and above the system navigation area. */
 const SIDE = 16;
 const GAP = 12;
-const LIFT = 6;
+const LIFT = TAB_BAR_LIFT;
 /** The capsule's inner padding at its round ends, and the drop's inset from its slot. */
 const PAD = 5;
 const DROP_H = BAR_H - 10;
@@ -245,7 +245,7 @@ const haptic = () => {
 /** Solid page ground from the screen's foot to the bar's top, softening 28 px above it: nothing scrolls under the bar. */
 export function TabBarFade() {
   const insets = useSafeAreaInsets();
-  return <ScrollEdgeFade height={insets.bottom + LIFT + BAR_H + 28} fade={28} />;
+  return <ScrollEdgeFade height={insets.bottom + LIFT + BAR_H + TAB_BAR_FADE} fade={TAB_BAR_FADE} />;
 }
 
 /**
