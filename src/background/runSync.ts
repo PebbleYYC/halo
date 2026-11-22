@@ -88,18 +88,31 @@ function watchForeground() {
   AppState.addEventListener("change", (next) => setForeground(onScreen(next)));
 }
 
-/** Serialised: a second call while one runs returns the same promise. Throws what the sync or pipeline threw. */
+/**
+ * Serialised: a second call while one runs returns the same promise. Throws what the sync or pipeline threw.
+ * The network extras after a run (weather, the Claude connector, the Coach's patterns) are not part of it: the next
+ * sync must never wait behind them. A headless task can't time out a stalled request, and when the task ran in the
+ * app's own runtime a hung extra kept every later sync from the app joined to it, with Health Connect's new data unread.
+ * The task still waits for them (its process may end once it returns); the app lets them finish on their own.
+ */
 export function runSync(store: Store, profile: Profile, source: Source, opts: RunSyncOptions): Promise<RunSyncResult> {
   watchForeground();
   if (inflight) return inflight;
-  const job = run(store, profile, source, opts).finally(() => {
+  let extras: Promise<unknown> = Promise.resolve();
+  const job = run(store, profile, source, opts, (p) => {
+    extras = p;
+  }).finally(() => {
     inflight = null;
   });
   inflight = job;
-  return job;
+  if (opts.owner !== "task") return job;
+  return job.then(async (r) => {
+    await extras.catch(() => {});
+    return r;
+  });
 }
 
-async function run(store: Store, profile: Profile, source: Source, opts: RunSyncOptions): Promise<RunSyncResult> {
+async function run(store: Store, profile: Profile, source: Source, opts: RunSyncOptions, after: (extras: Promise<unknown>) => void): Promise<RunSyncResult> {
   let lock = await takeLock(opts.owner);
   if (!lock.taken && opts.waitIfLocked && (await waitForLock(opts.owner, WAIT_FOR_TASK_MS))) lock = await takeLock(opts.owner);
   if (!lock.taken) return { ran: false, skipped: `${lock.holder === "app" ? "the app" : "the background task"} is syncing`, warnings: [] };
@@ -134,26 +147,23 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
     // The scores are on disk: the lock goes now, before the network extras. A weather request that never answers
     // (no timer can cut it short in a headless task) used to hold the lock, and the app behind it, until it went stale.
     await releaseLock(opts.owner);
-    // Headache risk's weather: only the app may read a fresh location; the background task reuses the last one.
-    if (source !== "demo") {
-      try {
-        await syncWeather({ place: () => resolvePlace(opts.owner === "app") });
-        await notifyHeadache(opts.timeZone);
-      } catch (e) {
-        // The day is scored and saved; weather is an extra and its failure is not the run's.
-        warnings.push(`weather: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
     return { ran: true, warnings };
   } finally {
     await releaseLock(opts.owner);
     await notifyAfterRun(store, opts.timeZone);
-    // The Claude connector, when set up: the task waits for the send (its process may end after); the app doesn't.
     if (scored) {
-      const send = sendAfterSync(store, profile, opts.timeZone);
-      // The Coach's patterns: found and worded now, so Home has them in its words; a weekly one may be sent.
-      const patterns = patternsAfterRun(store, profile, opts.timeZone);
-      if (opts.owner === "task") await Promise.all([send, patterns]);
+      const app = opts.owner === "app";
+      const p = profile;
+      after(
+        Promise.allSettled([
+          // Headache risk's weather: only the app may read a fresh location; the background task reuses the last one.
+          source !== "demo" ? syncWeather({ place: () => resolvePlace(app) }).then(() => notifyHeadache(opts.timeZone)) : null,
+          // The Claude connector, when set up.
+          sendAfterSync(store, p, opts.timeZone),
+          // The Coach's patterns: the look runs in the app only; the task may still send what the last look found.
+          patternsAfterRun(store, p, opts.timeZone, app),
+        ]),
+      );
     }
   }
 }

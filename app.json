@@ -42,6 +42,7 @@
         "android.permission.health.READ_MENSTRUATION",
         "android.permission.health.READ_INTERMENSTRUAL_BLEEDING",
         "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND",
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.REQUEST_INSTALL_PACKAGES",
         "android.permission.ACCESS_COARSE_LOCATION"

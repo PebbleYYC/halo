@@ -1,6 +1,8 @@
 package app.halo.glass
 
+import android.content.Context
 import android.os.Build
+import android.os.PowerManager
 import android.view.View
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -18,6 +20,14 @@ import expo.modules.kotlin.modules.ModuleDefinition
 class HaloGlassModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("HaloGlass")
+
+    // Whether Android exempts Halo from battery optimisation ("Unrestricted"), which lets background sync run on time.
+    // Lives here as Halo's one native module; it has nothing to do with glass.
+    Function("ignoresBatteryOptimizations") {
+      val context = appContext.reactContext ?: return@Function false
+      val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return@Function false
+      pm.isIgnoringBatteryOptimizations(context.packageName)
+    }
 
     OnActivityEntersForeground {
       val activity = appContext.currentActivity ?: return@OnActivityEntersForeground
