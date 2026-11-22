@@ -10,6 +10,8 @@ import { AppState, Linking, View } from "react-native";
 import { Bell, BellRing, CalendarRange, CloudOff, Download, Flame, Moon, NotebookPen, Lightbulb, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react-native";
 import { applyBedtime } from "@/background/alerts";
 import { DEEP_LINK, formatTime, parseTime, recoveryBody } from "@/background/decide";
+import * as IntentLauncher from "expo-intent-launcher";
+import { ignoresBatteryOptimizations } from "../../../modules/halo-glass";
 import { readLog, type RunLogEntry } from "@/background/log";
 import { askNotificationPermission, notificationPermission, sendNow, type NotificationPermission } from "@/background/notify";
 import { BEDTIME_LEADS, DEFAULT_SETTINGS, readSettings, writeSettings, type BackgroundSettings } from "@/background/settings";
@@ -90,6 +92,7 @@ function BackgroundSync({ s, start }: { s: ReturnType<typeof useNotificationSett
   const [available, setAvailable] = React.useState(true);
   const [background, setBackground] = React.useState<boolean | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [unrestricted, setUnrestricted] = React.useState<boolean | null>(null);
 
   const refresh = React.useCallback(
     () =>
@@ -98,6 +101,7 @@ function BackgroundSync({ s, start }: { s: ReturnType<typeof useNotificationSett
         setRegistered(r);
         setAvailable(a);
         setBackground(p ? p.background : null);
+        setUnrestricted(ignoresBatteryOptimizations());
       }),
     [hc],
   );
@@ -140,7 +144,7 @@ function BackgroundSync({ s, start }: { s: ReturnType<typeof useNotificationSett
 
   return (
     <RiseEach start={start}>
-      <InsetGroup title="Background sync" footer="Android runs it roughly every 15–30 min when the phone allows. Battery Saver and app sleep settings can pause it; a run resumes when Halo is opened.">
+      <InsetGroup title="Background sync" footer="Android runs it every 15–30 min at best. With battery optimised, it can wait hours; Unrestricted keeps it on time.">
         <SwitchRow
           icon={RefreshCw}
           system="blue"
@@ -151,6 +155,20 @@ function BackgroundSync({ s, start }: { s: ReturnType<typeof useNotificationSett
           disabled={!hc && !google}
         />
         <InfoRow label="Schedule" value={scheduled} valueColor={registered && s.settings.backgroundSync ? c.system.green : undefined} />
+        {unrestricted !== null && (
+          <InfoRow label="Battery" value={unrestricted ? "Unrestricted" : "Optimized"} valueColor={unrestricted ? c.system.green : c.tintInk.sand} />
+        )}
+        {unrestricted === false && s.settings.backgroundSync && (
+          <ButtonRow
+            label="Let it run on time"
+            onPress={() =>
+              void IntentLauncher.startActivityAsync("android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS", { data: "package:app.halo.health" })
+                .catch(() => IntentLauncher.startActivityAsync("android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"))
+                .catch(() => toast("Open Settings › Apps › Halo › Battery and choose Unrestricted"))
+                .finally(() => void refresh())
+            }
+          />
+        )}
         {!available && <NavRow icon={TriangleAlert} system="yellow" label="Restricted on this phone" description="Background tasks are restricted for Halo on this phone." action />}
         {__DEV__ && <ButtonRow label="Run the task now (debug)" onPress={() => void runNow()} disabled={busy} />}
       </InsetGroup>

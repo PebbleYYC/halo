@@ -22,7 +22,17 @@ export type NativeGlassProps = ViewProps & {
 
 export type NativeGlassTargetProps = ViewProps & { ref?: React.Ref<unknown> };
 
-const available = requireOptionalNativeModule("HaloGlass") != null;
+const native = requireOptionalNativeModule<{ ignoresBatteryOptimizations?: () => boolean }>("HaloGlass");
+const available = native != null;
+
+/** Android exempts Halo from battery optimisation ("Unrestricted"); null where the native module isn't built in. */
+export function ignoresBatteryOptimizations(): boolean | null {
+  try {
+    return native?.ignoresBatteryOptimizations ? native.ignoresBatteryOptimizations() : null;
+  } catch {
+    return null;
+  }
+}
 
 export const NativeGlassView: React.ComponentType<NativeGlassProps> | null = available
   ? requireNativeViewManager<NativeGlassProps>("HaloGlass", "HaloGlassView")
