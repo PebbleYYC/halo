@@ -193,13 +193,14 @@ function RingArc({ id, cx, cy, r, stroke, start = 0, sweep = 360, colors, track,
   // ring past half showed only its second half.) Once the second half is drawing, both halves lap over the seam by
   // `lap` so the join is buried in a doubly-painted, colour-matched band: the butt caps of a stroke this thick don't
   // close on a one-degree overlap, and the dim target band showed through the gap. The lap scales with the stroke (a
-  // thick ring needs a wider band) and only kicks in with the second half, so the first half never overshoots the head.
+  // thick ring needs a wider band) and grows with the second half, so the first half never overshoots the head.
   const half = sweep / 2;
   const lap = Math.min(30, (stroke * 0.75 * 180) / (Math.PI * r));
   const first = (v: number) => {
     "worklet";
     const q1 = clamp01(v * 2);
-    const over = clamp01(v * 2 - 1) > 0.001 ? lap : 0;
+    // Never past the head: just past the seam, a full lap ran the first half's square end out beyond the round head.
+    const over = Math.min(lap, half * clamp01(v * 2 - 1));
     return { d: arcPath(cx, cy, r, start, start + half * q1 + over), strokeOpacity: q1 > 0.001 ? 1 : 0 };
   };
   const second = (v: number) => {
