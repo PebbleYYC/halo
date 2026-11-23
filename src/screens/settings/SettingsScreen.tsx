@@ -21,6 +21,7 @@ import { ClaudeSection } from "./claude";
 import { GoalsSection } from "./goals";
 import { LiveHrSection } from "./liveHr";
 import { NotificationsSection } from "./notifications";
+import { FitbitAirSection } from "./fitbitAir";
 import { EditProfileButton } from "./ProfileSheet";
 import { AppSection, CoachSection, DataSourceSection, ProfileSection } from "./sections";
 import { UnitsSection } from "./units";
@@ -28,8 +29,8 @@ import { HeadacheSection } from "./headache";
 import { MedicinesSection } from "./medicines";
 import { WeeklyPlanSection } from "./weeklyPlan";
 
-export type SectionId = "profile" | "source" | "goals" | "notifications" | "live" | "app" | "units" | "headache" | "medicines" | "coach" | "claude";
-const IDS: SectionId[] = ["profile", "source", "goals", "notifications", "live", "app", "units", "headache", "medicines", "coach", "claude"];
+export type SectionId = "profile" | "source" | "goals" | "notifications" | "live" | "air" | "app" | "units" | "headache" | "medicines" | "coach" | "claude";
+const IDS: SectionId[] = ["profile", "source", "goals", "notifications", "live", "air", "app", "units", "headache", "medicines", "coach", "claude"];
 /** The web's ids and older names: ?s=account, ?s=sync, ?s=appearance. */
 const ALIAS: Record<string, SectionId> = { account: "profile", sync: "source", appearance: "app" };
 
@@ -40,6 +41,7 @@ const TITLE: Record<SectionId, string> = {
   goals: "Goals",
   notifications: "Notifications",
   live: "Live heart rate",
+  air: "Fitbit Air",
   app: "Appearance",
   units: "Units",
   headache: "Headache risk",
@@ -70,6 +72,8 @@ function Section({ id }: { id: SectionId }) {
       return <NotificationsSection />;
     case "live":
       return <LiveHrSection />;
+    case "air":
+      return <FitbitAirSection />;
     case "app":
       return <AppSection />;
     case "units":

@@ -9,7 +9,7 @@
 import * as React from "react";
 import { useRouter, type Href } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import { Archive, Bell, Bluetooth, BookOpen, Cable, CalendarDays, CalendarRange, ChartLine, ClipboardCheck, CloudRain, Pill, Database, Download, FlaskConical, HeartPulse, History, ListChecks, MessagesSquare, Palette, Plug, RefreshCw, Ruler, SwatchBook, Target, Trash2, UserRound } from "lucide-react-native";
+import { Archive, Bell, Bluetooth, BookOpen, Cable, CalendarDays, CalendarRange, ChartLine, ClipboardCheck, CloudRain, Pill, Database, Download, FlaskConical, HeartPulse, History, ListChecks, MessagesSquare, Palette, Plug, RefreshCw, Ruler, SwatchBook, Target, Trash2, UserRound, Watch } from "lucide-react-native";
 import { providerLabel } from "@/coach/providers";
 import { useCoachSetup } from "@/coach/session";
 import { describeHealthConnect } from "@/health/sync";
@@ -146,6 +146,7 @@ export default function MoreScreen() {
       rows: [
         { icon: Bell, system: "red", label: "Notifications & background", href: "/settings?s=notifications", keywords: "recovery ready alerts reminder check-in wind-down bedtime background sync updates test" },
         { icon: Bluetooth, system: "blue", label: "Live heart rate", aside: liveWord, href: "/settings?s=live", keywords: "bluetooth band fitbit air ble hrv connect" },
+        { icon: Watch, system: "indigo", label: "Fitbit Air", href: "/settings?s=air", keywords: "band battery buzz vibrate vibration haptic notifications relay" },
       ],
     },
     {
