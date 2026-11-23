@@ -3,7 +3,8 @@
 // ("pulse://journal", app.json `scheme`), the same links Android hands expo-router from outside.
 import * as React from "react";
 import * as Notifications from "expo-notifications";
-import { router, useRootNavigationState, type Href } from "expo-router";
+import { useRootNavigationState } from "expo-router";
+import { openRoute } from "@/lib/openRoute";
 import { handleMedResponse } from "./medReminders";
 
 /** "pulse://settings?s=source" → "/settings?s=source"; a path passes through. */
@@ -30,7 +31,7 @@ export function useNotificationDeepLinks(): void {
     }
     const data = response.notification.request.content.data as Record<string, unknown> | null | undefined;
     const url = data?.url;
-    if (typeof url === "string") router.push(pathOf(url) as Href);
+    if (typeof url === "string") openRoute(pathOf(url));
     // Consumed: a later mount (a reload) must not open it again.
     void Notifications.clearLastNotificationResponseAsync().catch(() => {});
   }, [navReady, response]);

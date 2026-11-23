@@ -7,11 +7,12 @@
 // the bar is its overlay, so the glass bends what is under it. The scroll offset lives on the UI thread (Reanimated):
 // the large title's fold, the inline title, the scroll edge and the cards that rise as they scroll into view all read
 // it there, and no JS runs while the page scrolls. Pull to refresh reads the live heart rate first, then syncs.
+import { openRoute } from "@/lib/openRoute";
 import { useScrollTopOnReselect } from "@/ui/motion/tabReselect";
 import { askLocationOnce } from "@/weather/place";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
-import { useRouter, type Href } from "expo-router";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CircleAlert } from "lucide-react-native";
 import Animated from "react-native-reanimated";
@@ -111,7 +112,7 @@ export default function HomeScreen() {
   const dayLoading = home.loading && !!vm && vm.day !== d;
   const shown = vm?.day ?? d;
   const at = React.useCallback((path: string) => dayHref(path, shown, today), [shown, today]);
-  const go = React.useCallback((href: string) => router.push(href as Href), [router]);
+  const go = React.useCallback((href: string) => openRoute(href), []);
 
   const setDay = React.useCallback((day: string) => router.setParams({ d: day === today ? undefined : day }), [router, today]);
   const refresh = () => void app.refresh();

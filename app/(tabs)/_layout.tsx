@@ -24,7 +24,8 @@ function TabPreloader() {
   // Building a tab is heavy JS; on top of the launch sync it held taps back for seconds. So a sync puts it off, and the
   // tabs still to build start again one at a time once the sync has finished and its screens have refreshed.
   const syncing = useSyncProgress() != null;
-  const left = React.useRef<string[]>(["/tab-sleep", "/tab-activity", "/health", "/journal"]);
+  // The Journal is light and opened by links with params (a reminder's log sheet): it is never preloaded.
+  const left = React.useRef<string[]>(["/tab-sleep", "/tab-activity", "/health"]);
   const first = React.useRef(true);
   // A tab already opened is built: prefetching the one on screen swapped it for a hidden preloaded copy (the Journal went
   // black when a log's sync finished while it was open). Opened tabs leave the list, and the one showing is skipped.
