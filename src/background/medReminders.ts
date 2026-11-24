@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { localDay } from "@/lib/time";
 import { logEntry } from "@/screens/journal/actions";
+import { medicineTag } from "@/lib/medicine";
 import { readMedicines, type MedSchedule } from "@/state/medicines";
 import { backgroundStore } from "./runSync";
 import { CHANNEL_ID, ensureChannel } from "./notify";
@@ -13,9 +14,14 @@ export const MED_TASK = "pulse.med.action";
 const ID_PREFIX = "pulse.med.";
 export const SNOOZE_MIN = 10;
 const HANDLED_KEY = "halo.med.handled";
+const THROUGH_KEY = "halo.med.scheduledThrough";
+/** Reminders are set one by one this many days ahead, so one can be skipped; topped up as the days pass. */
+const HORIZON_DAYS = 10;
+/** A dose logged up to this long before a reminder's time answers it: that reminder doesn't fire. */
+export const COVER_S = 3 * 3600;
 
 /** What a reminder carries, for its buttons. */
-type MedData = { url: string; med: { id: string; name: string; dose: string } };
+type MedData = { url: string; med: { id: string; name: string; dose: string }; /** When it fires, ms. */ at?: number };
 
 export const medLink = (name: string) => `pulse://journal?log=medicine&med=${encodeURIComponent(name)}`;
 
@@ -33,32 +39,85 @@ export function ensureMedCategory(): Promise<void> {
   return category ?? Promise.resolve();
 }
 
-const contentOf = (m: Pick<MedSchedule, "id" | "name" | "dose">): Notifications.NotificationContentInput => ({
+const contentOf = (m: Pick<MedSchedule, "id" | "name" | "dose">, at?: number): Notifications.NotificationContentInput => ({
   title: `Time for ${m.name}`,
   body: m.dose ? `${m.dose}. Tap Taken to log it.` : "Tap Taken to log it.",
-  data: { url: medLink(m.name), med: { id: m.id, name: m.name, dose: m.dose } } satisfies MedData,
+  data: { url: medLink(m.name), med: { id: m.id, name: m.name, dose: m.dose }, ...(at != null && { at }) } satisfies MedData,
   categoryIdentifier: MED_CATEGORY,
 });
 
 /**
- * A dose was logged (from anywhere: a stack, the sheet, Log anything, the Coach): its reminder showing in the shade
- * goes, and so does a snooze still waiting. Matched by the medicine's name. Never throws.
+ * A dose was logged (from anywhere: a stack, the sheet, Log anything, the Coach) at `ts` (seconds): its reminder showing
+ * in the shade goes, so does a snooze still waiting, and so does the next reminder if it is due within three hours of
+ * the dose. Matched by the medicine's name. Never throws.
  */
-export async function clearMedReminder(name: string): Promise<void> {
-  const key = name.trim().toLowerCase();
-  const isIt = (data: unknown) => String((data as Partial<MedData> | undefined)?.med?.name ?? "").trim().toLowerCase() === key;
+export async function clearMedReminder(name: string, ts = Math.floor(Date.now() / 1000)): Promise<void> {
+  const key = medicineTag(name);
+  const dataOf = (data: unknown) => data as Partial<MedData> | undefined;
+  const isIt = (data: unknown) => medicineTag(String(dataOf(data)?.med?.name ?? "")) === key;
+  const covered = (data: unknown) => {
+    const at = dataOf(data)?.at;
+    return typeof at === "number" && at > Date.now() && at >= ts * 1000 && at - ts * 1000 <= COVER_S * 1000;
+  };
   try {
     const [shown, waiting] = await Promise.all([Notifications.getPresentedNotificationsAsync(), Notifications.getAllScheduledNotificationsAsync()]);
     await Promise.all([
       ...shown.filter((n) => n.request.identifier.startsWith(ID_PREFIX) && isIt(n.request.content.data)).map((n) => Notifications.dismissNotificationAsync(n.request.identifier)),
-      ...waiting.filter((n) => n.identifier.startsWith(`${ID_PREFIX}snooze.`) && isIt(n.content.data)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+      ...waiting
+        .filter((n) => n.identifier.startsWith(ID_PREFIX) && isIt(n.content.data) && (n.identifier.startsWith(`${ID_PREFIX}snooze.`) || covered(n.content.data)))
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
     ]);
   } catch {
     // Best effort: the reminder stays until swiped.
   }
 }
 
-/** Replaces every scheduled reminder to match `list`: daily, or weekly on chosen days. Never throws; false on failure. */
+/** Each reminder in the next `days` days, as its medicine, time and fire time (ms, device clock), after `now`. */
+export function reminderSlots(meds: readonly MedSchedule[], now: Date, days = HORIZON_DAYS): { m: MedSchedule; t: string; at: Date; day: string }[] {
+  const out: { m: MedSchedule; t: string; at: Date; day: string }[] = [];
+  for (let k = 0; k < days; k++) {
+    const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + k);
+    const day = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(base.getDate()).padStart(2, "0")}`;
+    for (const m of meds) {
+      if (!m.remind || (m.days.length && !m.days.includes(base.getDay()))) continue;
+      for (const t of m.times) {
+        const [hour, minute] = t.split(":").map(Number);
+        const at = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hour, minute);
+        if (at.getTime() > now.getTime()) out.push({ m, t, at, day });
+      }
+    }
+  }
+  return out;
+}
+
+/** Whether a dose of `name` logged at one of `doses` (seconds) answers a reminder at `atMs`: within three hours before it. */
+export function coveredBy(doses: readonly { name: string; ts: number }[], name: string, atMs: number): boolean {
+  const tag = medicineTag(name);
+  return doses.some((d) => medicineTag(d.name) === tag && d.ts * 1000 <= atMs && atMs - d.ts * 1000 <= COVER_S * 1000);
+}
+
+/** Doses logged in the last three hours, which may answer the next reminders. */
+async function recentDoses(): Promise<{ name: string; ts: number }[]> {
+  try {
+    const store = await backgroundStore();
+    const rows = await store.loggedEntries(Math.floor(Date.now() / 1000) - COVER_S, 500);
+    return rows.filter((r) => r.type === "medication").map((r) => ({ name: String((r.data as { name?: unknown }).name ?? ""), ts: r.ts }));
+  } catch {
+    return [];
+  }
+}
+
+/** Sets the next days' reminders again once fewer than five are left ahead. Cheap otherwise; never throws. */
+export async function topUpMedReminders(): Promise<void> {
+  const through = await AsyncStorage.getItem(THROUGH_KEY).catch(() => null);
+  if (through && Number(through) - Date.now() > 5 * 86_400_000) return;
+  await syncMedReminders();
+}
+
+/**
+ * Replaces every scheduled reminder to match `list`: each one set on its own for the next ten days (daily, or on the
+ * chosen weekdays), so a dose logged up to three hours early skips it. Never throws; false on failure.
+ */
 export async function syncMedReminders(list?: MedSchedule[]): Promise<boolean> {
   try {
     const meds = list ?? (await readMedicines());
@@ -70,27 +129,17 @@ export async function syncMedReminders(list?: MedSchedule[]): Promise<boolean> {
     const reminding = meds.filter((m) => m.remind).map((m) => `${ID_PREFIX}snooze.${m.id}`);
     const keep = (id: string) => id.startsWith(`${ID_PREFIX}snooze.`) && reminding.some((p) => id === p || id.startsWith(`${p}.`));
     await Promise.all(scheduled.filter((n) => n.identifier.startsWith(ID_PREFIX) && !keep(n.identifier)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
-    for (const m of meds) {
-      if (!m.remind) continue;
-      for (const t of m.times) {
-        const [hour, minute] = t.split(":").map(Number);
-        if (!m.days.length) {
-          await Notifications.scheduleNotificationAsync({
-            identifier: `${ID_PREFIX}${m.id}.${t}`,
-            content: contentOf(m),
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
-          });
-          continue;
-        }
-        // expo's weekday runs 1 (Sunday) to 7 (Saturday).
-        for (const d of m.days)
-          await Notifications.scheduleNotificationAsync({
-            identifier: `${ID_PREFIX}${m.id}.${t}.${d}`,
-            content: contentOf(m),
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: d + 1, hour, minute, channelId: CHANNEL_ID },
-          });
-      }
+    const now = new Date();
+    const doses = await recentDoses();
+    for (const s of reminderSlots(meds, now)) {
+      if (coveredBy(doses, s.m.name, s.at.getTime())) continue;
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${ID_PREFIX}${s.m.id}.${s.t}.${s.day}`,
+        content: contentOf(s.m, s.at.getTime()),
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: s.at, channelId: CHANNEL_ID },
+      });
     }
+    await AsyncStorage.setItem(THROUGH_KEY, String(now.getTime() + HORIZON_DAYS * 86_400_000)).catch(() => {});
     return true;
   } catch (e) {
     console.warn("[med reminders]", e instanceof Error ? e.message : String(e));
