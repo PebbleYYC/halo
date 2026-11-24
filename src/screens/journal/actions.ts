@@ -360,7 +360,7 @@ export async function logEntry(c: ActionCtx, input: LogInput): Promise<ActionRes
   // mobile: no Google writer and no write permission to ask for; every entry stays in Halo, as in the web's demo mode.
   await saveEntries(c.store, entries, { tz, now });
   // A dose taken in the last few hours answers its reminder: clear it from the notification shade.
-  if (v.kind === "medicine" && ts >= now - 4 * 3600) void import("@/background/medReminders").then((m) => m.clearMedReminder(v.name)).catch(() => {});
+  if (v.kind === "medicine" && ts >= now - 4 * 3600) void import("@/background/medReminders").then((m) => m.clearMedReminder(v.name, ts)).catch(() => {});
   return { ok: true, data: { demo: true } };
 }
 
@@ -379,6 +379,8 @@ export async function deleteLogEntry(c: ActionCtx, input: { id: string }): Promi
       await c.store.deleteJournal(gone.day, tag);
       await c.store.markIntradayDirty([gone.day]);
     }
+    // A reminder it had answered comes back.
+    void import("@/background/medReminders").then((m) => m.syncMedReminders()).catch(() => {});
   }
   return { ok: true, data: undefined };
 }

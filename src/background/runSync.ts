@@ -162,6 +162,8 @@ async function run(store: Store, profile: Profile, source: Source, opts: RunSync
           sendAfterSync(store, p, opts.timeZone),
           // The Coach's patterns: the look runs in the app only; the task may still send what the last look found.
           patternsAfterRun(store, p, opts.timeZone, app),
+          // Medicine reminders are set ten days ahead; keep them topped up.
+          import("./medReminders").then((m) => m.topUpMedReminders()),
         ]),
       );
     }
