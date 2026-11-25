@@ -47,6 +47,27 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 export const weekdayOf = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
 export const weekdayName = (w: number) => WEEKDAYS[w];
 
+/**
+ * The weekdays a yes/no variable keeps to: a weekday variable its own day; anything else (a workout, a journal answer)
+ * the weekdays it is yes on at least half of, when those hold at least 70% of its yes days (basketball every
+ * Wednesday). Empty when it keeps to no weekday.
+ */
+export function regularWeekdays(v: Variable): number[] {
+  if (!v.flag) return [];
+  if (v.group === "weekday") return [Number(v.key.split(":")[1])];
+  const all = Array(7).fill(0);
+  const yes = Array(7).fill(0);
+  for (const [day, x] of v.values) {
+    const w = weekdayOf(day);
+    all[w]++;
+    if (x === 1) yes[w]++;
+  }
+  const days = [0, 1, 2, 3, 4, 5, 6].filter((w) => all[w] >= 4 && yes[w] / all[w] >= 0.5);
+  const total = yes.reduce((a, b) => a + b, 0);
+  const held = days.reduce((a, w) => a + yes[w], 0);
+  return days.length && total && held / total >= 0.7 ? days : [];
+}
+
 /** "21:00" from minutes after midnight (wrapping past 24 h), to 5 minutes. */
 export function clockOf(min: number): string {
   const m = ((Math.round(min / 5) * 5) % 1440 + 1440) % 1440;
@@ -56,7 +77,7 @@ export function clockOf(min: number): string {
 /** A value as the person reads it: the unit's rounding, clocks as HH:MM, no thousands separators. */
 export function fmt(v: number, unit: string): string {
   if (unit === "clock") return clockOf(v);
-  if (unit === "SD" || unit === "strain") return v.toFixed(1);
+  if (unit === "SD" || unit === "strain" || unit === "of 3") return v.toFixed(1);
   return String(Math.round(v));
 }
 
@@ -114,7 +135,7 @@ export function buildVariables(d: DiscoveryData): Variable[] {
   add({ key: "wake", label: "Wake-up time", unit: "clock", group: "night", flag: false }, map((r) => (r.sleep?.main ? localMinutes(r.sleep.main.end, d.timeZone) : null)));
   add({ key: "strain", label: "Day Strain", unit: "strain", group: "day", flag: false }, done(map((r) => (r.s1?.effort != null ? toStrain(r.s1.effort) : null))));
   add({ key: "steps", label: "Steps", unit: "steps", group: "day", flag: false }, done(map((r) => r.metrics?.steps)));
-  add({ key: "stress", label: "Average stress", unit: "%", group: "day", flag: false }, done(map((r) => r.stress?.average)));
+  add({ key: "stress", label: "Average stress (0 to 3: under 1 low, 1 to 2 medium, 2 and up high)", unit: "of 3", group: "day", flag: false }, done(map((r) => r.stress?.average)));
   // The evening of D gets into bed for the night stored on D + 1.
   add(
     { key: "bedtime", label: "Bedtime", unit: "clock", group: "evening", flag: false },

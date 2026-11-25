@@ -5,7 +5,8 @@
 import * as React from "react";
 import { Brain, Flame, HeartPulse, Moon, type LucideIcon } from "lucide-react-native";
 import { discover, dismissedFindings, dismissFinding, lookedToday, savedFindings, SHOW_DAYS, subscribeFindings } from "@/coach/discover";
-import type { FindingSubject } from "@/coach/discoverText";
+import { findingTiming, type FindingSubject } from "@/coach/discoverText";
+import { weekdayOf } from "@/queries/discovery";
 import { useHasCoachKey } from "@/coach/session";
 import { contentKey, useDismissed } from "@/lib/dismissed";
 import { addDays } from "@/lib/time";
@@ -22,7 +23,11 @@ async function findingCards(ctx: QueryCtx) {
   // Not looked today: look now (once; discover() shares a run in flight), show what's saved meanwhile.
   if (!lookedToday(saved, ctx.today)) void discover(ctx);
   const fresh = saved && saved.day >= addDays(ctx.today, -SHOW_DAYS) ? saved.findings : [];
-  return fresh.filter((f) => !(f.key in dismissed));
+  // One about a regular day (basketball on Wednesdays) only around that day, with the timing over it.
+  return fresh.filter((f) => !(f.key in dismissed)).flatMap((f) => {
+    const t = findingTiming(f, ctx.today, weekdayOf);
+    return t.show ? [{ ...f, eyebrow: t.eyebrow }] : [];
+  });
 }
 
 export function PatternsCard({ day, go }: { day: string; go: (href: string) => void }) {
@@ -39,7 +44,7 @@ function Cards({ day, go }: { day: string; go: (href: string) => void }) {
   // Swiped away: gone until the finding's words change.
   const [swiped, off] = useDismissed();
   const findings = React.useMemo(() => (q.data ?? []).filter((f) => !gone.includes(f.key) && !swiped(contentKey("finding", f.key, f.title, f.body))), [q.data, gone, swiped]);
-  const items = React.useMemo<HomeInsightItem[]>(() => findings.map((f) => ({ key: f.key, title: f.title, body: f.body, tint: TINT[f.subject], icon: ICON[f.subject] })), [findings]);
+  const items = React.useMemo<HomeInsightItem[]>(() => findings.map((f) => ({ key: f.key, title: f.title, body: f.body, tint: TINT[f.subject], icon: ICON[f.subject], eyebrow: f.eyebrow })), [findings]);
   const actions = React.useMemo(
     () => [
       {

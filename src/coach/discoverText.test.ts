@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/time";
 import type { DayRow } from "@/queries/common";
 import { buildVariables, fmt, screen, weekdayOf } from "@/queries/discovery";
-import { checkFindings, discoverPrompt, shortlistOf, TestFamily } from "./discoverText";
+import { checkFindings, discoverPrompt, findingTiming, shortlistOf, TestFamily } from "./discoverText";
 
 const START = "2026-06-01";
 function family() {
@@ -51,5 +51,20 @@ describe("checkFindings", () => {
     const p = discoverPrompt(vars, shortlistOf(screened));
     expect(p).toContain('"key":"bedtime"');
     expect(p).toContain("weekday:2>recovery@1");
+  });
+});
+
+describe("findingTiming", () => {
+  // 2026-11-24 is a Tuesday (2), 25 Wednesday, 26 Thursday.
+  const wd = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
+  const ball = { timing: { weekdays: [3], lag: 1, label: "Basketball", weekday: false } };
+  it("shows a regular day's finding the day before and the morning after, not on the day", () => {
+    expect(findingTiming(ball, "2026-11-24", wd)).toEqual({ show: true, eyebrow: "Basketball tomorrow" });
+    expect(findingTiming(ball, "2026-11-25", wd).show).toBe(false);
+    expect(findingTiming(ball, "2026-11-26", wd)).toEqual({ show: true, eyebrow: "After basketball" });
+    expect(findingTiming(ball, "2026-11-28", wd).show).toBe(false);
+  });
+  it("shows everything else every day", () => {
+    expect(findingTiming({}, "2026-11-25", wd)).toEqual({ show: true, eyebrow: "Coach spotted" });
   });
 });

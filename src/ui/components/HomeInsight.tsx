@@ -19,7 +19,7 @@ import { Card } from "./Card";
 import { iconRadius, softFill } from "./calmKit";
 import { Txt } from "./Text";
 
-export type HomeInsightItem = { key: string; title: string; body: string; tint?: CalmTint; icon?: LucideIcon };
+export type HomeInsightItem = { key: string; title: string; body: string; tint?: CalmTint; icon?: LucideIcon; /** Over this one's title, in place of the card's eyebrow. */ eyebrow?: string };
 /** A text button under the shown insight ("Ask Coach", "Dismiss"). */
 export type HomeInsightAction = { label: string; onPress: (item: HomeInsightItem) => void; primary?: boolean };
 
@@ -123,9 +123,9 @@ export function HomeInsight({ items, label = "Insights", eyebrow, actions, onDis
             ))}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            {eyebrow ? (
-              <Txt size={13} lineHeight={18} weight={600} style={{ color: c.sub, marginBottom: 2 }}>
-                {eyebrow}
+            {(items[at]?.eyebrow ?? eyebrow) ? (
+              <Txt size={13} lineHeight={18} weight={600} numberOfLines={1} style={{ color: c.sub, marginBottom: 2 }}>
+                {items[at]?.eyebrow ?? eyebrow}
               </Txt>
             ) : null}
             {items.map((it, k) => (

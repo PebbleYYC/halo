@@ -4,17 +4,35 @@
 // whole run (src/queries/discovery.ts `passes`) and every number it states comes from the tests it cites.
 import { tool } from "ai";
 import { z } from "zod";
-import { adjust, describeResult, DISCOVERY, numbersOf, passes, runTest, weekdayName, type TestResult, type Variable } from "@/queries/discovery";
+import { adjust, describeResult, DISCOVERY, numbersOf, passes, regularWeekdays, runTest, type TestResult, type Variable, weekdayName } from "@/queries/discovery";
 
 export type FindingSubject = "recovery" | "sleep" | "strain" | "stress";
-export type Finding = { key: string; title: string; body: string; ask: string; subject: FindingSubject; href: string; tests: string[] };
+/** When a finding about a regular day is worth showing: around those weekdays, named `label` ("Basketball", "Wednesday"). */
+export type FindingTiming = { weekdays: number[]; lag: number; label: string; weekday: boolean };
+export type Finding = { key: string; title: string; body: string; ask: string; subject: FindingSubject; href: string; tests: string[]; timing?: FindingTiming };
+
+/**
+ * Whether a finding shows on `today` (a YYYY-MM-DD), and the line over it. One about something on regular weekdays
+ * (basketball on Wednesdays) shows the day before (a heads-up) and the day its effect lands (the morning after, or that
+ * evening's bedtime); anything else shows every day.
+ */
+export function findingTiming(f: Pick<Finding, "timing">, today: string, weekdayOfDay: (day: string) => number): { show: boolean; eyebrow: string } {
+  const t = f.timing;
+  if (!t?.weekdays.length) return { show: true, eyebrow: "Coach spotted" };
+  const w = weekdayOfDay(today);
+  const name = t.weekday ? t.label : t.label.toLowerCase();
+  if (t.weekdays.includes((w + 1) % 7)) return { show: true, eyebrow: t.weekday ? `${t.label} is tomorrow` : `${t.label} tomorrow` };
+  if (t.lag === 0 && t.weekdays.includes(w)) return { show: true, eyebrow: t.weekday ? `It's ${t.label}` : `${t.label} today` };
+  if (t.lag === 1 && t.weekdays.includes((w + 6) % 7)) return { show: true, eyebrow: `After ${name}` };
+  return { show: false, eyebrow: "" };
+}
 
 export const DISCOVER_INSTRUCTIONS = [
   "You are Halo's health coach, looking through one person's own wearable and journal data for patterns worth telling them about before they ask.",
   "You get the list of daily variables and the strongest results of a screen that tested every pairing of something they do (a day's strain, steps or stress, a recorded workout such as a sport they play, their bedtime, a medicine's dose time, a journal answer, the weekday) against the night after, every night against the day it starts, and every day against that evening's bedtime.",
   "Use test_relationship to check your own ideas: any two variables, lag 1 (x on a day, y the night after) or lag 0 (same day), optionally only on one weekday (for example steps against the next night's REM sleep, only on Saturdays). At lag 0, x must be a night or weekday variable, or y must be the bedtime, so the cause comes first. Each test is added to the same multiple-comparison correction, so test what you think is plausible, not everything.",
   "Then pick at most 3 findings that are actionable and not obvious (time asleep raising the sleep score is obvious; a weekday that runs low, a behaviour, a timing, or a habit with a clear effect is not). Prefer findings with large effects, and combine tests when one explains another.",
-  "Only cite results whose clearsBar is true. State only numbers that appear in the cited results, exactly as given, with their units. No diagnoses, no promises, no other numbers or dates.",
+  "Only cite results whose clearsBar is true. State only numbers that appear in the cited results, exactly as given, with their units. No diagnoses, no promises, no other numbers or dates. Say stress as low, medium or high (its value out of 3 may follow), never as a percentage. Say HRV against the baseline in words (above or below your usual), never in SD.",
   'Finish with JSON only: [{"tests": ["<id>", ...], "title": "<at most 7 words, what to do>", "body": "<at most 2 sentences, second person>", "ask": "<a question they could ask you to dig deeper>"}]. The first test id is the main evidence. Reply [] if nothing clears the bar or is worth saying.',
 ].join(" ");
 
@@ -133,7 +151,10 @@ export function checkFindings(raw: string, family: TestFamily): Finding[] {
     const key = main.id;
     if (out.some((o) => o.key === key)) continue;
     const subject = SUBJECT[main.y] ?? "sleep";
-    out.push({ key, title: t, body: b, ask: typeof ask === "string" && ask.trim() ? ask.trim().slice(0, 300) : `Tell me more about: ${t}`, subject, href: HREF[subject], tests: results.map((r) => r.id) });
+    const vx = family.byKey.get(main.x);
+    const weekdays = vx ? regularWeekdays(vx) : [];
+    const timing = vx && weekdays.length ? { weekdays, lag: main.lag, label: vx.label.replace(/ day$/, ""), weekday: vx.group === "weekday" } : undefined;
+    out.push({ key, title: t, body: b, ask: typeof ask === "string" && ask.trim() ? ask.trim().slice(0, 300) : `Tell me more about: ${t}`, subject, href: HREF[subject], tests: results.map((r) => r.id), ...(timing && { timing }) });
     if (out.length >= 3) break;
   }
   return out;
