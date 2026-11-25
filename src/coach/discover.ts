@@ -11,7 +11,8 @@ import { deviceFetch } from "./net";
 import { modelFor } from "./providers";
 import { apiKey, coachSetup } from "./storage";
 
-const FINDINGS_KEY = "pulse.discover.findings";
+// v2: stress was worded as a percentage and HRV in SD; findings saved before are looked at again.
+const FINDINGS_KEY = "pulse.discover.findings.v2";
 const DISMISSED_KEY = "pulse.discover.dismissed";
 /** A dismissed finding stays away this long, then may come back if it still holds. */
 export const DISMISS_DAYS = 30;

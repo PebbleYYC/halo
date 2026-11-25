@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/time";
 import type { DayRow } from "./common";
-import { buildVariables, clockOf, passes, runTest, screen, screenPairs, tTwoSided, weekdayOf, type DiscoveryData } from "./discovery";
+import { buildVariables, clockOf, passes, regularWeekdays, runTest, screen, screenPairs, tTwoSided, weekdayOf, type DiscoveryData } from "./discovery";
 
 const START = "2026-06-01"; // a Monday
 const TZ = "UTC";
@@ -110,5 +110,14 @@ describe("workouts as variables", () => {
     expect(v).toMatchObject({ label: "Basketball day", group: "day", flag: true });
     expect(screenPairs(vars)).toContainEqual({ x: "workout:basketball", y: "bedtime", lag: 0 });
     expect(screenPairs(vars)).toContainEqual({ x: "workout:basketball", y: "recovery", lag: 1 });
+  });
+});
+
+describe("regularWeekdays", () => {
+  it("finds the weekday a workout keeps to, and nothing for a scattered one", () => {
+    const days = Array.from({ length: 56 }, (_, i) => addDays("2026-09-01", i));
+    const on = (pick: (d: string, i: number) => boolean) => ({ key: "workout:x", label: "X day", unit: "flag", group: "day" as const, flag: true, values: new Map(days.map((d, i) => [d, pick(d, i) ? 1 : 0])) });
+    expect(regularWeekdays(on((d) => new Date(`${d}T12:00:00Z`).getUTCDay() === 3))).toEqual([3]);
+    expect(regularWeekdays(on((_, i) => i % 5 === 0))).toEqual([]);
   });
 });
