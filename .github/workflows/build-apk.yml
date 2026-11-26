@@ -5,6 +5,8 @@ name: Build APK
 on:
   push:
     branches: [main]
+    # The team's prompts and the PR check change nothing in the app: no release for them.
+    paths-ignore: ["docs/**", ".github/workflows/pr-check.yml"]
   workflow_dispatch:
     inputs:
       bump:

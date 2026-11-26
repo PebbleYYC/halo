@@ -1,0 +1,31 @@
+# Every pull request: typecheck, lint and tests, so the Halo team's agents (docs/team/) and Ian see red before a merge.
+# Merging to main still builds and releases through build-apk.yml.
+name: PR check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+      - name: Lint
+        run: npx eslint src app modules --max-warnings 0
+      - name: Tests
+        run: npx vitest run
