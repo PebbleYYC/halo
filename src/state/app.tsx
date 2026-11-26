@@ -195,6 +195,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     zone.current = timeZone;
   }, [timeZone]);
+  // Reading the clock is the point: the midnight timer above re-renders when the day turns.
+  // eslint-disable-next-line react-hooks/purity
   const today = localDay(Date.now() / 1000, timeZone);
   // A tapped notification opens its screen once the navigator exists (src/background/links.ts).
   useNotificationDeepLinks();
@@ -629,6 +631,8 @@ export function useQueryCtx(): QueryCtx | null {
   const { units, ready } = useUnits();
   return React.useMemo(() => {
     if (!a.store || !a.profile || !ready) return null;
+    // `now` is stamped when the ctx is made (a new sync or day makes a new one); views read time from it, not the clock.
+    // eslint-disable-next-line react-hooks/purity
     return { store: a.store, profile: a.profile, timeZone: a.timeZone, today: a.today, now: Math.floor(Date.now() / 1000), sync: a.sync, units };
     // dataVersion is part of the key so a new scoring run produces a new ctx and every useQuery refetches; a change of
     // units does the same (the view models convert as they are built).
@@ -702,6 +706,7 @@ export function useQuery<T>(fn: (ctx: QueryCtx) => Promise<T>, deps: React.Depen
     if (!ctx) return;
     let live = true;
     // The same object when already loading (a mount), so no render is spent on it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a no-op on mount; marks a refetch as loading
     setR((s) => (s.loading ? s : { ...s, loading: true }));
     const job = key ? runCached(key, stamp, () => fn(ctx)) : fn(ctx);
     // Results land as a transition: a screen's numbers are a big render (charts, lists, text to measure), and React
