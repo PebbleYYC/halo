@@ -118,7 +118,8 @@ export function TopSlot({ vm, timeZone, at, go }: SlotProps) {
           title="Pinned"
           action={<EditDashboard keys={keys} defaults={vm.dashboard.defaults} empty={vm.dashboard.empty} />}
         />
-        <HeartRateCard key="hr" today={vm.isToday} onOpen={openHr} />
+        {/* The newest reading is right now, so it has no place under a past day's date. */}
+        {vm.isToday && <HeartRateCard key="hr" today onOpen={openHr} />}
         {vm.keyStats.map((s, i) => (
           <StatCard key={`pin-${s.key}`} s={s} series={data?.series[s.key] ?? null} day={vm.day} today={vm.today} open={open} order={i + 1} />
         ))}

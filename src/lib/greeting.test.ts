@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayPart, greeting } from "./greeting";
+import { dayPart, greeting, waitingWhen } from "./greeting";
 
 const TZ = "America/Regina"; // UTC−6 all year
 const at = (hhmm: string) => Date.parse(`2026-11-02T${hhmm}:00-06:00`) / 1000;
@@ -18,5 +18,12 @@ describe("greeting", () => {
     expect(greeting(at("08:30"), TZ, "Ian")).toBe("Good morning, Ian");
     expect(greeting(at("14:00"), TZ, null)).toBe("Good afternoon");
     expect(greeting(at("23:30"), TZ, "Ian")).toBe("Good evening, Ian");
+  });
+
+  it("says when the Stress card waits: this morning until noon, then today", () => {
+    expect(waitingWhen(at("06:00"), TZ)).toBe("this morning");
+    expect(waitingWhen(at("11:59"), TZ)).toBe("this morning");
+    expect(waitingWhen(at("12:00"), TZ)).toBe("today");
+    expect(waitingWhen(at("21:00"), TZ)).toBe("today");
   });
 });

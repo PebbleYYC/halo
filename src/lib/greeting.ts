@@ -15,3 +15,8 @@ export function greeting(nowS: number, tz: string, firstName: string | null): st
   const words = `Good ${part === "night" ? "evening" : part}`;
   return firstName ? `${words}, ${firstName}` : words;
 }
+
+/** When the Stress card waits for still minutes: "this morning" before noon, "today" from 12:00 on. */
+export function waitingWhen(nowS: number, tz: string): "this morning" | "today" {
+  return localMinutes(nowS, tz) < 12 * 60 ? "this morning" : "today";
+}

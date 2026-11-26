@@ -254,8 +254,9 @@ export function TodayHero({ vm, at, go, asleepMin }: { vm: HomeVM; asleepMin: nu
             word={band ? BAND_WORD[band] : null}
             color={recoveryInk}
             order={0}
-            spoken={recovery === null ? "Recovery, no score. Opens Health" : `Recovery ${formatValue("int", recovery)} percent, ${BAND_WORD[band!].toLowerCase()}. Opens Health`}
-            onPress={() => go(HEALTH_TAB)}
+            spoken={`${recovery === null ? "Recovery, no score" : `Recovery ${formatValue("int", recovery)} percent, ${BAND_WORD[band!].toLowerCase()}`}. Opens ${vm.isToday ? "Health" : "Recovery"}`}
+            // The Health tab shows today only, so a past day's score opens that day's Recovery instead.
+            onPress={() => go(vm.isToday ? HEALTH_TAB : at("/recovery"))}
           />
           <ScoreLine
             label="Sleep"
