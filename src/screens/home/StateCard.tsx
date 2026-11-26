@@ -4,6 +4,7 @@ import * as React from "react";
 import { View } from "react-native";
 import { Footprints, Gauge, Leaf, Target, type LucideIcon } from "lucide-react-native";
 import { clock } from "@/lib/format";
+import { localMinutes } from "@/lib/time";
 import type { DayState, StateKey } from "@/queries/types";
 import { minutesText } from "@/queries/outlook";
 import { Txt, useTheme } from "@/ui";
@@ -11,6 +12,7 @@ import { STRESS_WORD } from "@/lib/bands";
 import type { ColorToken } from "@/ui/theme";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { ActionPill, HomeCard } from "./controls";
+import { useNow } from "./status";
 
 // The Stress Monitor's own Low, Medium and High, in its colours; the minutes on the move aren't stress (the monitor
 // reads only still minutes), so they get a line of their own, not a share of the bar.
@@ -22,6 +24,9 @@ const LOOK: Record<StateKey, { label: string; title: string; tint: CalmTint; col
   active: { label: "On the move", title: "On the move", tint: "sand", icon: Footprints, line: "Stress is read while you’re still, so it pauses while you move." },
 };
 
+/** Before this (minutes after local midnight) the waiting line says "this morning"; after, "today". */
+const NOON_MIN = 12 * 60;
+
 const EMPTY: DayState = { now: null, mix: { calm: 0, focused: 0, stressed: 0, active: 0 } };
 
 /**
@@ -32,6 +37,8 @@ export function StateCard({ state: given, today, timeZone, onOpen, onBreathe }: 
   const c = useCalm();
   const { c: theme } = useTheme();
   const state = given ?? EMPTY;
+  // The waiting line's part of the day, checked every 5 minutes.
+  const morning = localMinutes(useNow(5 * 60_000) / 1000, timeZone) < NOON_MIN;
   const total = ORDER.reduce((n, k) => n + state.mix[k], 0);
   const now = state.now ? LOOK[state.now.key] : null;
   const waiting = !now && total < 15;
@@ -42,7 +49,7 @@ export function StateCard({ state: given, today, timeZone, onOpen, onBreathe }: 
         <Txt size={15} lineHeight={20} style={{ color: c.sub }}>
           {state.mix.active > 0
             ? `Stress is read while you’re still; so far today you’ve mostly been on the move (${minutesText(state.mix.active)}).`
-            : "Stress is read from your still, awake minutes. It shows here once your band has synced a few of them this morning."}
+            : `Stress is read from your still, awake minutes. It shows here once your band has synced a few of them ${morning ? "this morning" : "today"}.`}
         </Txt>
       </HomeCard>
     );
