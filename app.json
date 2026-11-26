@@ -2,7 +2,7 @@
   "expo": {
     "name": "Halo",
     "slug": "pulse",
-    "version": "1.26.132",
+    "version": "1.26.133",
     "scheme": "pulse",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -47,7 +47,7 @@
         "android.permission.REQUEST_INSTALL_PACKAGES",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "versionCode": 214,
+      "versionCode": 215,
       "blockedPermissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION"
