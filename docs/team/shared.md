@@ -8,9 +8,10 @@ gh api repos/PebbleYYC/halo/pulls -X POST -f title=... -f head=... -f base=main 
 
 Read AGENTS.md and DESIGN.md first; they win over anything here. UI work also passes the anti-slop filter.
 One task per run. Finish it, or comment where you stopped and why.
-Never: merge, push to main, bump versions, touch .github/ or release config, add a dependency or permission, change
-scoring math, delete user data, spend money, or ask for or handle secrets. If a task needs any of those, stop and
-comment on the issue: "@PebbleYYC" and the question.
+Never: push to main, bump versions (the release does), spend money, or ask for or handle secrets. Only the Reviewer
+merges. Leave anything labelled hold alone.
+A change in a protected area (docs/team/README.md lists them) is labelled needs-ian and waits for Ian's "go" comment.
+Ian can't test before a release: every change must be safe to ship as it stands, small, and easy to revert.
 Write like DESIGN.md: short, plain, no filler. Issue and PR text stays under 120 words.
 Budget: stop after 40 minutes or 400 changed lines, whichever comes first, and report.
 End every PR and issue body with: "— Halo team: <your role>".

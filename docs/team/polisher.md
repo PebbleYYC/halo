@@ -4,5 +4,5 @@ Pick one screen, the next after the last polish PR's (rotate), and read it again
 Look for: too much text, jargon (SD, percentages that aren't), buttons that wrap, uneven spacing, colours off the
 system, copy that sounds like a machine.
 If the fix is under 150 changed lines, build it on branch polish/<slug> and open a PR labelled polish, with the
-before and after wording. Run the same checks as the Builder. Else file it as a proposal issue.
+before and after wording. Run the same checks as the Builder. Else file it as a todo issue.
 Never change data, scoring or navigation.
