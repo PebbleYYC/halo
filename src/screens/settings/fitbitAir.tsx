@@ -3,16 +3,18 @@
 // and alerts, and apps the user picks, outside quiet hours. The buzzing is done by a notification listener, so it
 // works with Halo closed once Android gives it notification access. Google Health stays the band's owner.
 import * as React from "react";
-import { AppState, PermissionsAndroid, Platform } from "react-native";
-import { BatteryMedium, Bell, Moon, Vibrate, Watch } from "lucide-react-native";
+import { AppState, PermissionsAndroid, Platform, Pressable, View } from "react-native";
+import { BatteryMedium, Bell, Moon, Phone, Trash2, Vibrate, Watch } from "lucide-react-native";
 import {
   airErrorWords,
+  clearRelayActivity,
   getIntensity,
   hasNotificationAccess,
   installedApps,
   isAirPaired,
   openNotificationAccess,
   readBattery,
+  relayActivity,
   relayConfig,
   setIntensity,
   setRelayConfig,
@@ -21,10 +23,12 @@ import {
   type AppInfo,
   type Intensity,
   type RelayConfig,
+  type RelayEvent,
 } from "../../../modules/fitbit-air";
 import { RiseEach } from "@/ui/motion/Rise";
-import { useCalm } from "./calmKit";
-import { ButtonRow, CheckRow, Disclosure, InfoRow, InsetGroup, MenuRow, SearchField, SwitchRow } from "./list";
+import { Txt } from "@/ui";
+import { CalmInput, useCalm } from "./calmKit";
+import { ButtonRow, CheckRow, Disclosure, InfoRow, InsetGroup, MenuRow, RowBox, SearchField, SwitchRow } from "./list";
 import { toast } from "./toast";
 
 /** Nearby devices, which the Air's link needs; asked here so the native side never has to. */
@@ -42,6 +46,11 @@ const QUIET = [
   { value: "23-7", label: "23:00 – 07:00", span: [23 * 60, 7 * 60] },
 ] as const;
 type QuietId = (typeof QUIET)[number]["value"];
+const clockOf = (ms: number) => {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+const capital = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : "Skipped");
 const quietOf = (c: RelayConfig): QuietId => QUIET.find((q) => q.span[0] === c.quietStart && q.span[1] === c.quietEnd)?.value ?? "off";
 
 export function FitbitAirSection() {
@@ -55,6 +64,8 @@ export function FitbitAirSection() {
   const [access, setAccess] = React.useState(hasNotificationAccess);
   const [apps, setApps] = React.useState<AppInfo[] | null>(null);
   const [query, setQuery] = React.useState("");
+  const [caller, setCaller] = React.useState("");
+  const [activity, setActivity] = React.useState<RelayEvent[]>(relayActivity);
 
   // One command at a time: the Air serves one secure session.
   const run = React.useCallback(async <T,>(what: string, job: () => Promise<T>): Promise<T | null> => {
@@ -85,7 +96,11 @@ export function FitbitAirSection() {
     // After the screen has opened: reading the band opens a short Bluetooth session.
     const id = setTimeout(() => void read(), 0);
     void installedApps().then(setApps);
-    const sub = AppState.addEventListener("change", (st) => st === "active" && setAccess(hasNotificationAccess()));
+    const sub = AppState.addEventListener("change", (st) => {
+      if (st !== "active") return;
+      setAccess(hasNotificationAccess());
+      setActivity(relayActivity());
+    });
     return () => {
       clearTimeout(id);
       sub.remove();
@@ -95,14 +110,22 @@ export function FitbitAirSection() {
   const save = (next: RelayConfig) => {
     setRelay(next);
     setRelayConfig(next);
-    if ((next.halo || next.packages.length) && !hasNotificationAccess()) toast("Allow notification access so Halo can buzz the Air");
+    if ((next.halo || next.packages.length || next.calls) && !hasNotificationAccess()) toast("Allow notification access so Halo can buzz the Air");
   };
 
   const picked = new Set(relay.packages);
   const shown = (apps ?? [])
     .filter((a) => !query.trim() || a.label.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => Number(picked.has(b.package)) - Number(picked.has(a.package)));
-  const wanted = relay.halo || relay.packages.length > 0;
+  const wanted = relay.halo || relay.packages.length > 0 || relay.calls;
+  const addCaller = (name: string) => {
+    const n = name.trim();
+    if (!n || relay.callers.some((x) => x.toLowerCase() === n.toLowerCase())) return;
+    save({ ...relay, callers: [...relay.callers, n] });
+    setCaller("");
+  };
+  // Recent callers not on the list yet, to add with a tap.
+  const recentCallers = [...new Set(activity.filter((e) => e.kind === "call" && e.from).map((e) => e.from))].filter((n) => !relay.callers.some((x) => x.toLowerCase() === n.toLowerCase())).slice(0, 4);
 
   return (
     <RiseEach start={0}>
@@ -139,7 +162,40 @@ export function FitbitAirSection() {
           <ButtonRow label="Test buzz" busy={busy === "tap"} disabled={!!busy} onPress={() => void run("tap", tap)} />
         </InsetGroup>
       )}
-      <InsetGroup title="Buzz the Air for" footer="Only notifications that would alert the phone. Do Not Disturb and quiet hours hold them back.">
+      <InsetGroup title="Calls" footer={relay.callers.length ? "Only these callers ring the band, quiet hours too. Matched on the name the call shows." : "Anyone who calls, outside quiet hours. Add callers to ring for them only, quiet hours too."}>
+        <SwitchRow icon={Phone} system="green" label="Ring for calls" description="Phone, WhatsApp, Signal: every second until you answer" value={relay.calls} onChange={(v) => save({ ...relay, calls: v })} />
+        {relay.calls &&
+          relay.callers.map((n) => (
+            <RowBox key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 4, paddingVertical: 6 }}>
+              <Txt size={16} lineHeight={21} numberOfLines={1} style={{ flex: 1, minWidth: 0, color: c.ink, paddingVertical: 6 }}>
+                {n}
+              </Txt>
+              <Pressable
+                onPress={() => save({ ...relay, callers: relay.callers.filter((x) => x !== n) })}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${n}`}
+                style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? c.fill : "transparent" })}
+              >
+                <Trash2 size={18} color={c.sub} strokeWidth={2} />
+              </Pressable>
+            </RowBox>
+          ))}
+        {relay.calls && (
+          <RowBox style={{ paddingVertical: 10, gap: 8 }}>
+            <CalmInput value={caller} onChangeText={setCaller} placeholder="Add a caller, as their name shows" returnKeyType="done" onSubmitEditing={() => addCaller(caller)} autoCapitalize="words" />
+            {recentCallers.length ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {recentCallers.map((n) => (
+                  <Pressable key={n} onPress={() => addCaller(n)} accessibilityRole="button" accessibilityLabel={`Add ${n}`} style={({ pressed }) => ({ minHeight: 36, borderRadius: 18, paddingHorizontal: 14, justifyContent: "center", backgroundColor: c.fill, opacity: pressed ? 0.6 : 1 })}>
+                    <Txt size={14} lineHeight={19} numberOfLines={1} style={{ color: c.ink }}>{`+ ${n}`}</Txt>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </RowBox>
+        )}
+      </InsetGroup>
+      <InsetGroup title="Buzz the Air for" footer="Only notifications that would alert the phone: not promotions, likes or status updates. Do Not Disturb and quiet hours hold them back.">
         <SwitchRow icon={Bell} system="red" label="Halo's reminders" description="Medicines, bedtime and alerts: two pulses" value={relay.halo} onChange={(v) => save({ ...relay, halo: v })} />
         <MenuRow<QuietId>
           icon={Moon}
@@ -154,7 +210,7 @@ export function FitbitAirSection() {
         />
         {wanted && !access && <ButtonRow label="Allow notification access" onPress={() => openNotificationAccess()} />}
       </InsetGroup>
-      <InsetGroup title="Other apps" footer="One pulse for each app you pick. Nothing from a notification is kept or sent.">
+      <InsetGroup title="Messages" footer="One pulse per burst: a run of messages from one app within 15 seconds buzzes once.">
         <Disclosure label="Apps" summary={relay.packages.length ? `${relay.packages.length} chosen` : "None"}>
           {apps === null ? (
             <InfoRow label="Loading apps…" />
@@ -173,6 +229,26 @@ export function FitbitAirSection() {
           )}
         </Disclosure>
       </InsetGroup>
+      {activity.length > 0 && (
+        <InsetGroup title="Recent" footer="On this phone only: who and from which app, never what was said.">
+          {activity.slice(0, 8).map((e, i) => (
+            <InfoRow
+              key={`${e.at}-${i}`}
+              label={e.from || e.app}
+              detail={`${e.from ? `${e.app} · ` : ""}${clockOf(e.at)}`}
+              value={e.buzzed ? (e.kind === "call" ? "Rang" : "Buzzed") : capital(e.why)}
+              valueColor={e.buzzed ? c.system.green : undefined}
+            />
+          ))}
+          <ButtonRow
+            label="Clear"
+            onPress={() => {
+              clearRelayActivity();
+              setActivity([]);
+            }}
+          />
+        </InsetGroup>
+      )}
     </RiseEach>
   );
 }
