@@ -6,7 +6,7 @@ Each agent runs as a scheduled task with `shared.md` followed by its own file. C
 
 | Agent | Runs (America/Regina) | Produces |
 | --- | --- | --- |
-| [Scout](scout.md) | Mon, Thu 06:41 | Up to 3 `todo` issues; never code |
+| [Scout](scout.md) | Mon–Sat 04:41 | Tops the `todo` queue up to 3; never code |
 | [Builder](builder.md) | Tue–Sat 05:47 | One PR for one issue |
 | [Reviewer](reviewer.md) | Tue–Sat 08:53 | Reviews; merges what passes, which releases it |
 | [Polisher](polisher.md) | Wed, Sat 11:37 | One small `polish` PR, or a `todo` issue |
