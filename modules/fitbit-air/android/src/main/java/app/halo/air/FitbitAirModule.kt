@@ -30,12 +30,20 @@ class FitbitAirModule : Module() {
 
     Function("relayConfig") {
       val c = RelayStore.read(context)
-      mapOf("halo" to c.halo, "packages" to c.packages.toList(), "quietStart" to c.quietStart, "quietEnd" to c.quietEnd)
+      mapOf(
+        "halo" to c.halo, "packages" to c.packages.toList(), "quietStart" to c.quietStart, "quietEnd" to c.quietEnd,
+        "calls" to c.calls, "callers" to c.callers.toList(),
+      )
     }
 
-    Function("setRelayConfig") { halo: Boolean, packages: List<String>, quietStart: Int, quietEnd: Int ->
-      RelayStore.write(context, RelayConfig(halo, packages.toSet(), quietStart, quietEnd))
+    Function("setRelayConfig") { halo: Boolean, packages: List<String>, quietStart: Int, quietEnd: Int, calls: Boolean, callers: List<String> ->
+      RelayStore.write(context, RelayConfig(halo, packages.toSet(), quietStart, quietEnd, calls, callers.toSet()))
     }
+
+    // What the relay did lately, newest first: app, sender name, buzzed or why not. Kept on the phone only.
+    Function("activity") { RelayStore.readLog(context) }
+
+    Function("clearActivity") { RelayStore.clearLog(context) }
 
     Function("hasNotificationAccess") {
       val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: ""

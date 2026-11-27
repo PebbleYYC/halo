@@ -4,7 +4,9 @@
 // web): calls reject with UNAVAILABLE and the relay reads as off.
 import { requireOptionalNativeModule } from "expo-modules-core";
 
-export type RelayConfig = { halo: boolean; packages: string[]; quietStart: number; quietEnd: number };
+export type RelayConfig = { halo: boolean; packages: string[]; quietStart: number; quietEnd: number; calls: boolean; callers: string[] };
+/** One relay decision, newest first: never the message itself. */
+export type RelayEvent = { at: number; app: string; from: string; kind: "call" | "message" | "reminder"; buzzed: boolean; why: string };
 export type AppInfo = { package: string; label: string };
 export type AirBattery = { percent: number; onCharger?: boolean | null; voltageMillivolts?: number | null };
 /** The Air's vibration strength: 2 low, 3 high. */
@@ -13,7 +15,9 @@ export type Intensity = 2 | 3;
 type Native = {
   call(method: string, args: Record<string, unknown> | null): Promise<unknown>;
   relayConfig(): RelayConfig;
-  setRelayConfig(halo: boolean, packages: string[], quietStart: number, quietEnd: number): void;
+  setRelayConfig(halo: boolean, packages: string[], quietStart: number, quietEnd: number, calls: boolean, callers: string[]): void;
+  activity(): RelayEvent[];
+  clearActivity(): void;
   hasNotificationAccess(): boolean;
   openNotificationAccess(): void;
   apps(): Promise<AppInfo[]>;
@@ -34,16 +38,16 @@ export const setIntensity = (intensity: Intensity) => call("setHapticIntensity",
 /** One pulse at the wearer's strength. */
 export const tap = () => call("tap");
 
-const OFF: RelayConfig = { halo: false, packages: [], quietStart: 0, quietEnd: 0 };
+const OFF: RelayConfig = { halo: false, packages: [], quietStart: 0, quietEnd: 0, calls: false, callers: [] };
 export function relayConfig(): RelayConfig {
   try {
-    return native?.relayConfig() ?? OFF;
+    return { ...OFF, ...native?.relayConfig() };
   } catch {
     return OFF;
   }
 }
 export function setRelayConfig(c: RelayConfig): void {
-  native?.setRelayConfig(c.halo, c.packages, Math.round(c.quietStart), Math.round(c.quietEnd));
+  native?.setRelayConfig(c.halo, c.packages, Math.round(c.quietStart), Math.round(c.quietEnd), c.calls, c.callers);
 }
 export function hasNotificationAccess(): boolean {
   try {
@@ -52,6 +56,14 @@ export function hasNotificationAccess(): boolean {
     return false;
   }
 }
+export function relayActivity(): RelayEvent[] {
+  try {
+    return native?.activity() ?? [];
+  } catch {
+    return [];
+  }
+}
+export const clearRelayActivity = () => native?.clearActivity();
 export const openNotificationAccess = () => native?.openNotificationAccess();
 export const installedApps = (): Promise<AppInfo[]> => native?.apps() ?? Promise.resolve([]);
 
