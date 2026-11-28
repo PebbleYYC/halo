@@ -12,6 +12,7 @@ import { STRESS_WORD } from "@/lib/bands";
 import type { ColorToken } from "@/ui/theme";
 import { useCalm, type CalmTint } from "@/ui/calm";
 import { ActionPill, HomeCard } from "./controls";
+import { stateCardLabel } from "./stateLabel";
 import { useNow } from "./status";
 
 // The Stress Monitor's own Low, Medium and High, in its colours; the minutes on the move aren't stress (the monitor
@@ -62,7 +63,7 @@ export function StateCard({ state: given, today, timeZone, onOpen, onBreathe }: 
       subtitle={state.now ? `As of ${clock(state.now.at, timeZone)}` : undefined}
       onPress={onOpen}
       right={state.now?.key === "stressed" ? <ActionPill label="Breathe" accessibilityLabel="Open a breathing exercise" onPress={onBreathe} /> : undefined}
-      accessibilityLabel={`${title}. Today: ${spoken}. Opens Stress.`}
+      accessibilityLabel={stateCardLabel(title, spoken, today)}
       gap={12}
     >
       {now && (
